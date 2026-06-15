@@ -2,9 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Remove copy-paste boilerplate from the ~30 API route handlers (auth/scoping guard, JSON parsing, error responses) and add request validation, so adding/maintaining a route is consistent and forgetting tenancy scoping becomes structurally hard.
+**Goal:** Remove copy-paste boilerplate from the ~30 API route handlers (auth/scoping guard, JSON parsing, error responses) and add request validation, so adding/maintaining a route is consistent and the auth guard becomes impossible to skip.
 
 **Architecture:** Introduce four small `lib/` modules — web-standard response helpers (`api-response.ts`), JSON parse helpers (`json-parse.ts`), guard-callback helpers (`api-handler.ts`), and zod request schemas (`schemas.ts`) — then migrate routes onto them. Routes keep Next 16's native `export async function GET/POST/...` signatures; the guard helpers take a callback rather than wrapping the export, so we never fight Next's route type validator.
+
+> **Scope of the tenancy guarantee (be precise):** `withWorkspace`/`withRole` make the *auth/membership guard* structurally unskippable — a handler body cannot run without a resolved `WorkspaceCtx`. They do **not** automate the `where: { workspaceId }` filter, which is still added manually in each query. Enforcing workspace scoping *at the query level* (a tenant-scoped Prisma client or a repository layer) is explicitly **out of scope** here and remains future work — do not read "impossible to skip the guard" as "impossible to forget the filter."
 
 **Tech Stack:** Next.js 16 (App Router, `proxy.ts` instead of `middleware.ts`), Prisma 6 + SQLite, zod (new dependency), Vitest 4 (node env), TypeScript 5.
 
