@@ -13,14 +13,11 @@ import {
 } from "@/lib/cms";
 import { useCollections } from "./collections-context";
 import {
-  ImageInput,
-  NumberInput,
   SelectInput,
-  TextArea,
-  TextInput,
   Toggle,
   inputCls,
 } from "./controls";
+import { LEAF_INPUTS } from "@/lib/field-inputs";
 
 type Editing = { id: string; data: Record<string, any> } | null;
 
@@ -435,27 +432,8 @@ function ItemFieldInput({
   value: any;
   onChange: (v: any) => void;
 }) {
-  switch (field.type) {
-    case "textarea":
-      return <TextArea value={value ?? ""} onChange={onChange} />;
-    case "image":
-      return <ImageInput value={value ?? ""} onChange={onChange} />;
-    case "number":
-      return <NumberInput value={value ?? ""} onChange={onChange} />;
-    case "boolean":
-      return <Toggle value={!!value} onChange={onChange} />;
-    case "date":
-      return (
-        <input
-          type="date"
-          className={inputCls}
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
-    default:
-      return <TextInput value={value ?? ""} onChange={onChange} placeholder={field.type === "url" ? "https://…" : undefined} />;
-  }
+  const render = LEAF_INPUTS[field.type] ?? LEAF_INPUTS.text;
+  return <>{render({ value, onChange, placeholder: field.type === "url" ? "https://…" : undefined })}</>;
 }
 
 // --- Detail page tab --------------------------------------------------------
