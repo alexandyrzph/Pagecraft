@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ChevronDown, ClipboardPaste, Component as ComponentIcon, Copy, Eye, EyeOff, GripVertical, Link2, Monitor, PanelRight, Plus, Smartphone, Tablet, Trash2, Type, X } from "lucide-react";
+import { ChevronDown, ClipboardPaste, Component as ComponentIcon, Copy, Eye, EyeOff, GripVertical, Link2, Monitor, PanelRight, Plus, Smartphone, Tablet, Trash2, Type, X } from "lucide-react";
 import { getDefinition } from "@/lib/registry";
 import { findBlockById } from "@/lib/tree";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ import {
   UnitInput,
 } from "./controls";
 import { ItemsEditor, LEAF_INPUTS } from "@/lib/field-inputs";
+import { STYLE_GROUP_SCHEMAS, type StyleFieldDef } from "@/lib/style-groups";
 
 // --- style field hook -------------------------------------------------------
 
@@ -163,97 +164,42 @@ function SpacingControl({ label, keys }: { label: string; keys: [keyof StyleProp
 
 // --- style groups -----------------------------------------------------------
 
-const FONT_WEIGHTS = [
-  { label: "Default", value: "" },
-  { label: "Light", value: "300" },
-  { label: "Normal", value: "400" },
-  { label: "Medium", value: "500" },
-  { label: "Semibold", value: "600" },
-  { label: "Bold", value: "700" },
-  { label: "Extra bold", value: "800" },
-];
-const SHADOWS = [
-  { label: "None", value: "" },
-  { label: "Small", value: "0 1px 2px rgba(0,0,0,0.06)" },
-  { label: "Medium", value: "0 4px 6px rgba(0,0,0,0.08)" },
-  { label: "Large", value: "0 10px 20px rgba(0,0,0,0.12)" },
-  { label: "X-Large", value: "0 20px 30px rgba(0,0,0,0.16)" },
-];
-const opt = (...vals: string[]) => [
-  { label: "Default", value: "" },
-  ...vals.map((v) => ({ label: v, value: v })),
-];
-const ALIGN_SEG = [
-  { value: "left", label: "Left", icon: <AlignLeft size={14} /> },
-  { value: "center", label: "Center", icon: <AlignCenter size={14} /> },
-  { value: "right", label: "Right", icon: <AlignRight size={14} /> },
-  { value: "justify", label: "Justify", icon: <AlignJustify size={14} /> },
-];
+function StyleControl({ field }: { field: StyleFieldDef }) {
+  switch (field.control) {
+    case "unit":
+      return <SUnit label={field.label} k={field.k} units={field.units} placeholder={field.placeholder} />;
+    case "text":
+      return <SText label={field.label} k={field.k} placeholder={field.placeholder} />;
+    case "color":
+      return <SColor label={field.label} k={field.k} />;
+    case "select":
+      return <SSelect label={field.label} k={field.k} options={field.options} />;
+    case "segment":
+      return <SSegment label={field.label} k={field.k} options={field.options} />;
+    case "spacing":
+      return <SpacingControl label={field.label} keys={field.keys} />;
+    case "opacity":
+      return <SOpacity />;
+  }
+}
 
 function StyleGroupView({ group }: { group: StyleGroup }) {
-  switch (group) {
-    case "typography":
-      return (
-        <Section title="Typography">
-          <SUnit label="Font size" k="fontSize" units={["px", "rem", "em"]} placeholder="16" />
-          <SSelect label="Weight" k="fontWeight" options={FONT_WEIGHTS} />
-          <SColor label="Text color" k="color" />
-          <div className="grid grid-cols-2 gap-2">
-            <SUnit label="Line height" k="lineHeight" units={["", "px", "rem"]} placeholder="1.5" />
-            <SUnit label="Letter spacing" k="letterSpacing" units={["px", "em"]} placeholder="0" />
+  const schema = STYLE_GROUP_SCHEMAS[group];
+  return (
+    <Section title={schema.title} defaultOpen={schema.defaultOpen}>
+      {schema.rows.map((row, i) =>
+        row.length === 1 ? (
+          <StyleControl key={i} field={row[0]} />
+        ) : (
+          <div key={i} className="grid grid-cols-2 gap-2">
+            {row.map((f, j) => (
+              <StyleControl key={j} field={f} />
+            ))}
           </div>
-          <SSegment label="Align" k="textAlign" options={ALIGN_SEG} />
-          <SSelect label="Transform" k="textTransform" options={opt("none", "uppercase", "capitalize", "lowercase")} />
-        </Section>
-      );
-    case "spacing":
-      return (
-        <Section title="Spacing">
-          <SpacingControl label="Padding" keys={["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"]} />
-          <SpacingControl label="Margin" keys={["marginTop", "marginRight", "marginBottom", "marginLeft"]} />
-        </Section>
-      );
-    case "background":
-      return (
-        <Section title="Background" defaultOpen={false}>
-          <SColor label="Background color" k="backgroundColor" />
-          <SText label="Background image / gradient" k="backgroundImage" placeholder="url(…) or linear-gradient(…)" />
-        </Section>
-      );
-    case "border":
-      return (
-        <Section title="Border" defaultOpen={false}>
-          <SUnit label="Radius" k="borderRadius" units={["px", "%", "rem"]} placeholder="12" />
-          <div className="grid grid-cols-2 gap-2">
-            <SUnit label="Width" k="borderWidth" units={["px"]} placeholder="1" />
-            <SSelect label="Style" k="borderStyle" options={opt("solid", "dashed", "dotted", "none")} />
-          </div>
-          <SColor label="Border color" k="borderColor" />
-        </Section>
-      );
-    case "effects":
-      return (
-        <Section title="Effects" defaultOpen={false}>
-          <SSelect label="Shadow" k="boxShadow" options={SHADOWS} />
-          <SOpacity />
-        </Section>
-      );
-    case "layout":
-      return (
-        <Section title="Layout" defaultOpen={false}>
-          <div className="grid grid-cols-2 gap-2">
-            <SUnit label="Max width" k="maxWidth" units={["px", "%", "rem"]} placeholder="auto" />
-            <SUnit label="Min height" k="minHeight" units={["px", "vh", "rem", "auto"]} placeholder="auto" />
-          </div>
-          <SSelect label="Display" k="display" options={opt("block", "flex", "grid", "inline-block", "none")} />
-          <div className="grid grid-cols-2 gap-2">
-            <SSelect label="Align items" k="alignItems" options={opt("flex-start", "center", "flex-end", "stretch")} />
-            <SSelect label="Justify" k="justifyContent" options={opt("flex-start", "center", "flex-end", "space-between", "space-around")} />
-          </div>
-          <SUnit label="Gap" k="gap" units={["px", "rem"]} placeholder="16" />
-        </Section>
-      );
-  }
+        ),
+      )}
+    </Section>
+  );
 }
 
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {

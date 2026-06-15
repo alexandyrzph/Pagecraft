@@ -193,3 +193,13 @@ export type StyleGroup =
   | "border"
   | "effects"
   | "layout";
+
+/** Runtime list of every StyleGroup (keep in sync with the StyleGroup union). */
+export const STYLE_GROUPS: StyleGroup[] = [
+  "typography",
+  "spacing",
+  "background",
+  "border",
+  "effects",
+  "layout",
+];
