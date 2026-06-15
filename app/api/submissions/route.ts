@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireApiWorkspace } from "@/lib/workspace";
+import { withWorkspace } from "@/lib/api-handler";
+import { json, created, badRequest, notFound } from "@/lib/api-response";
+import { parseJsonObject } from "@/lib/json-parse";
 
 export const dynamic = "force-dynamic";
 
@@ -8,10 +9,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const slug = String(body.slug || "");
-  if (!slug) return NextResponse.json({ error: "slug required" }, { status: 400 });
+  if (!slug) return badRequest("slug required");
 
   const page = await prisma.page.findUnique({ where: { slug } });
-  if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!page) return notFound("Not found");
 
   await prisma.submission.create({
     data: {
@@ -20,39 +21,31 @@ export async function POST(req: Request) {
       data: JSON.stringify(body.data ?? {}),
     },
   });
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return created({ ok: true });
 }
 
 // GET /api/submissions?pageId=... — list submissions for a page (inbox, workspace-scoped)
 export async function GET(req: Request) {
-  const a = await requireApiWorkspace();
-  if ("response" in a) return a.response;
-  const { searchParams } = new URL(req.url);
-  const pageId = searchParams.get("pageId");
-  if (!pageId) return NextResponse.json({ error: "pageId required" }, { status: 400 });
+  return withWorkspace(async (ws) => {
+    const { searchParams } = new URL(req.url);
+    const pageId = searchParams.get("pageId");
+    if (!pageId) return badRequest("pageId required");
 
-  const page = await prisma.page.findFirst({ where: { id: pageId, workspaceId: a.workspace.id } });
-  if (!page) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const page = await prisma.page.findFirst({ where: { id: pageId, workspaceId: ws.workspace.id } });
+    if (!page) return notFound("Not found");
 
-  const subs = await prisma.submission.findMany({
-    where: { pageId },
-    orderBy: { createdAt: "desc" },
+    const subs = await prisma.submission.findMany({
+      where: { pageId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return json(
+      subs.map((s) => ({
+        id: s.id,
+        formId: s.formId,
+        data: parseJsonObject(s.data),
+        createdAt: s.createdAt.toISOString(),
+      }))
+    );
   });
-
-  return NextResponse.json(
-    subs.map((s) => ({
-      id: s.id,
-      formId: s.formId,
-      data: safeParse(s.data),
-      createdAt: s.createdAt.toISOString(),
-    }))
-  );
-}
-
-function safeParse(s: string): Record<string, string> {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return {};
-  }
 }

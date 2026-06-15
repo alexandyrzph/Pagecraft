@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { setActiveWorkspace } from "@/lib/workspace";
+import { json, forbidden } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || "");
   const ok = await setActiveWorkspace(id);
-  if (!ok) return NextResponse.json({ error: "Not a member" }, { status: 403 });
-  return NextResponse.json({ ok: true });
+  if (!ok) return forbidden("Not a member");
+  return json({ ok: true });
 }

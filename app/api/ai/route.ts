@@ -1,6 +1,6 @@
 import { requireApiUser } from "@/lib/auth";
-import { requireApiRole } from "@/lib/workspace";
-import { NextResponse } from "next/server";
+import { withRole } from "@/lib/api-handler";
+import { json, badRequest, error } from "@/lib/api-response";
 import {
   sectionSystemPrompt,
   pageSystemPrompt,
@@ -39,7 +39,7 @@ export async function GET() {
   const _auth = await requireApiUser();
   if ("response" in _auth) return _auth.response;
   const providers = available();
-  return NextResponse.json({ providers, default: providers[0] ?? null });
+  return json({ providers, default: providers[0] ?? null });
 }
 
 async function callAnthropic(model: string, system: string, prompt: string, maxTokens: number, temperature: number): Promise<string> {
@@ -100,53 +100,50 @@ async function callModel(
 
 // POST /api/ai — generate blocks from a prompt
 export async function POST(req: Request) {
-  const _auth = await requireApiRole("EDITOR");
-  if ("response" in _auth) return _auth.response;
-  const providers = available();
-  if (!providers.length) {
-    return NextResponse.json(
-      { error: "No AI provider configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env." },
-      { status: 400 }
-    );
-  }
+  return withRole("EDITOR", async (_ws) => {
+    const providers = available();
+    if (!providers.length) {
+      return badRequest("No AI provider configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env.");
+    }
 
-  const body = await req.json().catch(() => ({}));
-  const mode =
-    body.mode === "rewrite" ? "rewrite" : body.mode === "page" ? "page" : "generate";
-  const provider = providers.includes(body.provider) ? body.provider : providers[0];
+    const body = await req.json().catch(() => ({}));
+    const mode =
+      body.mode === "rewrite" ? "rewrite" : body.mode === "page" ? "page" : "generate";
+    const provider = providers.includes(body.provider) ? body.provider : providers[0];
 
-  try {
-    // --- rewrite / improve text ---
-    if (mode === "rewrite") {
-      const text = String(body.text || "").slice(0, 4000).trim();
-      if (!text) return NextResponse.json({ error: "No text to rewrite" }, { status: 400 });
-      const instruction = REWRITE_INSTRUCTIONS[body.action as string] ?? REWRITE_INSTRUCTIONS.improve;
-      if (provider === "mock") {
-        return NextResponse.json({ provider, text: `${text} (improved)` });
+    try {
+      // --- rewrite / improve text ---
+      if (mode === "rewrite") {
+        const text = String(body.text || "").slice(0, 4000).trim();
+        if (!text) return badRequest("No text to rewrite");
+        const instruction = REWRITE_INSTRUCTIONS[body.action as string] ?? REWRITE_INSTRUCTIONS.improve;
+        if (provider === "mock") {
+          return json({ provider, text: `${text} (improved)` });
+        }
+        const out = await callModel(provider, REWRITE_MODEL, REWRITE_SYSTEM, `${instruction}:\n\n${text}`, 1000, 0.5);
+        const cleaned = out.trim().replace(/^["']|["']$/g, "");
+        if (!cleaned) return error(422, "No rewrite returned");
+        return json({ provider, text: cleaned });
       }
-      const out = await callModel(provider, REWRITE_MODEL, REWRITE_SYSTEM, `${instruction}:\n\n${text}`, 1000, 0.5);
-      const cleaned = out.trim().replace(/^["']|["']$/g, "");
-      if (!cleaned) return NextResponse.json({ error: "No rewrite returned" }, { status: 422 });
-      return NextResponse.json({ provider, text: cleaned });
-    }
 
-    // --- generate section(s) or a whole page ---
-    const prompt = String(body.prompt || "").slice(0, 1000).trim();
-    if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
-    const isPage = mode === "page";
-    if (provider === "mock") {
-      return NextResponse.json({ provider, blocks: sanitizeGeneratedBlocks(isPage ? MOCK_PAGE : MOCK_BLOCKS) });
+      // --- generate section(s) or a whole page ---
+      const prompt = String(body.prompt || "").slice(0, 1000).trim();
+      if (!prompt) return badRequest("Prompt is required");
+      const isPage = mode === "page";
+      if (provider === "mock") {
+        return json({ provider, blocks: sanitizeGeneratedBlocks(isPage ? MOCK_PAGE : MOCK_BLOCKS) });
+      }
+      const style = DESIGN_STYLE_KEYS.includes(body.style) ? body.style : "auto";
+      const system = isPage ? pageSystemPrompt(style) : sectionSystemPrompt(style);
+      // styled output is larger; give it room. Higher temperature → more distinctive.
+      const raw = await callModel(provider, GEN_MODEL, system, prompt, isPage ? 8000 : 4000, 0.85);
+      const blocks = sanitizeGeneratedBlocks(extractJsonArray(raw));
+      if (!blocks.length) {
+        return error(422, "The model returned no usable blocks. Try rephrasing.");
+      }
+      return json({ provider, blocks });
+    } catch (e) {
+      return error(502, e instanceof Error ? e.message : "Generation failed");
     }
-    const style = DESIGN_STYLE_KEYS.includes(body.style) ? body.style : "auto";
-    const system = isPage ? pageSystemPrompt(style) : sectionSystemPrompt(style);
-    // styled output is larger; give it room. Higher temperature → more distinctive.
-    const raw = await callModel(provider, GEN_MODEL, system, prompt, isPage ? 8000 : 4000, 0.85);
-    const blocks = sanitizeGeneratedBlocks(extractJsonArray(raw));
-    if (!blocks.length) {
-      return NextResponse.json({ error: "The model returned no usable blocks. Try rephrasing." }, { status: 422 });
-    }
-    return NextResponse.json({ provider, blocks });
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Generation failed" }, { status: 502 });
-  }
+  });
 }

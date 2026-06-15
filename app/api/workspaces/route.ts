@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser } from "@/lib/auth";
 import { createWorkspace } from "@/lib/workspace";
+import { json, created, badRequest } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export async function GET() {
     include: { workspace: true },
     orderBy: { createdAt: "asc" },
   });
-  return NextResponse.json(
+  return json(
     memberships.map((m) => ({
       id: m.workspace.id,
       name: m.workspace.name,
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if ("response" in u) return u.response;
   const body = await req.json().catch(() => ({}));
   const name = String(body.name || "").trim();
-  if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
+  if (!name) return badRequest("Name required");
   const ws = await createWorkspace(u.user.id, name);
-  return NextResponse.json(ws, { status: 201 });
+  return created(ws);
 }
