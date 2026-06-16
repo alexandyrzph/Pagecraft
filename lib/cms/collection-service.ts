@@ -16,7 +16,7 @@ type CollectionRow = {
   items?: ItemRow[];
 };
 
-export function parseFields(s: string): CollectionField[] {
+function parseFields(s: string): CollectionField[] {
   try {
     const v = JSON.parse(s);
     return Array.isArray(v) ? v : [];

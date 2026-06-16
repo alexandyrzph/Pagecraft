@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
+// Next.js route-segment config — consumed by the framework, not imported.
+// fallow-ignore-next-line unused-export
 export const dynamic = "force-dynamic";
 
 const BASE = "https://pagecraft.app";

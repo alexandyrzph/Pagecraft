@@ -60,5 +60,3 @@ export const ICON_NAMES = [
   "ThumbsUp",
   "Play",
 ] as const;
-
-export type IconName = (typeof ICON_NAMES)[number];

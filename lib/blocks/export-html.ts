@@ -2,7 +2,7 @@ import { responsiveCss } from "./styles";
 import type { Block } from "@/lib/types";
 
 // Base reset + page typography shared by the public page and HTML export.
-export const BASE_CSS = `
+const BASE_CSS = `
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; display: block; }

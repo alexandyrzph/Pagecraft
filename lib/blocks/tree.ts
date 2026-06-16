@@ -169,14 +169,6 @@ export function updateBlockProp(
   }));
 }
 
-export function updateBlockProps(
-  tree: Block[],
-  id: string,
-  partial: Record<string, any>
-): Block[] {
-  return mapBlock(tree, id, (b) => ({ ...b, props: { ...b.props, ...partial } }));
-}
-
 export function updateBlockStyle(
   tree: Block[],
   id: string,

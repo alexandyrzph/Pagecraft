@@ -1,3 +1,5 @@
+// One-time data migration — run on demand via `npx tsx`, never imported.
+// fallow-ignore-file unused-file
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

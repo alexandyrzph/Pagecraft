@@ -35,7 +35,7 @@ export const CARD_SLOTS: { key: keyof CardBindings; label: string; hint: string 
  * Turn an arbitrary label into a stable, lowercase, identifier-ish key.
  * "Cover Image!" -> "cover-image". Falls back to "field" when empty.
  */
-export function slugify(input: string): string {
+export function slugifyKey(input: string): string {
   const s = (input ?? "")
     .toString()
     .trim()
@@ -51,7 +51,7 @@ export function slugify(input: string): string {
  * Collisions get a numeric suffix: title, title-2, title-3, …
  */
 export function uniqueFieldKey(label: string, existing: string[]): string {
-  const base = slugify(label);
+  const base = slugifyKey(label);
   if (!existing.includes(base)) return base;
   let n = 2;
   while (existing.includes(`${base}-${n}`)) n++;

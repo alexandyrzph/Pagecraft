@@ -22,18 +22,18 @@ export type Breakpoint = {
   custom?: boolean;
 };
 
-export const DEFAULT_BREAKPOINTS: Breakpoint[] = [
+const DEFAULT_BREAKPOINTS: Breakpoint[] = [
   { id: "desktop", label: "Desktop", width: 1280, base: "desktop" },
   { id: "tablet", label: "Tablet", width: 820, base: "tablet" },
   { id: "mobile", label: "Mobile", width: 390, base: "mobile" },
 ];
 
-export const MIN_WIDTH = 240;
-export const MAX_WIDTH = 3840;
-export const clampWidth = (w: number) => Math.max(MIN_WIDTH, Math.min(Math.round(w), MAX_WIDTH));
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 3840;
+const clampWidth = (w: number) => Math.max(MIN_WIDTH, Math.min(Math.round(w), MAX_WIDTH));
 
 /** Which style bucket / device chrome a given width maps to. */
-export const baseFor = (w: number): Viewport => (w >= 1024 ? "desktop" : w >= 640 ? "tablet" : "mobile");
+const baseFor = (w: number): Viewport => (w >= 1024 ? "desktop" : w >= 640 ? "tablet" : "mobile");
 
 type State = {
   custom: Breakpoint[];

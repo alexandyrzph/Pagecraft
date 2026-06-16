@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 // ---------------------------------------------------------------------------
 // Pagecraft brand identity.
 // The mark is a layout/blocks motif (a left rail + content blocks) — it reads
@@ -38,31 +36,5 @@ export function LogoMark({
         </linearGradient>
       </defs>
     </svg>
-  );
-}
-
-export function Logo({
-  size = 34,
-  wordmark = true,
-  className,
-}: {
-  size?: number;
-  wordmark?: boolean;
-  className?: string;
-}) {
-  return (
-    <span className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark size={size} className="rounded-[9.5px] shadow-sm ring-1 ring-black/5" />
-      {wordmark && (
-        <span className="flex flex-col leading-none">
-          <span className="text-[15px] font-bold tracking-tight text-zinc-900">
-            Pagecraft
-          </span>
-          <span className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-            Studio
-          </span>
-        </span>
-      )}
-    </span>
   );
 }

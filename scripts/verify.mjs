@@ -1,3 +1,5 @@
+// Standalone manual E2E smoke test (see README) — run directly via node, never imported.
+// fallow-ignore-file unused-file
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";

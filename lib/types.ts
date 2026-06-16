@@ -6,8 +6,6 @@
 
 export type Viewport = "desktop" | "tablet" | "mobile";
 
-export const VIEWPORTS: Viewport[] = ["desktop", "tablet", "mobile"];
-
 /** Page-level design tokens that cascade across all blocks. */
 export type Theme = {
   brand?: string;

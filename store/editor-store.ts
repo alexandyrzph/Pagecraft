@@ -18,7 +18,7 @@ import {
 
 const HISTORY_LIMIT = 100;
 
-export type EditorState = {
+type EditorState = {
   // page meta
   pageId: string | null;
   title: string;

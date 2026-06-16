@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import type { Block } from "@/lib/types";
 
-export type EditorActions = {
+type EditorActions = {
   /** Switch to another page in place (no full reload), guarding unsaved changes. */
   switchPage: (id: string) => void;
   /** Run `action` after resolving any unsaved changes. */

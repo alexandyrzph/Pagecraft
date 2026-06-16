@@ -16,9 +16,6 @@ export const updateComponentSchema = z.object({
   content: z.array(z.unknown()).optional(),
 });
 
-export type CreatePageInput = z.infer<typeof createPageSchema>;
-export type UpdateComponentInput = z.infer<typeof updateComponentSchema>;
-
 /**
  * Read + validate a JSON request body. Mirrors the guard pattern:
  * returns `{ data }` on success or `{ response }` (400) on failure, so callers

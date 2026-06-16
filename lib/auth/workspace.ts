@@ -106,7 +106,7 @@ export async function setActiveWorkspace(id: string): Promise<boolean> {
 }
 
 /** Unique workspace slug derived from a name. */
-export async function uniqueWorkspaceSlug(name: string): Promise<string> {
+async function uniqueWorkspaceSlug(name: string): Promise<string> {
   let n = 1;
   while (n < 1000) {
     const slug = slugCandidate(name, n);

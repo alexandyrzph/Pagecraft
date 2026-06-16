@@ -34,8 +34,3 @@ export function applyTokens(tree: Block[], data: Record<string, any>): Block[] {
     children: applyTokens(b.children ?? [], data),
   }));
 }
-
-/** Does any string prop in the tree reference {{...}}? (used for hints) */
-export function hasTokens(tree: Block[]): boolean {
-  return JSON.stringify(tree).includes("{{");
-}

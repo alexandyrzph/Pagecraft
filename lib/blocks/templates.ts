@@ -128,7 +128,3 @@ export const TEMPLATES: Template[] = [
     ],
   },
 ];
-
-export function getTemplate(id: string): Template | undefined {
-  return TEMPLATES.find((t) => t.id === id);
-}

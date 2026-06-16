@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  slugify,
+  slugifyKey,
   uniqueFieldKey,
   blankItemData,
   blankValue,
@@ -19,17 +19,17 @@ const FIELDS: CollectionField[] = [
   { key: "published", label: "Published", type: "date" },
 ];
 
-describe("slugify", () => {
+describe("slugifyKey", () => {
   it("lowercases and dasherizes", () => {
-    expect(slugify("Cover Image!")).toBe("cover-image");
-    expect(slugify("  Hello   World  ")).toBe("hello-world");
-    expect(slugify("Already-good")).toBe("already-good");
+    expect(slugifyKey("Cover Image!")).toBe("cover-image");
+    expect(slugifyKey("  Hello   World  ")).toBe("hello-world");
+    expect(slugifyKey("Already-good")).toBe("already-good");
   });
 
   it("falls back to 'field' when empty", () => {
-    expect(slugify("")).toBe("field");
-    expect(slugify("   ")).toBe("field");
-    expect(slugify("!!!")).toBe("field");
+    expect(slugifyKey("")).toBe("field");
+    expect(slugifyKey("   ")).toBe("field");
+    expect(slugifyKey("!!!")).toBe("field");
   });
 });
 

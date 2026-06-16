@@ -17,7 +17,7 @@ function describeField(f: SettingField): string {
 }
 
 /** Compact description of every block type + props for the model prompt. */
-export function blockSchema(): string {
+function blockSchema(): string {
   const skip = new Set(["column", "component"]);
   const lines: string[] = [];
   for (const [type, def] of Object.entries(REGISTRY)) {
@@ -123,10 +123,6 @@ Rules:
 - Apply ONE shared palette across navbar, hero, every section and footer; alternate section backgrounds for rhythm.
 - Write specific, on-brand marketing copy tailored to the request — never lorem ipsum. Keep the brand name/voice consistent across navbar, hero and footer.`;
 }
-
-// Back-compat aliases (auto direction).
-export const SYSTEM_PROMPT = sectionSystemPrompt("auto");
-export const PAGE_SYSTEM_PROMPT = pageSystemPrompt("auto");
 
 // --- Rewrite / improve text -------------------------------------------------
 

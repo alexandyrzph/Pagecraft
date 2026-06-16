@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/cms/cms";
+import { slugifyKey } from "@/lib/cms/cms";
 import { serializeCollection } from "@/lib/cms/collection-service";
 import { withWorkspace, withRole } from "@/lib/api/api-handler";
 import { json, created } from "@/lib/api/api-response";
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const name = String(body.name || "Collection").slice(0, 80);
 
-    const base = slugify(name);
+    const base = slugifyKey(name);
     let slug = base;
     let n = 2;
     while (await prisma.collection.findUnique({ where: { slug } })) slug = `${base}-${n++}`;

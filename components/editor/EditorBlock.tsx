@@ -42,7 +42,7 @@ export function SlottedChildren({
 // A block inside the editable canvas. The visual content lives here (portaled
 // into the iframe); selection chrome + the toolbar/drag-handle are drawn by the
 // top-document CanvasOverlay, anchored to this node's `data-block-id`.
-export function EditorBlock({
+function EditorBlock({
   block,
   parentId,
   parentType,
