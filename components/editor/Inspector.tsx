@@ -26,6 +26,7 @@ import {
 } from "./controls";
 import { ItemsEditor, LEAF_INPUTS } from "@/lib/field-inputs";
 import { STYLE_GROUP_SCHEMAS, type StyleFieldDef } from "@/lib/style-groups";
+import { CUSTOM_INSPECTORS } from "./custom-inspectors";
 
 // --- style field hook -------------------------------------------------------
 
@@ -445,6 +446,7 @@ function InspectorContent({
   const def = getDefinition(block.type);
   if (!def) return null;
   const Icon = def.icon;
+  const Custom = CUSTOM_INSPECTORS[block.type] ?? def.CustomContent;
 
   return (
     <>
@@ -517,8 +519,8 @@ function InspectorContent({
         >
           {tab === "content" ? (
             <>
-              {def.CustomContent ? (
-                <def.CustomContent block={block} />
+              {Custom ? (
+                <Custom block={block} />
               ) : def.fields.length === 0 ? (
                 <p className="text-sm text-zinc-400">
                   This block has no content options — use Attributes below or the Style tab.

@@ -1,7 +1,6 @@
 import { Database } from "lucide-react";
 import type { BlockDefinition } from "@/lib/registry-types";
 import { CollectionListBlock } from "./collection";
-import { CollectionInspector } from "@/components/editor/CollectionInspector";
 
 export const collectionBlocks: BlockDefinition[] = [
   {
@@ -21,6 +20,5 @@ export const collectionBlocks: BlockDefinition[] = [
     fields: [],
     styleGroups: ["background", "spacing"],
     Render: CollectionListBlock,
-    CustomContent: CollectionInspector,
   },
 ];
