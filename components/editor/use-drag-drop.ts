@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import {
-  MeasuringStrategy,
   PointerSensor,
   useSensor,
   useSensors,
@@ -89,6 +88,10 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
     cancelAnimationFrame(autoScrollRaf.current);
     window.removeEventListener("pointermove", onWindowPointerMove);
   }, [onWindowPointerMove]);
+
+  // Safety net: if the editor unmounts mid-drag, dnd-kit won't fire end/cancel —
+  // stop the auto-scroll rAF loop + pointermove listener on unmount.
+  useEffect(() => () => stopAutoScroll(), [stopAutoScroll]);
 
   const onDragStart = (e: DragStartEvent) => {
     const data = e.active.data.current as any;
