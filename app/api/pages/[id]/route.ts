@@ -1,3 +1,5 @@
+import { unlink } from "fs/promises";
+import path from "path";
 import { prisma } from "@/lib/prisma";
 import { withWorkspace, withRole } from "@/lib/api/api-handler";
 import { json, notFound } from "@/lib/api/api-response";
@@ -50,6 +52,8 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     const { id } = await params;
     const result = await prisma.page.deleteMany({ where: { id, workspaceId: ws.workspace.id } });
     if (result.count === 0) return notFound();
+    // best-effort: remove the cached preview screenshot
+    await unlink(path.join(process.cwd(), "public", "uploads", "thumbnails", `${id}.png`)).catch(() => {});
     return json({ ok: true });
   });
 }
