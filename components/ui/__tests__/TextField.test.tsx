@@ -1,0 +1,15 @@
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { TextField } from "../TextField";
+
+describe("TextField", () => {
+  it("associates the label with the input", () => {
+    render(<TextField label="Email" value="" onChange={() => {}} />);
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+  });
+
+  it("renders an error message", () => {
+    render(<TextField label="Email" errorMessage="Required" value="" onChange={() => {}} />);
+    expect(screen.getByText("Required")).toBeInTheDocument();
+  });
+});
