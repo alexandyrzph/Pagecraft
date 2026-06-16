@@ -12,4 +12,9 @@ describe("TextField", () => {
     render(<TextField label="Email" errorMessage="Required" value="" onChange={() => {}} />);
     expect(screen.getByText("Required")).toBeInTheDocument();
   });
+
+  it("renders a description hint", () => {
+    render(<TextField label="Email" description="We'll never share this" value="" onChange={() => {}} />);
+    expect(screen.getByText("We'll never share this")).toBeInTheDocument();
+  });
 });

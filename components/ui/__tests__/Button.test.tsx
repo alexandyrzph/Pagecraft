@@ -15,4 +15,11 @@ describe("Button", () => {
     render(<Button isLoading>Save</Button>);
     expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
   });
+
+  it("applies primary variant and md size classes by default", () => {
+    render(<Button>Go</Button>);
+    const btn = screen.getByRole("button", { name: "Go" });
+    expect(btn).toHaveClass("bg-brand-600");
+    expect(btn).toHaveClass("h-9");
+  });
 });

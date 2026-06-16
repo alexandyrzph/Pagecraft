@@ -22,6 +22,7 @@ const sizeStyles: Record<Size, string> = {
 };
 
 export interface ButtonProps extends RACButtonProps {
+  children?: ReactNode;
   variant?: Variant;
   size?: Size;
   isLoading?: boolean;
@@ -47,7 +48,7 @@ export function Button({
       className={(rs) =>
         cn(
           "inline-flex items-center justify-center rounded-control font-semibold outline-none transition-colors",
-          "focus-visible:ring-4 focus-visible:ring-brand-100",
+          "data-[focus-visible]:ring-4 data-[focus-visible]:ring-brand-100",
           "disabled:pointer-events-none disabled:opacity-50",
           variantStyles[variant],
           sizeStyles[size],
@@ -57,7 +58,7 @@ export function Button({
     >
       {isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
       {!isLoading && leadingIcon}
-      {children as ReactNode}
+      {children}
       {!isLoading && trailingIcon}
     </RACButton>
   );

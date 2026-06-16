@@ -28,10 +28,12 @@ export function Textarea({
     <RACTextField
       {...props}
       isInvalid={!!errorMessage || props.isInvalid}
-      className={cn(
-        "flex flex-col gap-1.5",
-        typeof className === "string" ? className : undefined,
-      )}
+      className={(rs) =>
+        cn(
+          "flex flex-col gap-1.5",
+          typeof className === "function" ? className(rs) : className,
+        )
+      }
     >
       {label && (
         <Label className="text-sm font-medium text-fg">{label}</Label>
@@ -43,7 +45,7 @@ export function Textarea({
           "w-full resize-y rounded-control border border-border-strong bg-white px-3 py-2 text-sm text-fg shadow-xs outline-none transition",
           "placeholder:text-fg-subtle hover:border-fg-subtle",
           "focus:border-brand-400 focus:ring-4 focus:ring-brand-100",
-          "data-[invalid]:border-danger-500",
+          "data-[invalid]:border-danger-500 disabled:opacity-50",
         )}
       />
       <FieldError className="text-xs text-danger-600">{errorMessage}</FieldError>

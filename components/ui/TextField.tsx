@@ -29,10 +29,12 @@ export function TextField({
     <RACTextField
       {...props}
       isInvalid={!!errorMessage || props.isInvalid}
-      className={cn(
-        "flex flex-col gap-1.5",
-        typeof className === "string" ? className : undefined,
-      )}
+      className={(rs) =>
+        cn(
+          "flex flex-col gap-1.5",
+          typeof className === "function" ? className(rs) : className,
+        )
+      }
     >
       {label && (
         <Label className="text-sm font-medium text-fg">{label}</Label>

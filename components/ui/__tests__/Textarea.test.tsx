@@ -10,4 +10,9 @@ describe("Textarea", () => {
     await userEvent.type(screen.getByLabelText("Bio"), "hi");
     expect(onChange).toHaveBeenCalled();
   });
+
+  it("renders an error message", () => {
+    render(<Textarea label="Bio" errorMessage="Too short" />);
+    expect(screen.getByText("Too short")).toBeInTheDocument();
+  });
 });
