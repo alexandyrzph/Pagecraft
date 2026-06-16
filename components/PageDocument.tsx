@@ -1,0 +1,63 @@
+import { prisma } from "@/lib/prisma";
+import { parseContent } from "@/lib/page-service";
+import { responsiveCss } from "@/lib/blocks/styles";
+import { designSystemCss, parseDesignSystem } from "@/lib/design/design-system";
+import { themeVars, parseTheme } from "@/lib/design/theme";
+import { buildCollectionMap } from "@/lib/cms/collection-service";
+import { BlockRenderer } from "@/components/BlockRenderer";
+
+type PageRow = { content: string; theme: string; workspaceId: string | null };
+
+/**
+ * Renders a page exactly as the public site does — shared by the public route
+ * (`/p/[slug]`) and the internal screenshot route (`/internal/shot/[id]`).
+ * Pass `animate={false}` for screenshots so the capture is the final frame.
+ */
+export async function PageDocument({ page, animate = true }: { page: PageRow; animate?: boolean }) {
+  const tree = parseContent(page.content);
+  const theme = parseTheme(page.theme);
+
+  // shared site header + footer (scoped to this page's workspace)
+  const site = page.workspaceId
+    ? await prisma.site.findUnique({ where: { workspaceId: page.workspaceId } })
+    : null;
+  const header = site ? parseContent(site.header) : [];
+  const footer = site ? parseContent(site.footer) : [];
+  const ds = parseDesignSystem(site);
+
+  const css =
+    designSystemCss(ds.colors, ds.textStyles) +
+    "\n" +
+    responsiveCss([...header, ...tree, ...footer]);
+
+  const comps = await prisma.component.findMany({ where: { workspaceId: page.workspaceId } });
+  const components: Record<string, { content: any[] }> = {};
+  for (const c of comps) {
+    try {
+      components[c.id] = { content: JSON.parse(c.content) };
+    } catch {
+      components[c.id] = { content: [] };
+    }
+  }
+
+  const collectionRows = await prisma.collection.findMany({
+    where: { workspaceId: page.workspaceId },
+    include: { items: { orderBy: { order: "asc" } } },
+  });
+  const collections = buildCollectionMap(collectionRows);
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <main style={themeVars(theme)}>
+        {header.length > 0 && (
+          <BlockRenderer tree={header} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+        )}
+        <BlockRenderer tree={tree} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+        {footer.length > 0 && (
+          <BlockRenderer tree={footer} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+        )}
+      </main>
+    </>
+  );
+}
