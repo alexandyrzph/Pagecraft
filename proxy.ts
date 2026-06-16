@@ -17,8 +17,14 @@ const AUTH_PAGES = ["/login", "/signup", "/forgot", "/reset"];
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Never gate: API (handlers enforce), published pages, Next internals.
-  if (pathname.startsWith("/api") || pathname.startsWith("/p/") || pathname.startsWith("/c/")) {
+  // Never gate: API (handlers enforce), published pages, the internal
+  // screenshot render route (token-gated), Next internals.
+  if (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/p/") ||
+    pathname.startsWith("/c/") ||
+    pathname.startsWith("/internal/")
+  ) {
     return NextResponse.next();
   }
 
