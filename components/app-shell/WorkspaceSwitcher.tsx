@@ -45,29 +45,34 @@ export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collaps
 
   return (
     <div className="relative w-full" onClick={(e) => e.stopPropagation()}>
-      <button onClick={() => setOpen((o) => !o)} title={collapsed ? active?.name : undefined} className={cn("flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-zinc-100", collapsed && "justify-center")}>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">{initials}</span>
-        {!collapsed && <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-zinc-900">{active?.name}</span>}
-        {!collapsed && <ChevronsUpDown size={15} className="text-zinc-500" />}
+      <button onClick={() => setOpen((o) => !o)} title={collapsed ? active?.name : undefined} className={cn("flex w-full items-center gap-2.5 rounded-[10px] border border-[#e8eaed] px-2 py-1.5 hover:bg-[#f7f8fa]", collapsed && "justify-center border-transparent px-1.5 hover:bg-[#f1f3f5]")}>
+        <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-[0.02em] text-white">{initials}</span>
+        {!collapsed && (
+          <span className="min-w-0 flex-1 text-left">
+            <span className="block truncate text-[13.5px] font-semibold leading-tight text-[#111827]">{active?.name}</span>
+            <span className="block font-mono text-[11px] text-[#9aa1ac]">Free plan</span>
+          </span>
+        )}
+        {!collapsed && <ChevronsUpDown size={15} className="text-[#9aa1ac]" />}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-60 rounded-xl border border-zinc-200 bg-white p-1 shadow-2xl">
-          <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Workspaces</p>
+        <div className="absolute left-0 top-full z-50 mt-1 w-60 rounded-xl border border-[#e8eaed] bg-white p-1 shadow-2xl">
+          <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#aeb4bd]">Workspaces</p>
           {workspaces.map((w) => (
-            <button key={w.id} onClick={() => switchTo(w.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-indigo-500 to-violet-600 text-[10px] font-bold text-white">{w.name.slice(0, 2).toUpperCase()}</span>
+            <button key={w.id} onClick={() => switchTo(w.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-[#4b5563] hover:bg-[#f1f3f5]">
+              <span className="flex h-6 w-6 items-center justify-center rounded bg-indigo-600 text-[10px] font-bold text-white">{w.name.slice(0, 2).toUpperCase()}</span>
               <span className="min-w-0 flex-1 truncate text-left">{w.name}</span>
-              <span className="text-[10px] uppercase text-zinc-400">{w.role}</span>
+              <span className="text-[10px] uppercase text-[#aeb4bd]">{w.role}</span>
               {w.id === active?.id && <Check size={14} className="text-indigo-600" />}
             </button>
           ))}
-          <div className="my-1 border-t border-zinc-100" />
+          <div className="my-1 border-t border-[#f1f3f5]" />
           {creating ? (
             <div className="p-1.5">
-              <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} placeholder="Workspace name" className="w-full rounded-lg border border-zinc-300 px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" />
+              <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} placeholder="Workspace name" className="w-full rounded-lg border border-[#d6dae0] px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" />
               <div className="mt-1.5 flex gap-1.5">
                 <button onClick={create} disabled={busy} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-zinc-900 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={13} className="animate-spin" /> : "Create"}</button>
-                <button onClick={() => setCreating(false)} className="rounded-lg px-2 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100">Cancel</button>
+                <button onClick={() => setCreating(false)} className="rounded-lg px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f1f3f5]">Cancel</button>
               </div>
               {err && <p className="mt-1.5 text-xs text-red-600">{err}</p>}
             </div>
