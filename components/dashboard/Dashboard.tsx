@@ -89,11 +89,6 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
     }
   }
 
-  function createBlank() {
-    const blank = TEMPLATES.find((t) => t.id === "blank");
-    if (blank) create(blank);
-  }
-
   async function remove(id: string) {
     if (!confirm("Delete this page? This cannot be undone.")) return;
     setDeleting(id);
@@ -177,6 +172,16 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
               </div>
             ) : (
               <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
+                {/* new page tile — first item; opens the template chooser */}
+                <button
+                  onClick={() => setModal(true)}
+                  className="group flex min-h-[250px] flex-col items-center justify-center gap-3 rounded-[14px] border-[1.5px] border-dashed border-[#d6dae0] text-[#9aa1ac] transition-all hover:border-indigo-600 hover:bg-indigo-50/40 hover:text-indigo-600"
+                >
+                  <span className="grid h-[42px] w-[42px] place-items-center rounded-[11px] border-[1.5px] border-current">
+                    <Plus size={20} />
+                  </span>
+                  <span className="text-[13.5px] font-semibold">New blank page</span>
+                </button>
                 {filtered.map((p, i) => (
                   <PageCard
                     key={p.id}
@@ -187,17 +192,6 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
                     onDelete={() => remove(p.id)}
                   />
                 ))}
-                {/* new blank page tile */}
-                <button
-                  onClick={createBlank}
-                  disabled={!!creating}
-                  className="group flex min-h-[250px] flex-col items-center justify-center gap-3 rounded-[14px] border-[1.5px] border-dashed border-[#d6dae0] text-[#9aa1ac] transition-all hover:border-indigo-600 hover:bg-indigo-50/40 hover:text-indigo-600 disabled:opacity-60"
-                >
-                  <span className="grid h-[42px] w-[42px] place-items-center rounded-[11px] border-[1.5px] border-current">
-                    <Plus size={20} />
-                  </span>
-                  <span className="text-[13.5px] font-semibold">New blank page</span>
-                </button>
               </div>
             )}
           </>
