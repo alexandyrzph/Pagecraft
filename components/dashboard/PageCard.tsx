@@ -46,10 +46,10 @@ function IconBtn({
   children: React.ReactNode;
 }) {
   const cls = cn(
-    "grid h-7 w-7 place-items-center rounded-[7px] border border-transparent text-[#9aa1ac] transition-colors",
+    "grid h-7 w-7 place-items-center rounded-[7px] border border-transparent text-[#6b7280] transition-colors",
     danger
       ? "hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-      : "hover:border-[#d6dae0] hover:bg-white hover:text-[#111827]",
+      : "hover:border-[#d6dae0] hover:bg-zinc-100 hover:text-[#111827]",
     disabled && "pointer-events-none opacity-40",
   );
   if (href) {
@@ -97,8 +97,8 @@ export function PageCard({
         />
         <span
           className={cn(
-            "absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider",
-            page.published ? "bg-emerald-600/10 text-emerald-700" : "bg-zinc-400/10 text-zinc-500",
+            "absolute left-2.5 top-2.5 z-10 flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider shadow-sm ring-1 ring-black/[0.06] backdrop-blur-sm",
+            page.published ? "bg-white/90 text-emerald-700" : "bg-white/90 text-zinc-600",
           )}
         >
           <span className={cn("h-1.5 w-1.5 rounded-full", page.published ? "bg-emerald-500" : "bg-zinc-400")} />
