@@ -70,7 +70,7 @@ export function Modal({
             aria-modal="true"
             aria-labelledby={labelledBy}
           >
-            <FocusScope contain restoreFocus>
+            <FocusScope contain restoreFocus autoFocus>
               {children}
             </FocusScope>
           </motion.div>

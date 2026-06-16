@@ -95,16 +95,16 @@ export function DialogProvider({ children }: { children: ReactNode }) {
           <div>
             <div className="flex items-start gap-3.5">
               {destructive && (
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-danger-50 text-danger-500">
                   <AlertTriangle size={18} />
                 </span>
               )}
               <div className="min-w-0 flex-1">
                 {state.title && (
-                  <h2 className="text-base font-semibold tracking-tight text-zinc-900">{state.title}</h2>
+                  <h2 className="text-base font-semibold tracking-tight text-fg">{state.title}</h2>
                 )}
                 {state.message && (
-                  <div className="mt-1 text-sm leading-relaxed text-zinc-500">{state.message}</div>
+                  <div className="mt-1 text-sm leading-relaxed text-fg-muted">{state.message}</div>
                 )}
               </div>
             </div>

@@ -4,6 +4,16 @@ import { describe, it, expect } from "vitest";
 import { Modal } from "../Modal";
 
 describe("Modal", () => {
+  it("auto-focuses the first focusable element on open", () => {
+    render(
+      <Modal onClose={() => {}}>
+        <button>a</button>
+        <button>b</button>
+      </Modal>
+    );
+    expect(screen.getByRole("button", { name: "a" })).toHaveFocus();
+  });
+
   it("contains Tab focus within the dialog", async () => {
     render(
       <Modal onClose={() => {}}>

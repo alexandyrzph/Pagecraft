@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
-export interface TextFieldProps extends RACTextFieldProps {
+export interface TextFieldProps extends Omit<RACTextFieldProps, "children"> {
   label?: ReactNode;
   description?: ReactNode;
   errorMessage?: string;

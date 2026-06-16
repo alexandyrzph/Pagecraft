@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
-export interface TextareaProps extends RACTextFieldProps {
+export interface TextareaProps extends Omit<RACTextFieldProps, "children"> {
   label?: ReactNode;
   placeholder?: string;
   rows?: number;

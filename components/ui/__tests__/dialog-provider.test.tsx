@@ -17,6 +17,13 @@ function Harness() {
 }
 
 describe("dialog-provider", () => {
+  it("keeps initial focus on the confirm button (not cancel)", async () => {
+    render(<DialogProvider><Harness /></DialogProvider>);
+    await userEvent.click(screen.getByRole("button", { name: "ask" }));
+    const yes = await screen.findByRole("button", { name: "Yes" });
+    expect(yes).toHaveFocus();
+  });
+
   it("resolves true when the confirm button is pressed", async () => {
     render(<DialogProvider><Harness /></DialogProvider>);
     await userEvent.click(screen.getByRole("button", { name: "ask" }));
