@@ -18,6 +18,35 @@
   --shadow-2xl: 0 24px 48px -12px rgb(10 13 18 / 0.18);
 }
 
+/* Semantic UI tokens — primitives reference these */
+@theme {
+  /* brand (replaces inline indigo) */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  /* neutrals (semantic aliases) */
+  --color-fg: #0a0d12;
+  --color-fg-muted: #6b7280;
+  --color-fg-subtle: #94a3b8;
+  --color-bg: #ffffff;
+  --color-bg-subtle: #fafafa;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+  /* feedback */
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  /* shape */
+  --radius-control: 0.5rem;
+  --radius-panel: 1rem;
+}
+
 html,
 body {
   height: 100%;
@@ -134,3 +163,8 @@ body {
 .pc-rich :where(h3) { font-size: 1.25em; font-weight: 600; line-height: 1.3; }
 .pc-rich.ProseMirror-focused, .pc-rich:focus { outline: none; }
 .pc-rich[contenteditable] { min-height: 1.4em; }
+
+@keyframes pc-overlay-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes pc-overlay-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.96); } }
+[data-entering] { animation: pc-overlay-in 0.12s ease-out; }
+[data-exiting]  { animation: pc-overlay-out 0.10s ease-in; }
