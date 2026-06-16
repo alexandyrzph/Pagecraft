@@ -33,6 +33,7 @@ export function OAuthButtonRow({ providers, next }: { providers: Provider[]; nex
     <div className="space-y-2.5">
       {providers.map((p) => {
         const Glyph = GLYPH[p];
+        if (!Glyph) return null; // ignore any unknown provider rather than crash the card
         return (
           <a
             key={p}
@@ -58,7 +59,13 @@ export function OAuthButtons({ next }: { next?: string }) {
   useEffect(() => {
     fetch("/api/auth/providers")
       .then((r) => r.json())
-      .then((d) => setProviders(Array.isArray(d.providers) ? d.providers : []))
+      .then((d) =>
+        setProviders(
+          Array.isArray(d.providers)
+            ? d.providers.filter((p: unknown): p is Provider => p === "google" || p === "github")
+            : [],
+        ),
+      )
       .catch(() => {});
   }, []);
   return <OAuthButtonRow providers={providers} next={next} />;
