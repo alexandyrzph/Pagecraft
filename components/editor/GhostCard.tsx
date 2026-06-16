@@ -8,9 +8,9 @@ import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 import { Wireframe } from "./Wireframe";
 
 /** Cursor-following preview card of the block being dragged. */
-export const GHOST_W = 300;
-export const GHOST_H = 184;
-export const GHOST_STAGE = 1024;
+const GHOST_W = 300;
+const GHOST_H = 184;
+const GHOST_STAGE = 1024;
 
 export function GhostCard({ block, components }: { block: Block; components: ComponentMap }) {
   const isComponent = block.type === "component";
