@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FocusScope } from "react-aria";
 import { cn } from "@/lib/utils";
 
 /**
@@ -69,7 +70,9 @@ export function Modal({
             aria-modal="true"
             aria-labelledby={labelledBy}
           >
-            {children}
+            <FocusScope contain restoreFocus>
+              {children}
+            </FocusScope>
           </motion.div>
         </motion.div>
       )}
