@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronDown, Upload, Images, Loader2, FileUp, Paperclip, 
 import { ICON_NAMES } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { DynamicIcon } from "@/components/blocks/shared";
-import { uploadFile } from "@/lib/upload";
+import { useUpload } from "@/lib/use-upload";
 import { AssetPicker } from "./AssetPicker";
 import { useDesignSystem } from "@/store/design-system";
 import type { SelectOption } from "@/lib/types";
@@ -428,27 +428,14 @@ export function ImageInput({
   onChange: (v: string) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [picker, setPicker] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { uploading, upload } = useUpload(onChange);
   useEffect(() => {
     setLoaded(false);
     if (ref.current?.complete) setLoaded(true);
   }, [value]);
-
-  async function onFile(file?: File) {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const a = await uploadFile(file);
-      onChange(a.url);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }
 
   return (
     <div className="space-y-2">
@@ -470,7 +457,7 @@ export function ImageInput({
           <Images size={13} /> Library
         </button>
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
       {value && (
         <div className="relative h-20 w-full overflow-hidden rounded-md border border-zinc-200">
           {!loaded && <span className="pc-skeleton absolute inset-0" />}
@@ -500,22 +487,9 @@ export function FileInput({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const [uploading, setUploading] = useState(false);
   const [picker, setPicker] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  async function onFile(file?: File) {
-    if (!file) return;
-    setUploading(true);
-    try {
-      const a = await uploadFile(file);
-      onChange(a.url);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }
+  const { uploading, upload } = useUpload(onChange);
 
   const name = value ? value.split("/").pop() : "";
 
@@ -547,7 +521,7 @@ export function FileInput({
           <Images size={13} />
         </button>
       </div>
-      <input ref={fileRef} type="file" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+      <input ref={fileRef} type="file" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
       <AssetPicker open={picker} kind="all" onSelect={onChange} onClose={() => setPicker(false)} />
     </div>
   );
