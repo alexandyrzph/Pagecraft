@@ -3,8 +3,6 @@
 import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/registry-types";
 
-export { layoutBlocks } from "./layout.defs";
-
 export function SectionBlock({ style, className, id, children }: BlockRenderProps) {
   return (
     <section id={id} className={cn("relative w-full", className)} style={style}>

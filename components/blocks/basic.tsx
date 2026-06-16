@@ -6,8 +6,6 @@ import type { BlockRenderProps } from "@/lib/registry-types";
 import { DynamicIcon, Editable } from "./shared";
 import { RichText } from "./RichText";
 
-export { basicBlocks } from "./basic.defs";
-
 export function HeadingBlock({
   block,
   editable,

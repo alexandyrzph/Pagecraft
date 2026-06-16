@@ -1,12 +1,7 @@
 import { FileText } from "lucide-react";
 import type { BlockDefinition } from "@/lib/registry-types";
 import { FileBlock } from "./file";
-
-const ALIGN_OPTIONS = [
-  { label: "Left", value: "left" },
-  { label: "Center", value: "center" },
-  { label: "Right", value: "right" },
-];
+import { ALIGN_OPTIONS } from "./shared.defs";
 
 export const fileBlocks: BlockDefinition[] = [
   {

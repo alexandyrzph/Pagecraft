@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/registry-types";
 import { Editable } from "./shared";
 
-export { formBlocks } from "./form.defs";
-
 type FormField = { label: string; type: string; required?: boolean };
 
 export function FormBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
