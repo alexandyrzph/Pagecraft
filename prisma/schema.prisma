@@ -24,8 +24,18 @@ model Page {
 
   submissions Submission[]
   versions    PageVersion[]
+  thumbnail   PageThumbnail?
 
   @@index([workspaceId])
+}
+
+model PageThumbnail {
+  pageId            String   @id
+  page              Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  url               String   // e.g. "/uploads/thumbnails/<pageId>.png"
+  takenForUpdatedAt DateTime // the Page.updatedAt value this screenshot reflects
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model PageVersion {
