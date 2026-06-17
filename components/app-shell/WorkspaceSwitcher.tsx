@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useDismissOnOutsideClick } from "@/lib/hooks/use-dismiss";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, Plus, Check, Loader2 } from "lucide-react";
+import { ChevronsUpDown, Plus, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 
 type WS = { id: string; name: string; slug: string; role: string };
 
@@ -71,8 +72,8 @@ export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collaps
             <div className="p-1.5">
               <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} placeholder="Workspace name" className="w-full rounded-lg border border-[#d6dae0] px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" />
               <div className="mt-1.5 flex gap-1.5">
-                <button onClick={create} disabled={busy} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-zinc-900 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={13} className="animate-spin" /> : "Create"}</button>
-                <button onClick={() => setCreating(false)} className="rounded-lg px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f1f3f5]">Cancel</button>
+                <Button variant="neutral" size="sm" className="flex-1" onPress={create} isLoading={busy}>Create</Button>
+                <Button variant="ghost" size="sm" onPress={() => setCreating(false)}>Cancel</Button>
               </div>
               {err && <p className="mt-1.5 text-xs text-red-600">{err}</p>}
             </div>

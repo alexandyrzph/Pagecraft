@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Search, Menu, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
 import { NAV_GROUPS } from "./nav";
 import { setSidebarCookie } from "./SidebarToggleCookie";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -118,7 +119,7 @@ export function Sidebar({
         </div>
       </aside>
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-[#e8eaed] bg-white px-4 py-2.5 md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 hover:bg-[#f1f3f5]"><Menu size={20} /></button>
+        <Button variant="ghost" size="icon" aria-label="Open menu" onPress={() => setMobileOpen(true)}><Menu size={20} /></Button>
         <span className="text-sm font-semibold text-[#111827]">{active?.name}</span>
       </div>
       <AnimatePresence>
@@ -126,7 +127,7 @@ export function Sidebar({
           <motion.div className="fixed inset-0 z-40 md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
             <motion.div className="absolute left-0 top-0 h-full" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: "spring", stiffness: 400, damping: 36 }}>
-              <div className="relative h-full">{rail}<button onClick={() => setMobileOpen(false)} className="absolute right-3 top-3 text-[#9aa1ac]"><X size={18} /></button></div>
+              <div className="relative h-full">{rail}<Button variant="ghost" size="icon" aria-label="Close menu" className="absolute right-3 top-3" onPress={() => setMobileOpen(false)}><X size={18} /></Button></div>
             </motion.div>
           </motion.div>
         )}
