@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Download, Inbox, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Table, THead, TH, TBody, TR, TD } from "@/components/ui/Table";
 
@@ -69,16 +70,9 @@ export function SubmissionsModal({
               </div>
               <div className="flex items-center gap-1.5">
                 {subs.length > 0 && (
-                  <button
-                    onClick={exportCsv}
-                    className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-50"
-                  >
-                    <Download size={13} /> CSV
-                  </button>
+                  <Button variant="secondary" size="sm" onPress={exportCsv} leadingIcon={<Download size={13} />}>CSV</Button>
                 )}
-                <button onClick={onClose} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100">
-                  <X size={18} />
-                </button>
+                <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}><X size={18} /></Button>
               </div>
             </div>
 

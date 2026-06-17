@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useConfirm } from "@/components/ui/dialog-provider";
 import { TEMPLATES, type Template } from "@/lib/blocks/templates";
@@ -133,16 +134,16 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setAiModal(true)}
-                className="flex h-[42px] items-center gap-2 rounded-[10px] border border-[#e8eaed] bg-white px-4 text-[13.5px] font-medium text-[#111827] transition-colors hover:bg-zinc-50"
+                className="flex h-[42px] items-center gap-2 rounded-[10px] border border-border bg-white px-4 text-[13.5px] font-medium text-fg transition-colors hover:bg-bg-subtle"
               >
-                <Sparkles size={16} className="text-indigo-600" /> Generate with AI
+                <Sparkles size={16} className="text-brand-600" /> Generate with AI
               </motion.button>
             )}
             <motion.button
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setModal(true)}
-              className="flex h-[42px] items-center gap-2 rounded-[10px] bg-zinc-900 px-[18px] text-[13.5px] font-semibold text-white transition-colors hover:bg-zinc-800"
+              className="flex h-[42px] items-center gap-2 rounded-[10px] bg-fg px-[18px] text-[13.5px] font-semibold text-white transition-colors hover:bg-fg/90"
             >
               <Plus size={16} /> New page
             </motion.button>
@@ -172,12 +173,7 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
             {filtered.length === 0 ? (
               <div className="py-20 text-center">
                 <p className="text-[15px] font-semibold text-[#111827]">No pages match “{query}”</p>
-                <button
-                  onClick={() => { setQuery(""); setFilter("all"); }}
-                  className="mt-2 text-[13.5px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
-                >
-                  Clear filters
-                </button>
+                <Button variant="link" onPress={() => { setQuery(""); setFilter("all"); }} className="mt-2 text-[13.5px]">Clear filters</Button>
               </div>
             ) : (
               <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
@@ -262,9 +258,7 @@ function AiPageModal({
             <h2 className="text-sm font-bold tracking-tight text-[#111827]">Generate a page with AI</h2>
             <p className="text-[11px] text-zinc-500">Describe your page — AI builds a full draft you can edit.</p>
           </div>
-          <button onClick={() => !busy && onClose()} className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600">
-            <X size={18} />
-          </button>
+          <Button variant="ghost" size="icon" aria-label="Close" onPress={() => !busy && onClose()}><X size={18} /></Button>
         </div>
         <div className="p-5">
           <textarea
@@ -292,14 +286,9 @@ function AiPageModal({
           {error && <p className="mt-2.5 text-xs text-red-500">{error}</p>}
           <div className="mt-4 flex items-center justify-between">
             <span className="text-[11px] text-zinc-400">⌘↵ to generate</span>
-            <button
-              onClick={run}
-              disabled={!prompt.trim() || busy}
-              className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-zinc-800 disabled:opacity-50"
-            >
-              {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+            <Button variant="neutral" onPress={run} isDisabled={!prompt.trim()} isLoading={busy} leadingIcon={<Sparkles size={15} />}>
               {busy ? "Generating page…" : "Generate page"}
-            </button>
+            </Button>
           </div>
         </div>
     </Modal>
@@ -324,7 +313,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.97 }}
         onClick={onCreate}
-        className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-zinc-800"
+        className="flex items-center gap-1.5 rounded-xl bg-fg px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-fg/90"
       >
         <Plus size={16} /> New page
       </motion.button>
@@ -350,9 +339,7 @@ function TemplateModal({
             <h2 className="text-lg font-bold tracking-tight text-zinc-900">Choose a starting point</h2>
             <p className="text-sm text-zinc-500">Pick a template or start from scratch.</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100">
-            <X size={18} />
-          </button>
+          <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}><X size={18} /></Button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {TEMPLATES.map((t) => (
