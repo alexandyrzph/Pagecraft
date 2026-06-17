@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Copy, Check, Trash2 } from "lucide-react";
+import { Copy, Check, Trash2 } from "lucide-react";
 import { useConfirm, useAlert } from "@/components/ui/dialog-provider";
+import { Button, TextField, Select } from "@/components/ui";
 
 type WS = { id: string; name: string; slug: string };
 type Member = { membershipId: string; userId: string; name: string; email: string; role: string };
 type Invite = { id: string; email: string; role: string; token: string; expiresAt: string };
 const ROLES = ["VIEWER", "EDITOR", "ADMIN", "OWNER"];
-const input = "rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100";
 
 export function SettingsClient({ workspace, role }: { workspace: WS; role: string }) {
   const router = useRouter();
@@ -18,9 +18,9 @@ export function SettingsClient({ workspace, role }: { workspace: WS; role: strin
     role === "OWNER" ? ["general", "members", "invites", "danger"] : ["general", "members", "invites"];
   return (
     <>
-      <div className="mt-6 flex gap-1 border-b border-zinc-200">
+      <div className="mt-6 flex gap-1 border-b border-border">
         {tabs.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 text-sm font-medium capitalize ${tab === t ? "border-b-2 border-indigo-600 text-indigo-700" : "text-zinc-500 hover:text-zinc-800"}`}>{t}</button>
+          <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 text-sm font-medium capitalize ${tab === t ? "border-b-2 border-brand-600 text-brand-700" : "text-fg-muted hover:text-fg"}`}>{t}</button>
         ))}
       </div>
       <div className="py-6">
@@ -45,10 +45,9 @@ function General({ workspace, onSaved }: { workspace: WS; onSaved: () => void })
   }
   return (
     <form onSubmit={save} className="max-w-sm space-y-3">
-      <label htmlFor="ws-name" className="block text-xs font-medium text-zinc-600">Workspace name</label>
-      <input id="ws-name" className={input + " w-full"} value={name} onChange={(e) => setName(e.target.value)} required />
-      {err && <p className="text-xs text-red-600">{err}</p>}
-      <button disabled={busy} className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={15} className="animate-spin" /> : ok ? <Check size={15} /> : null} Save</button>
+      <TextField label="Workspace name" value={name} onChange={setName} isRequired />
+      {err && <p className="text-xs text-danger-600">{err}</p>}
+      <Button type="submit" variant="neutral" isLoading={busy} leadingIcon={ok ? <Check size={15} /> : undefined}>Save</Button>
     </form>
   );
 }
@@ -77,8 +76,8 @@ function Members() {
         <div key={m.membershipId} className="flex items-center gap-3 px-4 py-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">{(m.name || m.email).slice(0, 2).toUpperCase()}</span>
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-zinc-800">{m.name || "—"}</p><p className="truncate text-xs text-zinc-400">{m.email}</p></div>
-          <select aria-label={`Role for ${m.email}`} value={m.role} onChange={(e) => changeRole(m, e.target.value)} className={input}>{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select>
-          <button aria-label={`Remove ${m.email}`} onClick={() => remove(m)} className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-500"><Trash2 size={15} /></button>
+          <Select aria-label={`Role for ${m.email}`} className="w-36" items={ROLES.map((r) => ({ id: r, label: r }))} selectedKey={m.role} onSelectionChange={(k) => changeRole(m, String(k))} />
+          <Button aria-label={`Remove ${m.email}`} variant="ghost" size="icon" onPress={() => remove(m)} className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={15} /></Button>
         </div>
       ))}
     </div>
@@ -103,24 +102,24 @@ function Invites() {
   return (
     <div className="space-y-5">
       <form onSubmit={create} className="flex flex-wrap items-end gap-2">
-        <div className="flex-1"><label className="mb-1 block text-xs font-medium text-zinc-600">Invite by email</label><input className={input + " w-full"} type="email" placeholder="teammate@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-        <select value={role} onChange={(e) => setRole(e.target.value)} className={input}>{["VIEWER", "EDITOR", "ADMIN"].map((r) => <option key={r} value={r}>{r}</option>)}</select>
-        <button disabled={busy} className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />} Invite</button>
+        <TextField className="flex-1" label="Invite by email" type="email" placeholder="teammate@company.com" value={email} onChange={setEmail} isRequired />
+        <Select aria-label="Invite role" className="w-32" items={["VIEWER", "EDITOR", "ADMIN"].map((r) => ({ id: r, label: r }))} selectedKey={role} onSelectionChange={(k) => setRole(String(k))} />
+        <Button type="submit" variant="neutral" isLoading={busy}>Invite</Button>
       </form>
-      {err && <p className="text-xs text-red-600">{err}</p>}
+      {err && <p className="text-xs text-danger-600">{err}</p>}
       {link && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
           <p className="mb-1.5 text-xs font-medium text-emerald-800">No email service configured — share this invite link:</p>
           <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-white p-2">
             <code className="min-w-0 flex-1 truncate text-xs text-zinc-600">{link}</code>
-            <button onClick={() => { navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); }} className="flex items-center gap-1 rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white">{copied ? <Check size={12} /> : <Copy size={12} />} {copied ? "Copied" : "Copy"}</button>
+            <Button variant="neutral" size="sm" onPress={() => { navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); }} leadingIcon={copied ? <Check size={12} /> : <Copy size={12} />}>{copied ? "Copied" : "Copy"}</Button>
           </div>
         </div>
       )}
       {invites.length > 0 && (
         <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200">
           {invites.map((i) => (
-            <div key={i.id} className="flex items-center gap-3 px-4 py-2.5"><div className="min-w-0 flex-1"><p className="truncate text-sm text-zinc-700">{i.email}</p><p className="text-xs text-zinc-400">{i.role} · pending</p></div><button onClick={() => revoke(i.id)} className="text-xs font-medium text-red-500 hover:underline">Revoke</button></div>
+            <div key={i.id} className="flex items-center gap-3 px-4 py-2.5"><div className="min-w-0 flex-1"><p className="truncate text-sm text-zinc-700">{i.email}</p><p className="text-xs text-zinc-400">{i.role} · pending</p></div><Button variant="link" onPress={() => revoke(i.id)} className="text-xs font-medium text-danger-600">Revoke</Button></div>
           ))}
         </div>
       )}
@@ -150,8 +149,8 @@ function Danger({ workspace, role }: { workspace: WS; role: string }) {
     <div className="rounded-xl border border-red-200 bg-red-50 p-5">
       <h3 className="text-sm font-semibold text-red-800">Delete this workspace</h3>
       <p className="mt-1 text-xs text-red-600">Permanent. You must have another workspace to switch to.</p>
-      {err && <p className="mt-2 text-xs text-red-700">{err}</p>}
-      <button onClick={del} disabled={busy} className="mt-3 flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">{busy ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />} Delete workspace</button>
+      {err && <p className="mt-2 text-xs text-danger-700">{err}</p>}
+      <Button variant="danger" onPress={del} isLoading={busy} leadingIcon={<Trash2 size={15} />}>Delete workspace</Button>
     </div>
   );
 }
