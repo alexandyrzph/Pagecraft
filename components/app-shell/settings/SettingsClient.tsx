@@ -150,7 +150,7 @@ function Danger({ workspace, role }: { workspace: WS; role: string }) {
       <h3 className="text-sm font-semibold text-red-800">Delete this workspace</h3>
       <p className="mt-1 text-xs text-red-600">Permanent. You must have another workspace to switch to.</p>
       {err && <p className="mt-2 text-xs text-danger-700">{err}</p>}
-      <Button variant="danger" onPress={del} isLoading={busy} leadingIcon={<Trash2 size={15} />}>Delete workspace</Button>
+      <Button variant="danger" onPress={del} isLoading={busy} leadingIcon={<Trash2 size={15} />} className="mt-3">Delete workspace</Button>
     </div>
   );
 }
