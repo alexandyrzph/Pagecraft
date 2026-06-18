@@ -2,6 +2,7 @@
 // actually mount and wire onChange (complements the node-env key-coverage test).
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { LEAF_INPUTS } from "@/lib/field-inputs";
 
 describe("LEAF_INPUTS renderers (dom)", () => {
@@ -14,7 +15,7 @@ describe("LEAF_INPUTS renderers (dom)", () => {
     expect(onChange).toHaveBeenCalledWith("bye");
   });
 
-  it("select: renders the provided options", () => {
+  it("select: shows the current value and emits the chosen key (RAC Select)", async () => {
     const onChange = vi.fn();
     render(
       <div>
@@ -28,15 +29,22 @@ describe("LEAF_INPUTS renderers (dom)", () => {
         })}
       </div>,
     );
-    const select = screen.getByRole("combobox") as HTMLSelectElement;
-    expect(select).toHaveValue("b");
-    expect(screen.getByRole("option", { name: "Alpha" })).toBeInTheDocument();
+    // The RAC Select renders a button trigger (not a native <select>) whose
+    // text reflects the current value.
+    const trigger = screen.getByRole("button");
+    expect(trigger).toHaveTextContent("Beta");
+    // Opening it surfaces the options in the listbox popover.
+    await userEvent.click(trigger);
+    expect(await screen.findByRole("option", { name: "Alpha" })).toBeInTheDocument();
+    // Picking one reports the option's key (value).
+    await userEvent.click(screen.getByRole("option", { name: "Alpha" }));
+    expect(onChange).toHaveBeenCalledWith("a");
   });
 
-  it("boolean: renders a toggle button and emits the negated value", () => {
+  it("boolean: renders a switch and emits the new value (RAC Switch)", async () => {
     const onChange = vi.fn();
     render(<div>{LEAF_INPUTS.boolean({ value: false, onChange })}</div>);
-    fireEvent.click(screen.getByRole("button"));
+    await userEvent.click(screen.getByRole("switch"));
     expect(onChange).toHaveBeenCalledWith(true);
   });
 });

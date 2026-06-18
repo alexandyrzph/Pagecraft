@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Plus, Trash2, ChevronDown, Upload, Images, Loader2, FileUp, Paperclip, MoveHorizontal } from "lucide-react";
 import { ICON_NAMES } from "@/lib/icons";
 import { cn } from "@/lib/utils";
@@ -8,12 +8,24 @@ import { DynamicIcon } from "@/components/blocks/shared";
 import { useUpload } from "@/lib/hooks/use-upload";
 import { AssetPicker } from "./AssetPicker";
 import { useDesignSystem } from "@/store/design-system";
+import { Select } from "@/components/ui/Select";
+import { Switch } from "@/components/ui/Switch";
+import { Slider as UISlider } from "@/components/ui/Slider";
+import { ToggleButtonGroup, ToggleButton } from "@/components/ui/ToggleButtonGroup";
 import type { SelectOption } from "@/lib/types";
 
 const COLOR_VAR_RE = /^var\(--pc-color-([A-Za-z0-9]+)\)$/;
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition placeholder:text-zinc-400 hover:border-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100";
+  "w-full rounded-lg border border-border-strong bg-white px-3 py-2 text-sm text-fg shadow-xs outline-none transition placeholder:text-fg-subtle hover:border-fg-subtle focus:border-brand-400 focus:ring-4 focus:ring-brand-100";
+
+/**
+ * Carries the parent `Field` label down to the RAC-based controls
+ * (Select/Switch/Slider/ToggleButtonGroup) which are button-based and so don't
+ * inherit an accessible name from a wrapping `<label>`. The native inputs read
+ * it too so they keep an accessible name now that `Field` is a `<div>`.
+ */
+const FieldLabelContext = createContext<string | undefined>(undefined);
 
 export function Field({
   label,
@@ -22,15 +34,20 @@ export function Field({
   label?: string;
   children: React.ReactNode;
 }) {
+  // A plain <div>: the RAC controls render their own hidden native <select>/
+  // <input>, and a wrapping <label> would mis-associate with those hidden
+  // elements. The label text is exposed to children via context instead.
   return (
-    <label className="block">
-      {label && (
-        <span className="mb-1 block text-[11px] font-medium text-zinc-500">
-          {label}
-        </span>
-      )}
-      {children}
-    </label>
+    <FieldLabelContext.Provider value={label}>
+      <div className="block">
+        {label && (
+          <span className="mb-1 block text-[11px] font-medium text-fg-muted">
+            {label}
+          </span>
+        )}
+        {children}
+      </div>
+    </FieldLabelContext.Provider>
   );
 }
 
@@ -43,9 +60,11 @@ export function TextInput({
   onChange: (v: string) => void;
   placeholder?: string;
 }) {
+  const label = useContext(FieldLabelContext);
   return (
     <input
       type="text"
+      aria-label={label}
       className={inputCls}
       value={value ?? ""}
       placeholder={placeholder}
@@ -65,8 +84,10 @@ export function TextArea({
   placeholder?: string;
   rows?: number;
 }) {
+  const label = useContext(FieldLabelContext);
   return (
     <textarea
+      aria-label={label}
       className={cn(inputCls, "resize-y leading-relaxed")}
       rows={rows}
       value={value ?? ""}
@@ -85,9 +106,11 @@ export function NumberInput({
   onChange: (v: number) => void;
   placeholder?: string;
 }) {
+  const label = useContext(FieldLabelContext);
   return (
     <input
       type="number"
+      aria-label={label}
       className={inputCls}
       value={value ?? ""}
       placeholder={placeholder}
@@ -105,24 +128,14 @@ export function SelectInput({
   onChange: (v: string) => void;
   options: SelectOption[];
 }) {
+  const label = useContext(FieldLabelContext);
   return (
-    <div className="relative">
-      <select
-        className={cn(inputCls, "appearance-none pr-8")}
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={14}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
-      />
-    </div>
+    <Select
+      aria-label={label ?? "Select"}
+      items={options.map((o) => ({ id: o.value, label: o.label }))}
+      selectedKey={value ?? ""}
+      onSelectionChange={(k) => onChange(String(k))}
+    />
   );
 }
 
@@ -344,19 +357,20 @@ export function Slider({
   step?: number;
   unit?: string;
 }) {
+  const label = useContext(FieldLabelContext);
   const num = parseFloat(String(value ?? "")) || 0;
   return (
     <div className="flex items-center gap-2.5">
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
+      <UISlider
+        aria-label={label ?? "Value"}
+        className="flex-1"
         value={num}
-        onChange={(e) => onChange(`${e.target.value}${unit}`)}
-        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-200 accent-indigo-600"
+        minValue={min}
+        maxValue={max}
+        step={step}
+        onChange={(v) => onChange(`${v}${unit}`)}
       />
-      <span className="w-12 shrink-0 text-right text-xs tabular-nums text-zinc-500">
+      <span className="w-12 shrink-0 text-right text-xs tabular-nums text-fg-muted">
         {num}
         {unit}
       </span>
@@ -374,23 +388,24 @@ export function Segmented({
   onChange: (v: string) => void;
   options: { value: string; label: string; icon?: React.ReactNode }[];
 }) {
+  const label = useContext(FieldLabelContext);
   return (
-    <div className="flex gap-0.5 rounded-lg bg-zinc-100 p-0.5">
+    <ToggleButtonGroup
+      aria-label={label ?? "Options"}
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={new Set([value])}
+      onSelectionChange={(keys) => {
+        const k = [...keys][0];
+        if (k != null) onChange(String(k));
+      }}
+    >
       {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          title={o.label}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            "flex flex-1 items-center justify-center rounded-md py-1.5 transition-colors",
-            value === o.value ? "bg-white text-indigo-600 shadow-sm" : "text-zinc-400 hover:text-zinc-600"
-          )}
-        >
+        <ToggleButton key={o.value} id={o.value} aria-label={o.label}>
           {o.icon ?? <span className="text-xs font-medium">{o.label}</span>}
-        </button>
+        </ToggleButton>
       ))}
-    </div>
+    </ToggleButtonGroup>
   );
 }
 
@@ -401,23 +416,8 @@ export function Toggle({
   value: boolean;
   onChange: (v: boolean) => void;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!value)}
-      className={cn(
-        "relative h-5 w-9 rounded-full transition-colors",
-        value ? "bg-indigo-600" : "bg-zinc-300"
-      )}
-    >
-      <span
-        className={cn(
-          "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
-          value ? "translate-x-4" : "translate-x-0.5"
-        )}
-      />
-    </button>
-  );
+  const label = useContext(FieldLabelContext);
+  return <Switch aria-label={label ?? "Toggle"} isSelected={value} onChange={onChange} />;
 }
 
 export function ImageInput({
