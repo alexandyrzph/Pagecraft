@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/blocks/registry-types";
 import { Editable } from "./shared";
@@ -40,12 +42,7 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
     const slug = window.location.pathname.split("/").filter(Boolean).pop() || "";
     setStatus("sending");
     try {
-      const res = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, formId, data }),
-      });
-      if (!res.ok) throw new Error("failed");
+      await api.post(endpoints.submissions.create, { slug, formId, data });
       setStatus("done");
       form.reset();
     } catch {

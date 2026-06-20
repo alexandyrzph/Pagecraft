@@ -5,6 +5,8 @@ import { Loader2, Upload, X } from "lucide-react";
 import { uploadFile, formatBytes, type UploadedAsset } from "@/lib/upload";
 import { Modal } from "@/components/ui/Modal";
 import { useAlert } from "@/components/ui/dialog-provider";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 
 export function AssetPicker({
   open,
@@ -32,8 +34,9 @@ export function AssetPicker({
 
   useEffect(() => {
     if (!open) return;
-    fetch(`/api/assets${kind === "image" ? "?kind=image" : ""}`)
-      .then((r) => r.json())
+    api
+      .get(endpoints.assets(kind === "image" ? { kind: "image" } : undefined))
+      .then((r) => r.data)
       .then((d) => setAssets(Array.isArray(d) ? d : []))
       .catch(() => {})
       .finally(() => setLoading(false));

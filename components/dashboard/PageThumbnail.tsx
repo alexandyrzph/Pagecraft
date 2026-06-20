@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { createLimiter } from "@/lib/thumbnails/queue";
 
 // Shared across all cards: at most 2 screenshot requests in flight at once.
@@ -29,11 +31,7 @@ export function PageThumbnail({
     if (!stale || started.current) return;
     started.current = true;
     setLoading(true);
-    limiter(() =>
-      fetch(`/api/pages/${pageId}/thumbnail`, { method: "POST" }).then((r) =>
-        r.ok ? r.json() : null,
-      ),
-    )
+    limiter(() => api.post(endpoints.pages.thumbnail(pageId)).then((r) => r.data))
       .then((d: { url?: string; version?: number } | null) => {
         if (d?.url) {
           setUrl(d.url);

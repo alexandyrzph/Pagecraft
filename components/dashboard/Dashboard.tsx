@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { motion } from "framer-motion";
 import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useConfirm } from "@/components/ui/dialog-provider";
@@ -39,8 +42,9 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
   }, []);
 
   useEffect(() => {
-    fetch("/api/ai")
-      .then((r) => r.json())
+    api
+      .get(endpoints.ai)
+      .then((r) => r.data)
       .then((d) => setHasAi(Array.isArray(d.providers) && d.providers.length > 0))
       .catch(() => {});
   }, []);
@@ -56,23 +60,18 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
   }, [searchParams, router]);
 
   async function generatePage(prompt: string): Promise<string | null> {
-    const r = await fetch("/api/ai", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mode: "page", prompt }),
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || "Generation failed");
-    const blocks = d.blocks ?? [];
+    let blocks;
+    try {
+      const d = (await api.post(endpoints.ai, { mode: "page", prompt })).data;
+      blocks = d.blocks ?? [];
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
+      throw new Error(d.error || "Generation failed");
+    }
     const titled = blocks.find((b: { props?: { title?: string } }) => b?.props?.title)?.props
       ?.title;
     const title = (titled || prompt).toString().slice(0, 60);
-    const res = await fetch("/api/pages", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, content: blocks }),
-    });
-    const page = await res.json();
+    const page = (await api.post(endpoints.pages.list, { title, content: blocks })).data;
     return page.id ?? null;
   }
 
@@ -83,15 +82,12 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
   async function create(template: Template) {
     setCreating(template.id);
     try {
-      const res = await fetch("/api/pages", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+      const page = (
+        await api.post(endpoints.pages.list, {
           title: template.id === "blank" ? "Untitled Page" : `${template.name}`,
           content: template.build(),
-        }),
-      });
-      const page = await res.json();
+        })
+      ).data;
       router.push(`/editor/${page.id}`);
     } catch {
       setCreating(null);
@@ -108,7 +104,7 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
     if (!ok) return;
     setDeleting(id);
     try {
-      await fetch(`/api/pages/${id}`, { method: "DELETE" });
+      await api.delete(endpoints.pages.byId(id));
       router.refresh();
     } finally {
       setDeleting(null);

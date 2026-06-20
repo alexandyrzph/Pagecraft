@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { ArrowLeft, Plus, Trash2, ExternalLink } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 import {
   Field,
@@ -73,16 +76,13 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
   ) {
     const next = { ...col, ...patch };
     setCol(next);
-    await fetch(`/api/collections/${col.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(patch),
-    }).catch(() => {});
+    await api.put(endpoints.collections.byId(col.id), patch).catch(() => {});
   }
 
   async function reloadItems() {
-    const r = await fetch(`/api/collections/${col.id}/items`)
-      .then((x) => x.json())
+    const r = await api
+      .get(endpoints.collections.items(col.id))
+      .then((x) => x.data)
       .catch(() => null);
     if (Array.isArray(r)) setCol((c) => ({ ...c, items: r }));
   }
@@ -90,11 +90,7 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
   async function addItem() {
     setBusy(true);
     try {
-      await fetch(`/api/collections/${col.id}/items`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: blankItemData(col.fields) }),
-      });
+      await api.post(endpoints.collections.items(col.id), { data: blankItemData(col.fields) });
       await reloadItems();
     } finally {
       setBusy(false);
@@ -102,11 +98,7 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
   }
 
   async function saveItem(item: CollectionItem) {
-    await fetch(`/api/collections/${col.id}/items/${item.id}`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ data: item.data }),
-    });
+    await api.put(endpoints.collections.item(col.id, item.id), { data: item.data });
     await reloadItems();
     setEditing(null);
   }
@@ -119,7 +111,7 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
       destructive: true,
     });
     if (!ok) return;
-    await fetch(`/api/collections/${col.id}/items/${id}`, { method: "DELETE" });
+    await api.delete(endpoints.collections.item(col.id, id));
     await reloadItems();
   }
 
@@ -139,12 +131,12 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
       destructive: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/collections/${col.id}`, { method: "DELETE" }).catch(() => null);
-    if (res && res.ok) {
+    try {
+      await api.delete(endpoints.collections.byId(col.id));
       router.push("/cms");
       router.refresh();
-    } else {
-      const d = res ? await res.json().catch(() => ({})) : {};
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       await alert({ title: "Couldn't delete collection", message: d.error || "Please try again." });
     }
   }

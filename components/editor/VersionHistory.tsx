@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { History, Loader2, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useEditor } from "@/store/editor-store";
 
 type Version = { id: string; label: string; createdAt: string };
@@ -40,8 +42,8 @@ export function VersionHistory({
     if (!pageId) return;
     setLoading(true);
     try {
-      const r = await fetch(`/api/pages/${pageId}/versions`);
-      setVersions(await r.json());
+      const { data } = await api.get(endpoints.pages.versions(pageId));
+      setVersions(data);
     } finally {
       setLoading(false);
     }
@@ -56,8 +58,9 @@ export function VersionHistory({
 
   useEffect(() => {
     if (!open || !pageId) return;
-    fetch(`/api/pages/${pageId}/versions`)
-      .then((r) => r.json())
+    api
+      .get(endpoints.pages.versions(pageId))
+      .then((r) => r.data)
       .then((d) => setVersions(d))
       .finally(() => setLoading(false));
   }, [open, pageId]);
@@ -67,11 +70,7 @@ export function VersionHistory({
     setBusy("save");
     try {
       await save(); // persist current edits so the snapshot is current
-      await fetch(`/api/pages/${pageId}/versions`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ label: "Manual save" }),
-      });
+      await api.post(endpoints.pages.versions(pageId), { label: "Manual save" });
       await refresh();
     } finally {
       setBusy(null);
@@ -84,12 +83,8 @@ export function VersionHistory({
     try {
       // snapshot the current state first so restore is always reversible
       await save();
-      await fetch(`/api/pages/${pageId}/versions`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ label: "Before restore" }),
-      });
-      const snap = await (await fetch(`/api/pages/${pageId}/versions/${v.id}`)).json();
+      await api.post(endpoints.pages.versions(pageId), { label: "Before restore" });
+      const snap = (await api.get(endpoints.pages.version(pageId, v.id))).data;
       replaceTree(snap.content);
       setTheme(snap.theme ?? {});
       await save();
@@ -103,7 +98,7 @@ export function VersionHistory({
     if (!pageId) return;
     setBusy(id);
     try {
-      await fetch(`/api/pages/${pageId}/versions/${id}`, { method: "DELETE" });
+      await api.delete(endpoints.pages.version(pageId, id));
       await refresh();
     } finally {
       setBusy(null);

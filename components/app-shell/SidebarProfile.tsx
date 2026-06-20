@@ -5,6 +5,8 @@ import { useDismissOnOutsideClick } from "@/lib/hooks/use-dismiss";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, UserCog, Loader2 } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 export function SidebarProfile({
@@ -23,7 +25,7 @@ export function SidebarProfile({
 
   async function logout() {
     setOut(true);
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    await api.post(endpoints.auth.logout).catch(() => {});
     router.replace("/login");
     router.refresh();
   }

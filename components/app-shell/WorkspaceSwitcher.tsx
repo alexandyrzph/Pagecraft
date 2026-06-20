@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useDismissOnOutsideClick } from "@/lib/hooks/use-dismiss";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { ChevronsUpDown, Plus, Check } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
@@ -32,11 +35,7 @@ export function WorkspaceSwitcher({
   async function switchTo(id: string) {
     if (id === active?.id) return setOpen(false);
     setBusy(true);
-    await fetch("/api/workspaces/switch", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    await api.post(endpoints.workspaces.switch, { id });
     router.refresh();
     setBusy(false);
     setOpen(false);
@@ -47,26 +46,23 @@ export function WorkspaceSwitcher({
     if (!n) return;
     setBusy(true);
     setErr("");
-    const res = await fetch("/api/workspaces", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: n }),
-    });
-    const ws = await res.json().catch(() => ({}));
-    if (res.ok && ws?.id) {
-      await fetch("/api/workspaces/switch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: ws.id }),
-      });
-      router.refresh();
+    try {
+      const { data: ws } = await api.post(endpoints.workspaces.list, { name: n });
+      if (ws?.id) {
+        await api.post(endpoints.workspaces.switch, { id: ws.id });
+        router.refresh();
+        setBusy(false);
+        setCreating(false);
+        setName("");
+        setOpen(false);
+      } else {
+        setBusy(false);
+        setErr(ws?.error || "Could not create workspace");
+      }
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       setBusy(false);
-      setCreating(false);
-      setName("");
-      setOpen(false);
-    } else {
-      setBusy(false);
-      setErr(ws?.error || "Could not create workspace");
+      setErr(d.error || "Could not create workspace");
     }
   }
 

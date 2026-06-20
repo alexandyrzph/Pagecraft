@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Modal } from "@/components/ui/Modal";
 import { findBlockById } from "@/lib/blocks/tree";
 import type { Block } from "@/lib/types";
@@ -46,8 +49,9 @@ export function AiGenerateModal() {
 
   useEffect(() => {
     if (!ai) return;
-    fetch("/api/ai")
-      .then((r) => r.json())
+    api
+      .get(endpoints.ai)
+      .then((r) => r.data)
       .then((d) => {
         const list: string[] = Array.isArray(d.providers) ? d.providers : [];
         setProviders(list);
@@ -66,21 +70,14 @@ export function AiGenerateModal() {
     setBusy(true);
     setError("");
     try {
-      const r = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
+      const d = (
+        await api.post(endpoints.ai, {
           prompt: p,
           provider,
           style,
           mode: scope === "page" ? "page" : "generate",
-        }),
-      });
-      const d = await r.json();
-      if (!r.ok) {
-        setError(d.error || "Generation failed");
-        return;
-      }
+        })
+      ).data;
       const blocks = (d.blocks as Block[]) ?? [];
       if (scope === "page") {
         replaceTree(blocks);
@@ -94,8 +91,13 @@ export function AiGenerateModal() {
         blocks.forEach((blk, i) => insertTree(blk, ai.parentId, index + i));
       }
       close();
-    } catch {
-      setError("Network error — try again.");
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response) {
+        const d = e.response.data;
+        setError(d.error || "Generation failed");
+      } else {
+        setError("Network error — try again.");
+      }
     } finally {
       setBusy(false);
     }

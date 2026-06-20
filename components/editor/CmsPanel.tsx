@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Database, Loader2, Plus, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useCollections } from "./collections-context";
 import { CmsManagerModal } from "./CmsManagerModal";
 
@@ -18,12 +20,7 @@ export function CmsPanel() {
     if (!trimmed || creating) return;
     setCreating(true);
     try {
-      const r = await fetch("/api/collections", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      const c = await r.json();
+      const { data: c } = await api.post(endpoints.collections.list, { name: trimmed });
       setName("");
       await refresh();
       if (c?.id) setManagingId(c.id);

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useDesignSystem } from "@/store/design-system";
 import type { Block, CollectionData } from "@/lib/types";
 import type { ComponentItem } from "./components-context";
@@ -19,8 +21,7 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
 
   const refreshComponents = useCallback(async () => {
     try {
-      const r = await fetch("/api/components");
-      const d = await r.json();
+      const d = (await api.get(endpoints.components.list)).data;
       setComponentList(Array.isArray(d) ? d : []);
     } catch {
       /* ignore */
@@ -29,8 +30,7 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
 
   const refreshCollections = useCallback(async () => {
     try {
-      const r = await fetch("/api/collections");
-      const d = await r.json();
+      const d = (await api.get(endpoints.collections.list)).data;
       setCollectionList(Array.isArray(d) ? d : []);
     } catch {
       /* ignore */
@@ -39,8 +39,7 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
 
   const refreshSite = useCallback(async () => {
     try {
-      const r = await fetch("/api/site");
-      const d = await r.json();
+      const d = (await api.get(endpoints.site)).data;
       setSite({
         header: Array.isArray(d.header) ? d.header : [],
         footer: Array.isArray(d.footer) ? d.footer : [],

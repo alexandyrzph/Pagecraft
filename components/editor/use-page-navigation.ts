@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { parseContent } from "@/lib/page-service";
 import { parseTheme } from "@/lib/design/theme";
 import { useEditor } from "@/store/editor-store";
@@ -20,9 +22,7 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
   const loadPageInPlace = useCallback(
     async (id: string) => {
       try {
-        const r = await fetch(`/api/pages/${id}`);
-        if (!r.ok) return;
-        const p = await r.json();
+        const p = (await api.get(endpoints.pages.byId(id))).data;
         init({
           id: p.id,
           title: p.title,
@@ -65,12 +65,8 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
       const block = saveCompBlock;
       if (!block) return;
       try {
-        const res = await fetch("/api/components", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name, content: [block] }),
-        });
-        const created = await res.json();
+        const created = (await api.post(endpoints.components.list, { name, content: [block] }))
+          .data;
         await refreshComponents();
         useEditor.getState().replaceWithComponent(block.id, created.id);
       } catch {

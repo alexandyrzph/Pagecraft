@@ -1,15 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { api } from "@/lib/api/client";
 import { PageThumbnail } from "@/components/dashboard/PageThumbnail";
 
-describe("PageThumbnail", () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.reject(new Error("no network in test"))),
-    );
-  });
+vi.mock("@/lib/api/client", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
 
+describe("PageThumbnail", () => {
   it("shows the cached image (cache-busted) when one exists and it is fresh", () => {
     render(
       <PageThumbnail
@@ -21,7 +19,7 @@ describe("PageThumbnail", () => {
       />,
     );
     expect(screen.getByRole("img").getAttribute("src")).toBe("/uploads/thumbnails/p1.png?v=42");
-    expect(fetch).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it("shows a neutral placeholder (no image) when there is none", () => {
@@ -35,6 +33,6 @@ describe("PageThumbnail", () => {
       />,
     );
     expect(screen.queryByRole("img")).toBeNull();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
   });
 });

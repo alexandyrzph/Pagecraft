@@ -1,3 +1,6 @@
+import axios from "axios";
+import { externalApi, endpoints } from "@/lib/api/endpoints";
+
 export type Provider = "google" | "github";
 
 export type OAuthProfile = {
@@ -17,15 +20,15 @@ type ProviderConfig = {
 
 const CONFIG: Record<Provider, ProviderConfig> = {
   google: {
-    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-    tokenUrl: "https://oauth2.googleapis.com/token",
+    authorizeUrl: externalApi.oauth.google.authorize,
+    tokenUrl: externalApi.oauth.google.token,
     scope: "openid email profile",
     idEnv: "GOOGLE_CLIENT_ID",
     secretEnv: "GOOGLE_CLIENT_SECRET",
   },
   github: {
-    authorizeUrl: "https://github.com/login/oauth/authorize",
-    tokenUrl: "https://github.com/login/oauth/access_token",
+    authorizeUrl: externalApi.oauth.github.authorize,
+    tokenUrl: externalApi.oauth.github.token,
     scope: "read:user user:email",
     idEnv: "GITHUB_CLIENT_ID",
     secretEnv: "GITHUB_CLIENT_SECRET",
@@ -37,7 +40,7 @@ function appUrl(): string {
 }
 
 export function redirectUri(provider: Provider): string {
-  return `${appUrl()}/api/auth/oauth/${provider}/callback`;
+  return `${appUrl()}${endpoints.auth.oauthCallback(provider)}`;
 }
 
 export function isProvider(p: string): p is Provider {
@@ -102,20 +105,30 @@ export function normalizeGithubProfile(
 
 export async function exchangeCode(provider: Provider, code: string): Promise<string> {
   const cfg = CONFIG[provider];
-  const res = await fetch(cfg.tokenUrl, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
-    body: new URLSearchParams({
-      client_id: process.env[cfg.idEnv] || "",
-      client_secret: process.env[cfg.secretEnv] || "",
-      code,
-      redirect_uri: redirectUri(provider),
-      grant_type: "authorization_code",
-    }).toString(),
-  });
-  const data = await res.json();
-  if (!res.ok || !data.access_token) throw new Error(`token exchange failed: ${res.status}`);
-  return data.access_token as string;
+  try {
+    const { data } = await axios.post(
+      cfg.tokenUrl,
+      new URLSearchParams({
+        client_id: process.env[cfg.idEnv] || "",
+        client_secret: process.env[cfg.secretEnv] || "",
+        code,
+        redirect_uri: redirectUri(provider),
+        grant_type: "authorization_code",
+      }).toString(),
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          accept: "application/json",
+        },
+      },
+    );
+    if (!data.access_token) throw new Error("token exchange failed: no access_token");
+    return data.access_token as string;
+  } catch (e) {
+    if (axios.isAxiosError(e))
+      throw new Error(`token exchange failed: ${e.response?.status ?? "network"}`);
+    throw e;
+  }
 }
 
 export async function fetchProfile(provider: Provider, accessToken: string): Promise<OAuthProfile> {
@@ -125,16 +138,22 @@ export async function fetchProfile(provider: Provider, accessToken: string): Pro
     "user-agent": "pagecraft",
   };
   if (provider === "google") {
-    const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers });
-    if (!res.ok) throw new Error(`google userinfo failed: ${res.status}`);
-    return normalizeGoogleProfile(await res.json());
+    try {
+      const { data } = await axios.get(externalApi.oauth.google.userInfo, { headers });
+      return normalizeGoogleProfile(data);
+    } catch (e) {
+      if (axios.isAxiosError(e))
+        throw new Error(`google userinfo failed: ${e.response?.status ?? "network"}`);
+      throw e;
+    }
   }
-  const [uRes, eRes] = await Promise.all([
-    fetch("https://api.github.com/user", { headers }),
-    fetch("https://api.github.com/user/emails", { headers }),
+  const [uRes, eRes] = await Promise.allSettled([
+    axios.get(externalApi.oauth.github.user, { headers }),
+    axios.get(externalApi.oauth.github.emails, { headers }),
   ]);
-  if (!uRes.ok) throw new Error(`github user failed: ${uRes.status}`);
-  const user = await uRes.json();
-  const emails = eRes.ok ? await eRes.json() : [];
-  return normalizeGithubProfile(user, Array.isArray(emails) ? emails : []);
+  if (uRes.status === "rejected") throw new Error("github user failed");
+  const user = uRes.value.data;
+  const emails =
+    eRes.status === "fulfilled" && Array.isArray(eRes.value.data) ? eRes.value.data : [];
+  return normalizeGithubProfile(user, emails);
 }

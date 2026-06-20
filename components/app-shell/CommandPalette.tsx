@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, CornerDownLeft } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { ALL_NAV } from "./nav";
 
 type Cmd = { id: string; label: string; hint?: string; run: () => void };
@@ -27,8 +29,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   useEffect(() => {
     if (!open) return;
     inputRef.current?.focus();
-    fetch("/api/pages")
-      .then((r) => r.json())
+    api
+      .get(endpoints.pages.list)
+      .then((r) => r.data)
       .then(
         (d) =>
           Array.isArray(d) &&

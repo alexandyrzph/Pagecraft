@@ -1,6 +1,8 @@
 "use client";
 
 import { create } from "zustand";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import type { ColorToken, StyleProps, TextStyle } from "@/lib/types";
 import { uid } from "@/lib/utils";
 
@@ -32,11 +34,7 @@ export const useDesignSystem = create<DesignSystemState>((set, get) => {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       const { colors, textStyles } = get();
-      void fetch("/api/site", {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ colors, textStyles }),
-      }).catch(() => {});
+      void api.put(endpoints.site, { colors, textStyles }).catch(() => {});
     }, 600);
   };
 
@@ -47,8 +45,7 @@ export const useDesignSystem = create<DesignSystemState>((set, get) => {
 
     load: async () => {
       try {
-        const r = await fetch("/api/site");
-        const d = await r.json();
+        const d = (await api.get(endpoints.site)).data;
         set({
           colors: Array.isArray(d.colors) ? d.colors : [],
           textStyles: Array.isArray(d.textStyles) ? d.textStyles : [],

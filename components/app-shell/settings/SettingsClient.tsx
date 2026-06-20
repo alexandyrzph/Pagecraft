@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Copy, Check, Trash2 } from "lucide-react";
 import { useConfirm, useAlert } from "@/components/ui/dialog-provider";
 import { Button, TextField, Select } from "@/components/ui";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 
 type WS = { id: string; name: string; slug: string };
 type Member = { membershipId: string; userId: string; name: string; email: string; role: string };
@@ -51,18 +54,15 @@ function General({ workspace, onSaved }: { workspace: WS; onSaved: () => void })
     setBusy(true);
     setOk(false);
     setErr("");
-    const res = await fetch(`/api/workspaces/${workspace.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name }),
-    }).catch(() => null);
-    setBusy(false);
-    if (res && res.ok) {
+    try {
+      await api.patch(endpoints.workspaces.byId(workspace.id), { name });
+      setBusy(false);
       setOk(true);
       onSaved();
       setTimeout(() => setOk(false), 1500);
-    } else {
-      const d = res ? await res.json().catch(() => ({})) : {};
+    } catch (e) {
+      setBusy(false);
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       setErr(d.error || "Could not save");
     }
   }
@@ -87,21 +87,21 @@ function Members() {
   const alert = useAlert();
   const [members, setMembers] = useState<Member[]>([]);
   const load = () =>
-    fetch("/api/workspaces/members")
-      .then((r) => r.json())
+    api
+      .get(endpoints.workspaces.members.list)
+      .then((r) => r.data)
       .then((d) => Array.isArray(d) && setMembers(d));
   useEffect(() => {
     load();
   }, []);
   async function changeRole(m: Member, role: string) {
-    const res = await fetch("/api/workspaces/members", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ membershipId: m.membershipId, role }),
-    }).catch(() => null);
-    if (res && !res.ok) {
-      const d = await res.json().catch(() => ({}));
-      await alert({ title: "Couldn't change role", message: d.error || "Please try again." });
+    try {
+      await api.patch(endpoints.workspaces.members.list, { membershipId: m.membershipId, role });
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response) {
+        const d = e.response.data ?? {};
+        await alert({ title: "Couldn't change role", message: d.error || "Please try again." });
+      }
     }
     load();
   }
@@ -113,12 +113,13 @@ function Members() {
       destructive: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/workspaces/members?membershipId=${m.membershipId}`, {
-      method: "DELETE",
-    }).catch(() => null);
-    if (res && !res.ok) {
-      const d = await res.json().catch(() => ({}));
-      await alert({ title: "Couldn't remove member", message: d.error || "Please try again." });
+    try {
+      await api.delete(endpoints.workspaces.members.byMembershipId(m.membershipId));
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response) {
+        const d = e.response.data ?? {};
+        await alert({ title: "Couldn't remove member", message: d.error || "Please try again." });
+      }
     }
     load();
   }
@@ -165,8 +166,9 @@ function Invites() {
   const [copied, setCopied] = useState(false);
   const [err, setErr] = useState("");
   const load = () =>
-    fetch("/api/workspaces/invites")
-      .then((r) => r.json())
+    api
+      .get(endpoints.workspaces.invites.list)
+      .then((r) => r.data)
       .then((d) => Array.isArray(d) && setInvites(d));
   useEffect(() => {
     load();
@@ -176,25 +178,25 @@ function Invites() {
     setBusy(true);
     setErr("");
     setLink("");
-    const res = await fetch("/api/workspaces/invites", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    const d = await res.json().catch(() => ({}));
-    setBusy(false);
-    if (res.ok) {
-      setLink(d.inviteUrl);
+    try {
+      const { data } = await api.post(endpoints.workspaces.invites.list, { email, role });
+      setBusy(false);
+      setLink(data.inviteUrl);
       setEmail("");
       load();
-    } else setErr(d.error || "Failed");
+    } catch (e) {
+      setBusy(false);
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
+      setErr(d.error || "Failed");
+    }
   }
   async function revoke(id: string) {
-    const res = await fetch(`/api/workspaces/invites?id=${id}`, { method: "DELETE" }).catch(
-      () => null,
-    );
-    if (res && !res.ok)
-      await alert({ title: "Couldn't revoke invite", message: "Please try again." });
+    try {
+      await api.delete(endpoints.workspaces.invites.byId(id));
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response)
+        await alert({ title: "Couldn't revoke invite", message: "Please try again." });
+    }
     load();
   }
   return (
@@ -281,12 +283,12 @@ function Danger({ workspace, role }: { workspace: WS; role: string }) {
     if (!ok) return;
     setBusy(true);
     setErr("");
-    const res = await fetch(`/api/workspaces/${workspace.id}`, { method: "DELETE" });
-    const d = await res.json().catch(() => ({}));
-    if (res.ok) {
+    try {
+      await api.delete(endpoints.workspaces.byId(workspace.id));
       router.push("/");
       router.refresh();
-    } else {
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       setErr(d.error || "Failed");
       setBusy(false);
     }

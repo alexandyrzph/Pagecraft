@@ -1,3 +1,7 @@
+import axios from "axios";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
+
 export type UploadedAsset = {
   id: string;
   url: string;
@@ -6,16 +10,20 @@ export type UploadedAsset = {
   size: number;
 };
 
+type UploadErrorBody = { error?: string };
+
 /** Upload a single file to /api/upload and return its asset record. */
 export async function uploadFile(file: File): Promise<UploadedAsset> {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch("/api/upload", { method: "POST", body: fd });
-  if (!res.ok) {
-    const msg = await res.json().catch(() => ({}));
-    throw new Error(msg.error || "Upload failed");
+  try {
+    return (await api.post<UploadedAsset>(endpoints.upload, fd)).data;
+  } catch (e) {
+    if (axios.isAxiosError<UploadErrorBody>(e) && e.response) {
+      throw new Error(e.response.data?.error || "Upload failed");
+    }
+    throw e;
   }
-  return res.json();
 }
 
 export function formatBytes(n: number): string {

@@ -1,3 +1,5 @@
+import axios from "axios";
+import { externalApi } from "@/lib/api/endpoints";
 import { requireApiUser } from "@/lib/auth/auth";
 import { withRole } from "@/lib/api/api-handler";
 import { json, badRequest, error } from "@/lib/api/api-response";
@@ -52,24 +54,32 @@ async function callAnthropic(
 ): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      system,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!r.ok) throw new Error(`Anthropic ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  const data = await r.json();
-  return data?.content?.[0]?.text ?? "";
+  try {
+    const { data } = await axios.post(
+      externalApi.anthropic.messages,
+      {
+        model,
+        max_tokens: maxTokens,
+        temperature,
+        system,
+        messages: [{ role: "user", content: prompt }],
+      },
+      {
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+      },
+    );
+    return data?.content?.[0]?.text ?? "";
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      throw new Error(
+        `Anthropic ${e.response.status}: ${JSON.stringify(e.response.data).slice(0, 200)}`,
+      );
+    }
+    throw e;
+  }
 }
 
 async function callOpenAI(
@@ -79,25 +89,29 @@ async function callOpenAI(
   maxTokens: number,
   temperature: number,
 ): Promise<string> {
-  const r = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature,
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-  if (!r.ok) throw new Error(`OpenAI ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  const data = await r.json();
-  return data?.choices?.[0]?.message?.content ?? "";
+  try {
+    const { data } = await axios.post(
+      externalApi.openai.chatCompletions,
+      {
+        model,
+        temperature,
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: prompt },
+        ],
+      },
+      { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` } },
+    );
+    return data?.choices?.[0]?.message?.content ?? "";
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response) {
+      throw new Error(
+        `OpenAI ${e.response.status}: ${JSON.stringify(e.response.data).slice(0, 200)}`,
+      );
+    }
+    throw e;
+  }
 }
 
 async function callModel(

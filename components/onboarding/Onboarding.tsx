@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { DoodleBuild, DoodleConfetti, DoodleMagic, DoodlePublish, DoodleWave } from "./doodles";
 
 type Step = {
@@ -89,7 +91,7 @@ export function Onboarding({ name }: { name: string }) {
   async function finish() {
     setFinishing(true);
     try {
-      await fetch("/api/auth/onboard", { method: "POST" });
+      await api.post(endpoints.auth.onboard);
     } catch {
       /* ignore */
     }

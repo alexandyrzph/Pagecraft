@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { buildExportDocument } from "@/lib/blocks/export-html";
 import { designSystemCss } from "@/lib/design/design-system";
 import { useEditor } from "@/store/editor-store";
@@ -29,12 +31,12 @@ export function useEditorPersistence(opts: {
     const started = Date.now();
     try {
       const url = isSiteMode
-        ? `/api/site`
+        ? endpoints.site
         : isCollectionMode
-          ? `/api/collections/${s.pageId}`
+          ? endpoints.collections.byId(s.pageId)
           : isComponentMode
-            ? `/api/components/${s.pageId}`
-            : `/api/pages/${s.pageId}`;
+            ? endpoints.components.byId(s.pageId)
+            : endpoints.pages.byId(s.pageId);
       const payload = isSiteMode
         ? { [siteRegion ?? "header"]: s.tree }
         : isCollectionMode
@@ -42,11 +44,7 @@ export function useEditorPersistence(opts: {
           : isComponentMode
             ? { name: s.title, content: s.tree }
             : { title: s.title, content: s.tree, seo: s.seo, theme: s.theme };
-      await fetch(url, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      await api.put(url, payload);
       // keep the saving indicator visible long enough to read
       const elapsed = Date.now() - started;
       if (elapsed < 650) await new Promise((r) => setTimeout(r, 650 - elapsed));
@@ -61,19 +59,10 @@ export function useEditorPersistence(opts: {
     const s = useEditor.getState();
     if (!s.pageId) return;
     try {
-      const res = await fetch(`/api/pages/${s.pageId}/publish`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ published: true }),
-      });
-      const data = await res.json();
+      const data = (await api.post(endpoints.pages.publish(s.pageId), { published: true })).data;
       useEditor.getState().setPublished(!!data.published);
       // capture a restore point for each publish
-      void fetch(`/api/pages/${s.pageId}/versions`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ label: "Published" }),
-      });
+      void api.post(endpoints.pages.versions(s.pageId), { label: "Published" }).catch(() => {});
     } catch {
       /* ignore */
     }
@@ -83,12 +72,7 @@ export function useEditorPersistence(opts: {
     const s = useEditor.getState();
     if (!s.pageId) return;
     try {
-      const res = await fetch(`/api/pages/${s.pageId}/publish`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ published: false }),
-      });
-      const data = await res.json();
+      const data = (await api.post(endpoints.pages.publish(s.pageId), { published: false })).data;
       useEditor.getState().setPublished(!!data.published);
     } catch {
       /* ignore */

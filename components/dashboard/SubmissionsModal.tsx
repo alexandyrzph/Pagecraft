@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Download, Inbox, Loader2, X } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Table, THead, TH, TBody, TR, TD } from "@/components/ui/Table";
@@ -31,8 +33,9 @@ export function SubmissionsModal({
     if (!page) return;
     const pageId = page.id;
     let active = true;
-    fetch(`/api/submissions?pageId=${pageId}`)
-      .then((r) => r.json())
+    api
+      .get(endpoints.submissions.byPage(pageId))
+      .then((r) => r.data)
       .then((d) => {
         if (active) setData({ pageId, subs: Array.isArray(d) ? d : [] });
       })

@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Blocks, Check, Copy, Loader2, Lock, Mail, User } from "lucide-react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { AuthBackground } from "@/components/auth/AuthBackground";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
 
@@ -74,17 +77,7 @@ export function AuthScreen({
             : mode === "forgot"
               ? { email }
               : { token, password };
-      const res = await fetch(`/api/auth/${mode}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error || "Something went wrong. Please try again.");
-        setPending(false);
-        return;
-      }
+      const { data } = await api.post(endpoints.auth.mode(mode), payload);
       if (mode === "forgot") {
         setResetUrl(data.resetUrl || "sent");
         setPending(false);
@@ -93,7 +86,13 @@ export function AuthScreen({
       const dest = data.onboarded ? next || "/" : "/onboarding";
       router.replace(dest);
       router.refresh();
-    } catch {
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response) {
+        const data = e.response.data ?? {};
+        setError(data.error || "Something went wrong. Please try again.");
+        setPending(false);
+        return;
+      }
       setError("Network error. Please try again.");
       setPending(false);
     }

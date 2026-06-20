@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 
 type ActivityEvent = {
   id: string;
@@ -68,8 +70,9 @@ export default function ActivityPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/activity")
-      .then((r) => r.json())
+    api
+      .get(endpoints.activity)
+      .then((r) => r.data)
       .then((d) => Array.isArray(d) && setEvents(d))
       .catch(() => {})
       .finally(() => setLoading(false));

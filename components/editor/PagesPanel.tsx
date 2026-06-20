@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { FileText, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useEditor } from "@/store/editor-store";
 import { useEditorActions } from "./editor-actions";
 
@@ -16,8 +18,9 @@ export function PagesPanel() {
   const [creating, setCreating] = useState(false);
 
   function load() {
-    fetch("/api/pages")
-      .then((r) => r.json())
+    api
+      .get(endpoints.pages.list)
+      .then((r) => r.data)
       .then((d) => setPages(Array.isArray(d) ? d : []))
       .catch(() => setPages([]))
       .finally(() => setLoading(false));
@@ -28,12 +31,10 @@ export function PagesPanel() {
     actions.confirmLeave(async () => {
       setCreating(true);
       try {
-        const res = await fetch("/api/pages", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ title: "Untitled Page", content: [] }),
+        const { data: p } = await api.post(endpoints.pages.list, {
+          title: "Untitled Page",
+          content: [],
         });
-        const p = await res.json();
         await actions.loadPageInPlace(p.id);
         load();
       } finally {

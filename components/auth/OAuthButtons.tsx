@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { Provider } from "@/lib/auth/oauth";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 
 function GoogleGlyph() {
   return (
@@ -52,7 +54,7 @@ export function OAuthButtonRow({ providers, next }: { providers: Provider[]; nex
         return (
           <a
             key={p}
-            href={`/api/auth/oauth/${p}${q}`}
+            href={`${endpoints.auth.oauth(p)}${q}`}
             className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-zinc-300 bg-white py-2.5 text-sm font-semibold text-zinc-800 shadow-xs transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
           >
             <Glyph /> {LABEL[p]}
@@ -72,8 +74,9 @@ export function OAuthButtonRow({ providers, next }: { providers: Provider[]; nex
 export function OAuthButtons({ next }: { next?: string }) {
   const [providers, setProviders] = useState<Provider[]>([]);
   useEffect(() => {
-    fetch("/api/auth/providers")
-      .then((r) => r.json())
+    api
+      .get(endpoints.auth.providers)
+      .then((r) => r.data)
       .then((d) =>
         setProviders(
           Array.isArray(d.providers)

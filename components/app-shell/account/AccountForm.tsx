@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Check } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button, TextField } from "@/components/ui";
 
 function Card({
@@ -39,18 +42,15 @@ export function AccountForm({ initialName, email }: { initialName: string; email
     setSavingName(true);
     setNameOk(false);
     setNameErr("");
-    const res = await fetch("/api/account", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name }),
-    }).catch(() => null);
-    setSavingName(false);
-    if (res && res.ok) {
+    try {
+      await api.patch(endpoints.account.root, { name });
+      setSavingName(false);
       setNameOk(true);
       router.refresh();
       setTimeout(() => setNameOk(false), 1500);
-    } else {
-      const d = res ? await res.json().catch(() => ({})) : {};
+    } catch (e) {
+      setSavingName(false);
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       setNameErr(d.error || "Could not save");
     }
   }
@@ -58,21 +58,16 @@ export function AccountForm({ initialName, email }: { initialName: string; email
     e.preventDefault();
     setPwBusy(true);
     setPwMsg(null);
-    const res = await fetch("/api/account/password", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ current: cur, next }),
-    });
-    const d = await res.json().catch(() => ({}));
-    setPwBusy(false);
-    setPwMsg(
-      res.ok
-        ? { ok: true, text: "Password updated. Other sessions were signed out." }
-        : { ok: false, text: d.error || "Failed" },
-    );
-    if (res.ok) {
+    try {
+      await api.post(endpoints.account.password, { current: cur, next });
+      setPwBusy(false);
+      setPwMsg({ ok: true, text: "Password updated. Other sessions were signed out." });
       setCur("");
       setNext("");
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
+      setPwBusy(false);
+      setPwMsg({ ok: false, text: d.error || "Failed" });
     }
   }
 

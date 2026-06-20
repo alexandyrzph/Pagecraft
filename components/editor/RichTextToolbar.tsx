@@ -14,6 +14,8 @@ import {
   Unlink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useRichText } from "@/store/richtext";
 import { useIframe } from "./iframe-context";
 
@@ -38,8 +40,9 @@ export function RichTextToolbar() {
   void tick;
 
   useEffect(() => {
-    fetch("/api/ai")
-      .then((r) => r.json())
+    api
+      .get(endpoints.ai)
+      .then((r) => r.data)
       .then((d) => setHasAi(Array.isArray(d.providers) && d.providers.length > 0))
       .catch(() => {});
   }, []);
@@ -75,13 +78,8 @@ export function RichTextToolbar() {
     if (!text.trim() || aiBusy) return;
     setAiBusy(true);
     try {
-      const r = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode: "rewrite", action, text }),
-      });
-      const d = await r.json();
-      if (r.ok && d.text) {
+      const d = (await api.post(endpoints.ai, { mode: "rewrite", action, text })).data;
+      if (d.text) {
         if (hasSel) editor.chain().focus().insertContent(d.text).run();
         else editor.chain().focus().setContent(d.text).run();
       }

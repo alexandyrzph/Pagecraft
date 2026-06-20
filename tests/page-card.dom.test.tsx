@@ -1,6 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PageCard, type DashboardPage } from "@/components/dashboard/PageCard";
+
+vi.mock("@/lib/api/client", () => ({
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
 
 const base: DashboardPage = {
   id: "p1",
@@ -15,13 +19,6 @@ const base: DashboardPage = {
 };
 
 describe("PageCard", () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.reject(new Error("no net"))),
-    );
-  });
-
   it("shows a Live pill and a view-live link for a published page", () => {
     const { container } = render(
       <PageCard

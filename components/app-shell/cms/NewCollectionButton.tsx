@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 
 export function NewCollectionButton() {
@@ -10,16 +12,15 @@ export function NewCollectionButton() {
   const [busy, setBusy] = useState(false);
   async function create() {
     setBusy(true);
-    const res = await fetch("/api/collections", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "New collection" }),
-    });
-    const c = await res.json().catch(() => ({}));
-    if (res.ok && c?.id) {
-      router.push(`/cms/${c.id}`);
-      router.refresh();
-    } else {
+    try {
+      const { data: c } = await api.post(endpoints.collections.list, { name: "New collection" });
+      if (c?.id) {
+        router.push(`/cms/${c.id}`);
+        router.refresh();
+      } else {
+        setBusy(false);
+      }
+    } catch {
       setBusy(false);
     }
   }

@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Loader2 } from "lucide-react";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 
 export function InviteAccept({ token }: { token: string }) {
@@ -17,21 +20,21 @@ export function InviteAccept({ token }: { token: string }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    fetch(`/api/invites/${token}`)
-      .then((r) => r.json())
-      .then(setState)
+    api
+      .get(endpoints.invites.byToken(token))
+      .then((r) => setState(r.data))
       .catch(() => setState({ valid: false }));
   }, [token]);
 
   async function accept() {
     setBusy(true);
     setErr("");
-    const res = await fetch(`/api/invites/${token}`, { method: "POST" });
-    const d = await res.json().catch(() => ({}));
-    if (res.ok) {
+    try {
+      await api.post(endpoints.invites.byToken(token));
       router.push("/");
       router.refresh();
-    } else {
+    } catch (e) {
+      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
       setErr(d.error || "Could not accept");
       setBusy(false);
     }

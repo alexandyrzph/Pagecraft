@@ -6,6 +6,8 @@ import { Database, ExternalLink, Loader2, Pencil, Plus, Trash2, X } from "lucide
 import { Modal } from "./Modal";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/dialog-provider";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import type { CmsFieldType, CollectionField, CollectionItem } from "@/lib/types";
 import { blankItemData, CMS_FIELD_TYPES, uniqueFieldKey } from "@/lib/cms/cms";
@@ -52,11 +54,7 @@ export function CmsManagerModal({
   async function patchCollection(body: Record<string, unknown>) {
     setBusy(true);
     try {
-      await fetch(`/api/collections/${collectionId}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      await api.put(endpoints.collections.byId(collectionId), body);
       await refresh();
     } finally {
       setBusy(false);
@@ -79,12 +77,9 @@ export function CmsManagerModal({
   async function addItem() {
     setBusy(true);
     try {
-      const r = await fetch(`/api/collections/${collectionId}/items`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: blankItemData(fields) }),
+      const { data: item } = await api.post(endpoints.collections.items(collectionId), {
+        data: blankItemData(fields),
       });
-      const item = await r.json();
       await refresh();
       setTab("items");
       setEditing({ id: item.id, data: item.data ?? {} });
@@ -97,10 +92,8 @@ export function CmsManagerModal({
     if (!editing) return;
     setBusy(true);
     try {
-      await fetch(`/api/collections/${collectionId}/items/${editing.id}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: editing.data }),
+      await api.put(endpoints.collections.item(collectionId, editing.id), {
+        data: editing.data,
       });
       await refresh();
       setEditing(null);
@@ -112,7 +105,7 @@ export function CmsManagerModal({
   async function deleteItem(itemId: string) {
     setBusy(true);
     try {
-      await fetch(`/api/collections/${collectionId}/items/${itemId}`, { method: "DELETE" });
+      await api.delete(endpoints.collections.item(collectionId, itemId));
       await refresh();
       if (editing?.id === itemId) setEditing(null);
     } finally {
@@ -129,7 +122,7 @@ export function CmsManagerModal({
     });
     if (!ok) return;
     setBusy(true);
-    await fetch(`/api/collections/${collectionId}`, { method: "DELETE" });
+    await api.delete(endpoints.collections.byId(collectionId));
     await refresh();
     onClose();
   }

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Component as ComponentIcon, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
 import { useConfirm } from "@/components/ui/dialog-provider";
 import { useEditor } from "@/store/editor-store";
 import { useComponents, type ComponentItem } from "./components-context";
@@ -29,7 +31,7 @@ function CompItem({ c }: { c: ComponentItem }) {
       destructive: true,
     });
     if (!ok) return;
-    await fetch(`/api/components/${c.id}`, { method: "DELETE" });
+    await api.delete(endpoints.components.byId(c.id));
     await components.refresh();
   }
 
