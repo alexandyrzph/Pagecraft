@@ -1,4 +1,13 @@
-import { Heading, Type, MousePointerClick, Image as ImageIcon, Star, Video as VideoIcon, List as ListIcon, Quote as QuoteIcon } from "lucide-react";
+import {
+  Heading,
+  Type,
+  MousePointerClick,
+  Image as ImageIcon,
+  Star,
+  Video as VideoIcon,
+  List as ListIcon,
+  Quote as QuoteIcon,
+} from "lucide-react";
 import type { BlockDefinition } from "@/lib/blocks/registry-types";
 import {
   HeadingBlock,
@@ -34,7 +43,10 @@ export const basicBlocks: BlockDefinition[] = [
         key: "level",
         label: "Tag",
         type: "select",
-        options: ["h1", "h2", "h3", "h4", "h5", "h6"].map((v) => ({ label: v.toUpperCase(), value: v })),
+        options: ["h1", "h2", "h3", "h4", "h5", "h6"].map((v) => ({
+          label: v.toUpperCase(),
+          value: v,
+        })),
       },
     ],
     styleGroups: ["typography", "spacing"],

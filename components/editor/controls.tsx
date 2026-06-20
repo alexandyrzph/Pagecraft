@@ -1,7 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Plus, Trash2, ChevronDown, Upload, Images, Loader2, FileUp, Paperclip, MoveHorizontal } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ChevronDown,
+  Upload,
+  Images,
+  Loader2,
+  FileUp,
+  Paperclip,
+  MoveHorizontal,
+} from "lucide-react";
 import { ICON_NAMES } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { DynamicIcon } from "@/components/blocks/shared";
@@ -27,24 +37,14 @@ const inputCls =
  */
 const FieldLabelContext = createContext<string | undefined>(undefined);
 
-export function Field({
-  label,
-  children,
-}: {
-  label?: string;
-  children: React.ReactNode;
-}) {
+export function Field({ label, children }: { label?: string; children: React.ReactNode }) {
   // A plain <div>: the RAC controls render their own hidden native <select>/
   // <input>, and a wrapping <label> would mis-associate with those hidden
   // elements. The label text is exposed to children via context instead.
   return (
     <FieldLabelContext.Provider value={label}>
       <div className="block">
-        {label && (
-          <span className="mb-1 block text-[11px] font-medium text-fg-muted">
-            {label}
-          </span>
-        )}
+        {label && <span className="mb-1 block text-[11px] font-medium text-fg-muted">{label}</span>}
         {children}
       </div>
     </FieldLabelContext.Provider>
@@ -172,8 +172,12 @@ export function ColorInput({
   hideTokens?: boolean;
 }) {
   const tokens = useDesignSystem((s) => s.colors);
-  const [recent, setRecent] = useState<string[]>([]);
-  useEffect(() => setRecent(getRecent()), [value]);
+  const [recent, setRecent] = useState<string[]>(getRecent);
+  const [prevValue, setPrevValue] = useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setRecent(getRecent());
+  }
 
   // A value can be a literal hex or a `var(--pc-color-<id>)` token reference.
   const linkedId = String(value ?? "").match(COLOR_VAR_RE)?.[1];
@@ -194,7 +198,10 @@ export function ColorInput({
             backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
           }}
         >
-          <span className="absolute inset-0" style={{ backgroundColor: display || "transparent" }} />
+          <span
+            className="absolute inset-0"
+            style={{ backgroundColor: display || "transparent" }}
+          />
           <input
             type="color"
             value={safe}
@@ -206,7 +213,10 @@ export function ColorInput({
         {linked ? (
           <span className={cn(inputCls, "flex items-center justify-between gap-2")}>
             <span className="flex items-center gap-1.5 truncate">
-              <span className="h-3 w-3 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: linked.value }} />
+              <span
+                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
+                style={{ backgroundColor: linked.value }}
+              />
               <span className="truncate text-[13px] font-medium text-zinc-700">{linked.name}</span>
             </span>
             <button
@@ -241,7 +251,9 @@ export function ColorInput({
               }}
               className={cn(
                 "h-5 w-5 rounded-md border shadow-xs transition-transform hover:scale-110",
-                value?.toLowerCase() === c.toLowerCase() ? "border-indigo-500 ring-1 ring-indigo-300" : "border-zinc-200"
+                value?.toLowerCase() === c.toLowerCase()
+                  ? "border-indigo-500 ring-1 ring-indigo-300"
+                  : "border-zinc-200",
               )}
               style={{ backgroundColor: c }}
             />
@@ -250,7 +262,9 @@ export function ColorInput({
       )}
       {!hideTokens && tokens.length > 0 && (
         <div>
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Color styles</span>
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+            Color styles
+          </span>
           <div className="flex flex-wrap gap-1">
             {tokens.map((t) => (
               <button
@@ -260,7 +274,9 @@ export function ColorInput({
                 onClick={() => onChange(`var(--pc-color-${t.id})`)}
                 className={cn(
                   "h-5 w-5 rounded-md border shadow-xs transition-transform hover:scale-110",
-                  linked?.id === t.id ? "border-indigo-500 ring-1 ring-indigo-300" : "border-zinc-200"
+                  linked?.id === t.id
+                    ? "border-indigo-500 ring-1 ring-indigo-300"
+                    : "border-zinc-200",
                 )}
                 style={{ backgroundColor: t.value }}
               />
@@ -294,13 +310,15 @@ export function UnitInput({
 }) {
   const fallback = units.find((u) => u !== "auto") || "px";
   const { num, unit } = parseUnit(value, fallback);
-  const emit = (n: string, u: string) => onChange(u === "auto" ? "auto" : n === "" ? "" : `${n}${u}`);
+  const emit = (n: string, u: string) =>
+    onChange(u === "auto" ? "auto" : n === "" ? "" : `${n}${u}`);
 
   const scrub = (e: React.PointerEvent) => {
     const u = unit === "auto" ? fallback : unit;
     const startX = e.clientX;
     const startV = parseFloat(num) || 0;
-    const onMove = (ev: PointerEvent) => emit(String(Math.round(startV + (ev.clientX - startX))), u);
+    const onMove = (ev: PointerEvent) =>
+      emit(String(Math.round(startV + (ev.clientX - startX))), u);
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -334,7 +352,9 @@ export function UnitInput({
         className="cursor-pointer appearance-none bg-transparent py-1.5 pl-1 pr-2 text-xs text-zinc-500 outline-none"
       >
         {units.map((u) => (
-          <option key={u} value={u}>{u}</option>
+          <option key={u} value={u}>
+            {u}
+          </option>
         ))}
       </select>
     </div>
@@ -409,32 +429,21 @@ export function Segmented({
   );
 }
 
-export function Toggle({
-  value,
-  onChange,
-}: {
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
+export function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   const label = useContext(FieldLabelContext);
   return <Switch aria-label={label ?? "Toggle"} isSelected={value} onChange={onChange} />;
 }
 
-export function ImageInput({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function ImageInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [loaded, setLoaded] = useState(false);
   const [picker, setPicker] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { uploading, upload } = useUpload(onChange);
   useEffect(() => {
-    setLoaded(false);
-    if (ref.current?.complete) setLoaded(true);
+    const img = ref.current;
+    if (img) setLoaded(img.complete);
+    else setLoaded(false);
   }, [value]);
 
   return (
@@ -457,7 +466,13 @@ export function ImageInput({
           <Images size={13} /> Library
         </button>
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => upload(e.target.files?.[0])}
+      />
       {value && (
         <div className="relative h-20 w-full overflow-hidden rounded-md border border-zinc-200">
           {!loaded && <span className="pc-skeleton absolute inset-0" />}
@@ -470,23 +485,22 @@ export function ImageInput({
             onError={() => setLoaded(true)}
             className={cn(
               "h-full w-full object-cover transition-opacity duration-300",
-              loaded ? "opacity-100" : "opacity-0"
+              loaded ? "opacity-100" : "opacity-0",
             )}
           />
         </div>
       )}
-      <AssetPicker open={picker} kind="image" onSelect={onChange} onClose={() => setPicker(false)} />
+      <AssetPicker
+        open={picker}
+        kind="image"
+        onSelect={onChange}
+        onClose={() => setPicker(false)}
+      />
     </div>
   );
 }
 
-export function FileInput({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function FileInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [picker, setPicker] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { uploading, upload } = useUpload(onChange);
@@ -499,7 +513,11 @@ export function FileInput({
         <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-2 text-xs text-zinc-600">
           <Paperclip size={13} className="shrink-0 text-zinc-400" />
           <span className="min-w-0 flex-1 truncate">{name}</span>
-          <button type="button" onClick={() => onChange("")} className="shrink-0 rounded p-0.5 text-zinc-400 hover:bg-red-50 hover:text-red-500">
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="shrink-0 rounded p-0.5 text-zinc-400 hover:bg-red-50 hover:text-red-500"
+          >
             <Trash2 size={12} />
           </button>
         </div>
@@ -511,7 +529,8 @@ export function FileInput({
           disabled={uploading}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-600 shadow-xs transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-60"
         >
-          {uploading ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />} Upload file
+          {uploading ? <Loader2 size={13} className="animate-spin" /> : <FileUp size={13} />} Upload
+          file
         </button>
         <button
           type="button"
@@ -521,19 +540,18 @@ export function FileInput({
           <Images size={13} />
         </button>
       </div>
-      <input ref={fileRef} type="file" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+      <input
+        ref={fileRef}
+        type="file"
+        className="hidden"
+        onChange={(e) => upload(e.target.files?.[0])}
+      />
       <AssetPicker open={picker} kind="all" onSelect={onChange} onClose={() => setPicker(false)} />
     </div>
   );
 }
 
-export function IconPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+export function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -563,7 +581,7 @@ export function IconPicker({
                 }}
                 className={cn(
                   "flex items-center justify-center rounded-md p-1.5 text-zinc-600 hover:bg-indigo-50 hover:text-indigo-600",
-                  value === name && "bg-indigo-100 text-indigo-600"
+                  value === name && "bg-indigo-100 text-indigo-600",
                 )}
               >
                 <DynamicIcon name={name} size={16} />

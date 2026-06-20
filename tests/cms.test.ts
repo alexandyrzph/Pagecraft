@@ -96,7 +96,12 @@ describe("resolveCard", () => {
   };
 
   it("maps bound fields and drops empty values", () => {
-    const card = resolveCard(item, { title: "title", image: "cover", text: "excerpt", link: "link" });
+    const card = resolveCard(item, {
+      title: "title",
+      image: "cover",
+      text: "excerpt",
+      link: "link",
+    });
     expect(card).toEqual({
       id: "i1",
       title: "Hello",

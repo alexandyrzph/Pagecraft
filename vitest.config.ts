@@ -32,10 +32,7 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
-          include: [
-            "tests/**/*.dom.test.tsx",
-            "components/**/__tests__/*.test.tsx",
-          ],
+          include: ["tests/**/*.dom.test.tsx", "components/**/__tests__/*.test.tsx"],
           setupFiles: ["tests/setup-dom.ts"],
         },
       },

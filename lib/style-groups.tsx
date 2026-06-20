@@ -43,7 +43,12 @@ export type StyleFieldDef =
   | { control: "text"; label: string; k: K; placeholder?: string }
   | { control: "color"; label: string; k: K }
   | { control: "select"; label: string; k: K; options: SelectOption[] }
-  | { control: "segment"; label: string; k: K; options: { value: string; label: string; icon?: ReactNode }[] }
+  | {
+      control: "segment";
+      label: string;
+      k: K;
+      options: { value: string; label: string; icon?: ReactNode }[];
+    }
   | { control: "spacing"; label: string; keys: [K, K, K, K] }
   | { control: "opacity" };
 
@@ -60,22 +65,61 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
   typography: {
     title: "Typography",
     rows: [
-      [{ control: "unit", label: "Font size", k: "fontSize", units: ["px", "rem", "em"], placeholder: "16" }],
+      [
+        {
+          control: "unit",
+          label: "Font size",
+          k: "fontSize",
+          units: ["px", "rem", "em"],
+          placeholder: "16",
+        },
+      ],
       [{ control: "select", label: "Weight", k: "fontWeight", options: FONT_WEIGHTS }],
       [{ control: "color", label: "Text color", k: "color" }],
       [
-        { control: "unit", label: "Line height", k: "lineHeight", units: ["", "px", "rem"], placeholder: "1.5" },
-        { control: "unit", label: "Letter spacing", k: "letterSpacing", units: ["px", "em"], placeholder: "0" },
+        {
+          control: "unit",
+          label: "Line height",
+          k: "lineHeight",
+          units: ["", "px", "rem"],
+          placeholder: "1.5",
+        },
+        {
+          control: "unit",
+          label: "Letter spacing",
+          k: "letterSpacing",
+          units: ["px", "em"],
+          placeholder: "0",
+        },
       ],
       [{ control: "segment", label: "Align", k: "textAlign", options: ALIGN_SEG }],
-      [{ control: "select", label: "Transform", k: "textTransform", options: opt("none", "uppercase", "capitalize", "lowercase") }],
+      [
+        {
+          control: "select",
+          label: "Transform",
+          k: "textTransform",
+          options: opt("none", "uppercase", "capitalize", "lowercase"),
+        },
+      ],
     ],
   },
   spacing: {
     title: "Spacing",
     rows: [
-      [{ control: "spacing", label: "Padding", keys: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] }],
-      [{ control: "spacing", label: "Margin", keys: ["marginTop", "marginRight", "marginBottom", "marginLeft"] }],
+      [
+        {
+          control: "spacing",
+          label: "Padding",
+          keys: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+        },
+      ],
+      [
+        {
+          control: "spacing",
+          label: "Margin",
+          keys: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+        },
+      ],
     ],
   },
   background: {
@@ -83,17 +127,37 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
     defaultOpen: false,
     rows: [
       [{ control: "color", label: "Background color", k: "backgroundColor" }],
-      [{ control: "text", label: "Background image / gradient", k: "backgroundImage", placeholder: "url(…) or linear-gradient(…)" }],
+      [
+        {
+          control: "text",
+          label: "Background image / gradient",
+          k: "backgroundImage",
+          placeholder: "url(…) or linear-gradient(…)",
+        },
+      ],
     ],
   },
   border: {
     title: "Border",
     defaultOpen: false,
     rows: [
-      [{ control: "unit", label: "Radius", k: "borderRadius", units: ["px", "%", "rem"], placeholder: "12" }],
+      [
+        {
+          control: "unit",
+          label: "Radius",
+          k: "borderRadius",
+          units: ["px", "%", "rem"],
+          placeholder: "12",
+        },
+      ],
       [
         { control: "unit", label: "Width", k: "borderWidth", units: ["px"], placeholder: "1" },
-        { control: "select", label: "Style", k: "borderStyle", options: opt("solid", "dashed", "dotted", "none") },
+        {
+          control: "select",
+          label: "Style",
+          k: "borderStyle",
+          options: opt("solid", "dashed", "dotted", "none"),
+        },
       ],
       [{ control: "color", label: "Border color", k: "borderColor" }],
     ],
@@ -111,13 +175,42 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
     defaultOpen: false,
     rows: [
       [
-        { control: "unit", label: "Max width", k: "maxWidth", units: ["px", "%", "rem"], placeholder: "auto" },
-        { control: "unit", label: "Min height", k: "minHeight", units: ["px", "vh", "rem", "auto"], placeholder: "auto" },
+        {
+          control: "unit",
+          label: "Max width",
+          k: "maxWidth",
+          units: ["px", "%", "rem"],
+          placeholder: "auto",
+        },
+        {
+          control: "unit",
+          label: "Min height",
+          k: "minHeight",
+          units: ["px", "vh", "rem", "auto"],
+          placeholder: "auto",
+        },
       ],
-      [{ control: "select", label: "Display", k: "display", options: opt("block", "flex", "grid", "inline-block", "none") }],
       [
-        { control: "select", label: "Align items", k: "alignItems", options: opt("flex-start", "center", "flex-end", "stretch") },
-        { control: "select", label: "Justify", k: "justifyContent", options: opt("flex-start", "center", "flex-end", "space-between", "space-around") },
+        {
+          control: "select",
+          label: "Display",
+          k: "display",
+          options: opt("block", "flex", "grid", "inline-block", "none"),
+        },
+      ],
+      [
+        {
+          control: "select",
+          label: "Align items",
+          k: "alignItems",
+          options: opt("flex-start", "center", "flex-end", "stretch"),
+        },
+        {
+          control: "select",
+          label: "Justify",
+          k: "justifyContent",
+          options: opt("flex-start", "center", "flex-end", "space-between", "space-around"),
+        },
       ],
       [{ control: "unit", label: "Gap", k: "gap", units: ["px", "rem"], placeholder: "16" }],
     ],

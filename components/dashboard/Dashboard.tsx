@@ -45,12 +45,14 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
       .catch(() => {});
   }, []);
 
-  // Open the new-page modal when ?new=1 is in the URL (e.g. from sidebar "New" button)
+  const newParam = searchParams.get("new");
+  const [seenNewParam, setSeenNewParam] = useState<string | null | undefined>(undefined);
+  if (newParam !== seenNewParam) {
+    setSeenNewParam(newParam);
+    if (newParam === "1") setModal(true);
+  }
   useEffect(() => {
-    if (searchParams.get("new") === "1") {
-      setModal(true);
-      router.replace("/");
-    }
+    if (searchParams.get("new") === "1") router.replace("/");
   }, [searchParams, router]);
 
   async function generatePage(prompt: string): Promise<string | null> {
@@ -62,7 +64,8 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
     const d = await r.json();
     if (!r.ok) throw new Error(d.error || "Generation failed");
     const blocks = d.blocks ?? [];
-    const titled = blocks.find((b: any) => b?.props?.title)?.props?.title;
+    const titled = blocks.find((b: { props?: { title?: string } }) => b?.props?.title)?.props
+      ?.title;
     const title = (titled || prompt).toString().slice(0, 60);
     const res = await fetch("/api/pages", {
       method: "POST",
@@ -125,9 +128,12 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
               <span>/</span>
               <span className="text-[#4b5563]">Pages</span>
             </div>
-            <h1 className="text-[32px] font-bold leading-none tracking-tight text-[#111827]">Your pages</h1>
+            <h1 className="text-[32px] font-bold leading-none tracking-tight text-[#111827]">
+              Your pages
+            </h1>
             <p className="mt-2.5 text-[13.5px] text-[#6b7280]">
-              {pages.length} {pages.length === 1 ? "page" : "pages"} · {liveCount} live · create, edit and publish in one click
+              {pages.length} {pages.length === 1 ? "page" : "pages"} · {liveCount} live · create,
+              edit and publish in one click
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -175,7 +181,16 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
             {filtered.length === 0 ? (
               <div className="py-20 text-center">
                 <p className="text-[15px] font-semibold text-[#111827]">No pages match “{query}”</p>
-                <Button variant="link" onPress={() => { setQuery(""); setFilter("all"); }} className="mt-2 text-[13.5px]">Clear filters</Button>
+                <Button
+                  variant="link"
+                  onPress={() => {
+                    setQuery("");
+                    setFilter("all");
+                  }}
+                  className="mt-2 text-[13.5px]"
+                >
+                  Clear filters
+                </Button>
               </div>
             ) : (
               <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(290px,1fr))]">
@@ -187,7 +202,9 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition-transform group-hover:scale-110">
                     <Plus className="h-6 w-6 text-slate-400 transition-colors group-hover:text-indigo-600" />
                   </div>
-                  <span className="text-sm font-medium text-slate-600 transition-colors group-hover:text-slate-900">New page</span>
+                  <span className="text-sm font-medium text-slate-600 transition-colors group-hover:text-slate-900">
+                    New page
+                  </span>
                 </button>
                 {filtered.map((p, i) => (
                   <PageCard
@@ -205,9 +222,19 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
         )}
       </main>
 
-      <TemplateModal open={modal} creating={creating} onClose={() => !creating && setModal(false)} onPick={create} />
+      <TemplateModal
+        open={modal}
+        creating={creating}
+        onClose={() => !creating && setModal(false)}
+        onPick={create}
+      />
 
-      <AiPageModal open={aiModal} onClose={() => setAiModal(false)} onGenerate={generatePage} onDone={(id) => router.push(`/editor/${id}`)} />
+      <AiPageModal
+        open={aiModal}
+        onClose={() => setAiModal(false)}
+        onGenerate={generatePage}
+        onDone={(id) => router.push(`/editor/${id}`)}
+      />
 
       <SubmissionsModal page={inbox} onClose={() => setInbox(null)} />
     </div>
@@ -253,46 +280,64 @@ function AiPageModal({
   }
 
   return (
-    <Modal open={open} onClose={() => !busy && onClose()} align="top" dismissible={!busy} className="max-w-lg overflow-hidden">
-        <div className="flex items-center gap-2.5 border-b border-[#e8eaed] bg-white px-5 py-3.5">
-          <Sparkles size={18} className="text-indigo-600" />
-          <div className="flex-1">
-            <h2 className="text-sm font-bold tracking-tight text-[#111827]">Generate a page with AI</h2>
-            <p className="text-[11px] text-zinc-500">Describe your page — AI builds a full draft you can edit.</p>
-          </div>
-          <Button variant="ghost" size="icon" aria-label="Close" onPress={() => !busy && onClose()}><X size={18} /></Button>
+    <Modal
+      open={open}
+      onClose={() => !busy && onClose()}
+      align="top"
+      dismissible={!busy}
+      className="max-w-lg overflow-hidden"
+    >
+      <div className="flex items-center gap-2.5 border-b border-[#e8eaed] bg-white px-5 py-3.5">
+        <Sparkles size={18} className="text-indigo-600" />
+        <div className="flex-1">
+          <h2 className="text-sm font-bold tracking-tight text-[#111827]">
+            Generate a page with AI
+          </h2>
+          <p className="text-[11px] text-zinc-500">
+            Describe your page — AI builds a full draft you can edit.
+          </p>
         </div>
-        <div className="p-5">
-          <textarea
-            autoFocus
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
-            }}
-            rows={3}
-            placeholder="e.g. A landing page for a meal-planning app with pricing and testimonials"
-            className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-3.5 py-3 text-sm leading-relaxed text-zinc-800 shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
-          />
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {AI_EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => setPrompt(ex)}
-                className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-          {error && <p className="mt-2.5 text-xs text-red-500">{error}</p>}
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-[11px] text-zinc-400">⌘↵ to generate</span>
-            <Button variant="neutral" onPress={run} isDisabled={!prompt.trim()} isLoading={busy} leadingIcon={<Sparkles size={15} />}>
-              {busy ? "Generating page…" : "Generate page"}
-            </Button>
-          </div>
+        <Button variant="ghost" size="icon" aria-label="Close" onPress={() => !busy && onClose()}>
+          <X size={18} />
+        </Button>
+      </div>
+      <div className="p-5">
+        <textarea
+          autoFocus
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
+          }}
+          rows={3}
+          placeholder="e.g. A landing page for a meal-planning app with pricing and testimonials"
+          className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-3.5 py-3 text-sm leading-relaxed text-zinc-800 shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+        />
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {AI_EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              onClick={() => setPrompt(ex)}
+              className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+            >
+              {ex}
+            </button>
+          ))}
         </div>
+        {error && <p className="mt-2.5 text-xs text-red-500">{error}</p>}
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-[11px] text-zinc-400">⌘↵ to generate</span>
+          <Button
+            variant="neutral"
+            onPress={run}
+            isDisabled={!prompt.trim()}
+            isLoading={busy}
+            leadingIcon={<Sparkles size={15} />}
+          >
+            {busy ? "Generating page…" : "Generate page"}
+          </Button>
+        </div>
+      </div>
     </Modal>
   );
 }
@@ -341,10 +386,14 @@ function TemplateModal({
     <Modal open={open} onClose={onClose} dismissible={!creating} className="max-w-3xl p-6">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-900">Choose a starting point</h2>
+          <h2 className="text-lg font-bold tracking-tight text-zinc-900">
+            Choose a starting point
+          </h2>
           <p className="text-sm text-zinc-500">Pick a template or start from scratch.</p>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}><X size={18} /></Button>
+        <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}>
+          <X size={18} />
+        </Button>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {built.map(({ template: t, blocks }) => (
@@ -359,7 +408,9 @@ function TemplateModal({
           >
             <TemplatePreview blocks={blocks} />
             <div className="flex flex-col gap-1 p-4 transition-colors group-hover:bg-indigo-50/40">
-              <span className="font-semibold tracking-tight text-zinc-900 group-hover:text-indigo-700">{t.name}</span>
+              <span className="font-semibold tracking-tight text-zinc-900 group-hover:text-indigo-700">
+                {t.name}
+              </span>
               <span className="text-xs leading-snug text-zinc-500">{t.description}</span>
             </div>
             <button
@@ -380,4 +431,3 @@ function TemplateModal({
     </Modal>
   );
 }
-

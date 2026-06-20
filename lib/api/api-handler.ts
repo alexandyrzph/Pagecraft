@@ -1,4 +1,9 @@
-import { requireApiRole, requireApiWorkspace, type Role, type WorkspaceCtx } from "@/lib/auth/workspace";
+import {
+  requireApiRole,
+  requireApiWorkspace,
+  type Role,
+  type WorkspaceCtx,
+} from "@/lib/auth/workspace";
 import { authzTotal } from "@/lib/observability";
 
 type Guarded = WorkspaceCtx | { response: Response };

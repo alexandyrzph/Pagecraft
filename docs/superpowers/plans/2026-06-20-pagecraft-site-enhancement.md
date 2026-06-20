@@ -21,6 +21,7 @@
 ## File Structure (created/modified in `~/Desktop/projects/pagecraft-site`)
 
 **Create:**
+
 - `src/lib/motion/env.ts` — `useMotionEnv()` gating hook.
 - `src/components/motion/SmoothScroll.tsx` — Lenis + GSAP ticker/ScrollTrigger provider (reduced-motion bypass).
 - `src/lib/motion/useParallax.ts` — ScrollTrigger parallax hook.
@@ -32,6 +33,7 @@
 - `src/components/ui/MagneticButton.tsx` — magnetic CTA wrapper.
 
 **Modify:**
+
 - `src/app/layout.tsx` — wrap children in `SmoothScroll`.
 - `src/components/sections/Hero.tsx` — mount `HeroBackdrop`; wrap mock in 3D tilt.
 - `src/components/sections/Features.tsx` — rework to a bento grid.
@@ -52,6 +54,7 @@ cd ~/Desktop/projects/pagecraft-site
 npm install gsap @gsap/react lenis three @react-three/fiber @react-three/drei
 npm install -D @types/three
 ```
+
 Expected: installs cleanly. Versions should resolve to `@react-three/fiber@^9`, `@react-three/drei@^10`, `gsap@^3.15`, `lenis@^1.3`, `three@^0.17x`. If `@react-three/fiber` resolves below 9, run `npm install @react-three/fiber@^9 @react-three/drei@^10` explicitly (v9 is the React 19 line). If any peer-dep error mentions React 18, add `--legacy-peer-deps` and note it in the report.
 
 - [ ] **Step 2: `src/lib/motion/env.ts`** — single source of truth for motion gating
@@ -68,14 +71,19 @@ export type MotionEnv = { reducedMotion: boolean; isMobile: boolean; allowWebgl:
  * heavy runs before we know the environment.
  */
 export function useMotionEnv(): MotionEnv {
-  const [env, setEnv] = useState<MotionEnv>({ reducedMotion: true, isMobile: true, allowWebgl: false });
+  const [env, setEnv] = useState<MotionEnv>({
+    reducedMotion: true,
+    isMobile: true,
+    allowWebgl: false,
+  });
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     const small = window.innerWidth < 768;
     const isMobile = coarse || small;
-    const lowPower = typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency <= 4;
+    const lowPower =
+      typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency <= 4;
     const allowWebgl = !reduce && !isMobile && !lowPower;
     setEnv({ reducedMotion: reduce, isMobile, allowWebgl });
   }, []);
@@ -123,6 +131,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   );
 }
 ```
+
 Note: confirm the `lenis/react` exports `ReactLenis` and a `LenisRef` type exposing `.lenis`. If the type name differs, read `node_modules/lenis/react/...d.ts` and use the actual ref type (the ref's `.lenis` instance is what `raf`/`on` are called on). If `autoRaf: false` isn't accepted, omit it and instead let Lenis self-raf and only wire `lenis.on("scroll", ScrollTrigger.update)`.
 
 - [ ] **Step 4: Wrap the app in `src/app/layout.tsx`**
@@ -132,7 +141,9 @@ Import and wrap the existing children (keep the `RouteProvider`/`Theme` provider
 ```tsx
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 ```
+
 Inside the body, wrap the existing provider tree's children so the structure becomes:
+
 ```tsx
 <RouteProvider>
   <Theme>
@@ -157,17 +168,30 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger, useGSAP as
 export function useParallax<T extends HTMLElement>(speed = 40) {
   const ref = useRef<T>(null);
   const { reducedMotion } = useMotionEnv();
-  useGSAP(() => {
-    if (reducedMotion || !ref.current) return;
-    gsap.fromTo(
-      ref.current,
-      { y: -speed },
-      { y: speed, ease: "none", scrollTrigger: { trigger: ref.current, start: "top bottom", end: "bottom top", scrub: true } },
-    );
-  }, { dependencies: [reducedMotion] });
+  useGSAP(
+    () => {
+      if (reducedMotion || !ref.current) return;
+      gsap.fromTo(
+        ref.current,
+        { y: -speed },
+        {
+          y: speed,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ref.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        },
+      );
+    },
+    { dependencies: [reducedMotion] },
+  );
   return ref;
 }
 ```
+
 (If `gsap.registerPlugin(... useGSAP ...)` errors — `useGSAP` is a hook, not a plugin — drop it from `registerPlugin` and only register `ScrollTrigger`. The line is defensive; remove if it complains.)
 
 - [ ] **Step 6: Prove the pipeline — add parallax to Stats**
@@ -182,6 +206,7 @@ npx tsc --noEmit            # expect 0 errors
 npm run build               # expect success (static build green)
 git add -A && git commit -m "feat(motion): Lenis+GSAP smooth scroll, motion-env gating, parallax helper"
 ```
+
 If `npm run build` fails on a Lenis/GSAP server-import, ensure `SmoothScroll`, `env.ts`, `useParallax.ts` all carry `"use client"` and that no server component imports them at module top level outside a client boundary. Fix and rebuild.
 
 ---
@@ -219,7 +244,11 @@ function Blocks() {
   const blocks = useMemo(
     () =>
       Array.from({ length: BLOCK_COUNT }, (_, i) => ({
-        pos: [(Math.sin(i * 1.7) * 6), (Math.cos(i * 2.3) * 3.5), -2 - (i % 5)] as [number, number, number],
+        pos: [Math.sin(i * 1.7) * 6, Math.cos(i * 2.3) * 3.5, -2 - (i % 5)] as [
+          number,
+          number,
+          number,
+        ],
         scale: 0.5 + (i % 4) * 0.18,
         speed: 0.15 + (i % 5) * 0.05,
         hue: i % 3,
@@ -235,15 +264,36 @@ function Blocks() {
       m.rotation.y = Math.cos(t * 0.12 + i) * 0.2;
     });
     // subtle pointer parallax
-    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, state.pointer.x * 0.15, 0.04);
-    group.current.rotation.x = THREE.MathUtils.lerp(group.current.rotation.x, -state.pointer.y * 0.1, 0.04);
+    group.current.rotation.y = THREE.MathUtils.lerp(
+      group.current.rotation.y,
+      state.pointer.x * 0.15,
+      0.04,
+    );
+    group.current.rotation.x = THREE.MathUtils.lerp(
+      group.current.rotation.x,
+      -state.pointer.y * 0.1,
+      0.04,
+    );
   });
   const colors = ["#a78bfa", "#c4b5fd", "#7c3aed"];
   return (
     <group ref={group}>
       {blocks.map((b, i) => (
-        <RoundedBox key={i} args={[1, 1, 1]} radius={0.16} smoothness={3} position={b.pos} scale={b.scale}>
-          <meshStandardMaterial color={colors[b.hue]} roughness={0.35} metalness={0.1} transparent opacity={0.85} />
+        <RoundedBox
+          key={i}
+          args={[1, 1, 1]}
+          radius={0.16}
+          smoothness={3}
+          position={b.pos}
+          scale={b.scale}
+        >
+          <meshStandardMaterial
+            color={colors[b.hue]}
+            roughness={0.35}
+            metalness={0.1}
+            transparent
+            opacity={0.85}
+          />
         </RoundedBox>
       ))}
     </group>
@@ -273,6 +323,7 @@ export default function HeroScene() {
   );
 }
 ```
+
 Note: `export default` is required for `next/dynamic`. Confirm `RoundedBox` is exported by the installed `@react-three/drei` (it is in v10); if tree-shaking/import errors occur, replace `RoundedBox` with a plain `<mesh><boxGeometry/><meshStandardMaterial/></mesh>`.
 
 - [ ] **Step 3: `src/components/webgl/HeroBackdrop.tsx`** — gated dynamic mount
@@ -308,6 +359,7 @@ npx tsc --noEmit            # 0 errors
 npm run build               # MUST stay green — the WebGL is ssr:false dynamic, so it must not appear in the static/server bundle
 git add -A && git commit -m "feat(webgl): R3F hero backdrop (drifting blocks) + static fallback + 3D-tilt mock"
 ```
+
 If `next build` fails citing `three`/`window`/`self is not defined` in SSR, the dynamic `ssr:false` boundary is being bypassed — ensure `HeroScene` is ONLY imported via the `dynamic(() => import("./HeroScene"), { ssr:false })` in `HeroBackdrop`, never imported directly anywhere, and that `HeroBackdrop` is the only thing `Hero.tsx` imports.
 
 ---
@@ -321,10 +373,26 @@ If `next build` fails citing `three`/`window`/`self is not defined` in SSR, the 
 ```ts
 export type ShowcaseStep = { kicker: string; title: string; text: string };
 export const SHOWCASE_STEPS: ShowcaseStep[] = [
-  { kicker: "Design", title: "Visual, not code", text: "Drag polished blocks onto the canvas. What you see is exactly what ships — no markup, no fiddling." },
-  { kicker: "Responsive", title: "Per-breakpoint control", text: "Tune spacing, type and layout for every device with live visual controls — not media-query guesswork." },
-  { kicker: "Content", title: "Bind real data", text: "Model collections and bind them to any block. Detail pages generate themselves from your content." },
-  { kicker: "Ship", title: "Publish in one click", text: "Push to a fast global edge in seconds. Preview, version, and roll back without a deploy pipeline." },
+  {
+    kicker: "Design",
+    title: "Visual, not code",
+    text: "Drag polished blocks onto the canvas. What you see is exactly what ships — no markup, no fiddling.",
+  },
+  {
+    kicker: "Responsive",
+    title: "Per-breakpoint control",
+    text: "Tune spacing, type and layout for every device with live visual controls — not media-query guesswork.",
+  },
+  {
+    kicker: "Content",
+    title: "Bind real data",
+    text: "Model collections and bind them to any block. Detail pages generate themselves from your content.",
+  },
+  {
+    kicker: "Ship",
+    title: "Publish in one click",
+    text: "Push to a fast global edge in seconds. Preview, version, and roll back without a deploy pipeline.",
+  },
 ];
 ```
 
@@ -349,30 +417,37 @@ export function ProductShowcase() {
   const [active, setActive] = useState(0);
   const { reducedMotion } = useMotionEnv();
 
-  useGSAP(() => {
-    if (reducedMotion || !root.current || !pinTarget.current) return;
-    const steps = SHOWCASE_STEPS.length;
-    const st = ScrollTrigger.create({
-      trigger: root.current,
-      start: "top top",
-      end: () => `+=${steps * 100}%`,
-      pin: pinTarget.current,
-      scrub: true,
-      onUpdate: (self) => setActive(Math.min(steps - 1, Math.floor(self.progress * steps))),
-    });
-    return () => st.kill();
-  }, { dependencies: [reducedMotion] });
+  useGSAP(
+    () => {
+      if (reducedMotion || !root.current || !pinTarget.current) return;
+      const steps = SHOWCASE_STEPS.length;
+      const st = ScrollTrigger.create({
+        trigger: root.current,
+        start: "top top",
+        end: () => `+=${steps * 100}%`,
+        pin: pinTarget.current,
+        scrub: true,
+        onUpdate: (self) => setActive(Math.min(steps - 1, Math.floor(self.progress * steps))),
+      });
+      return () => st.kill();
+    },
+    { dependencies: [reducedMotion] },
+  );
 
   // Reduced motion: a plain stacked, non-pinned version of the same content.
   if (reducedMotion) {
     return (
       <section className="mx-auto max-w-7xl px-6 py-24">
-        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">How Pagecraft is different</h2>
+        <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          How Pagecraft is different
+        </h2>
         <div className="mt-12 grid gap-10 lg:grid-cols-2">
           <div className="space-y-8">
             {SHOWCASE_STEPS.map((s) => (
               <div key={s.title}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{s.kicker}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+                  {s.kicker}
+                </p>
                 <h3 className="mt-1 text-xl font-semibold text-gray-900">{s.title}</h3>
                 <p className="mt-1 text-gray-600">{s.text}</p>
               </div>
@@ -389,11 +464,23 @@ export function ProductShowcase() {
       <div ref={pinTarget} className="flex min-h-screen items-center">
         <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 lg:grid-cols-2">
           <div className="flex flex-col justify-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">How Pagecraft is different</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              How Pagecraft is different
+            </h2>
             <div className="relative mt-8 h-44">
               {SHOWCASE_STEPS.map((s, i) => (
-                <div key={s.title} className={cx("absolute inset-0 transition-all duration-500", i === active ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0")}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{s.kicker}</p>
+                <div
+                  key={s.title}
+                  className={cx(
+                    "absolute inset-0 transition-all duration-500",
+                    i === active
+                      ? "translate-y-0 opacity-100"
+                      : "pointer-events-none translate-y-3 opacity-0",
+                  )}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+                    {s.kicker}
+                  </p>
                   <h3 className="mt-1 text-2xl font-semibold text-gray-900">{s.title}</h3>
                   <p className="mt-2 text-lg text-gray-600">{s.text}</p>
                 </div>
@@ -401,17 +488,26 @@ export function ProductShowcase() {
             </div>
             <div className="mt-6 flex gap-2">
               {SHOWCASE_STEPS.map((s, i) => (
-                <span key={s.title} className={cx("h-1.5 rounded-full transition-all", i === active ? "w-8 bg-brand-600" : "w-4 bg-gray-200")} />
+                <span
+                  key={s.title}
+                  className={cx(
+                    "h-1.5 rounded-full transition-all",
+                    i === active ? "w-8 bg-brand-600" : "w-4 bg-gray-200",
+                  )}
+                />
               ))}
             </div>
           </div>
-          <div className="flex items-center"><EditorMock /></div>
+          <div className="flex items-center">
+            <EditorMock />
+          </div>
         </div>
       </div>
     </section>
   );
 }
 ```
+
 Note: the pinned wrapper gives the section a scroll length of `steps * 100%`; `onUpdate` maps scroll progress → active step. The `EditorMock` here is the same component used in the hero (fine to reuse). Verify pinning doesn't fight Lenis — it shouldn't (ScrollTrigger.update is wired to Lenis in Task 1). If the pin "jumps", add `anticipatePin: 1` to the `ScrollTrigger.create` options.
 
 - [ ] **Step 3: Verify & commit**
@@ -437,7 +533,15 @@ import { type ReactNode, useRef } from "react";
 import { motion, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 
 /** Wraps a link/button so it subtly follows the pointer. No-op under reduced motion / touch. */
-export function MagneticButton({ children, className, strength = 0.3 }: { children: ReactNode; className?: string; strength?: number }) {
+export function MagneticButton({
+  children,
+  className,
+  strength = 0.3,
+}: {
+  children: ReactNode;
+  className?: string;
+  strength?: number;
+}) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLSpanElement>(null);
   const x = useMotionValue(0);
@@ -456,13 +560,17 @@ export function MagneticButton({ children, className, strength = 0.3 }: { childr
         x.set((e.clientX - (r.left + r.width / 2)) * strength);
         y.set((e.clientY - (r.top + r.height / 2)) * strength);
       }}
-      onPointerLeave={() => { x.set(0); y.set(0); }}
+      onPointerLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
     >
       {children}
     </motion.span>
   );
 }
 ```
+
 Apply it around the primary CTA in `Hero.tsx` and `FinalCTA.tsx` (wrap the existing `<a>` in `<MagneticButton>`). Keep the anchor itself unchanged inside.
 
 - [ ] **Step 2: Add parallax to Testimonials**
@@ -487,16 +595,42 @@ git add -A && git commit -m "feat(motion): magnetic CTAs + testimonials parallax
 
 ```ts
 export const TEMPLATES = [
-  "SaaS landing", "Portfolio", "Agency", "E-commerce", "Blog", "Event",
-  "Startup", "Personal", "Docs", "Newsletter", "Restaurant", "Course",
+  "SaaS landing",
+  "Portfolio",
+  "Agency",
+  "E-commerce",
+  "Blog",
+  "Event",
+  "Startup",
+  "Personal",
+  "Docs",
+  "Newsletter",
+  "Restaurant",
+  "Course",
 ] as const;
 
 export type UseCase = { title: string; text: string; icon: string };
 export const USE_CASES: UseCase[] = [
-  { icon: "Rocket02", title: "Landing pages", text: "Spin up high-converting launch and campaign pages in an afternoon." },
-  { icon: "Image01", title: "Portfolios", text: "Showcase work with responsive galleries and case-study detail pages." },
-  { icon: "Grid01", title: "SaaS sites", text: "Marketing sites with pricing, docs and a CMS your whole team can edit." },
-  { icon: "File02", title: "Blogs", text: "Model posts as a collection; detail pages generate from your content." },
+  {
+    icon: "Rocket02",
+    title: "Landing pages",
+    text: "Spin up high-converting launch and campaign pages in an afternoon.",
+  },
+  {
+    icon: "Image01",
+    title: "Portfolios",
+    text: "Showcase work with responsive galleries and case-study detail pages.",
+  },
+  {
+    icon: "Grid01",
+    title: "SaaS sites",
+    text: "Marketing sites with pricing, docs and a CMS your whole team can edit.",
+  },
+  {
+    icon: "File02",
+    title: "Blogs",
+    text: "Model posts as a collection; detail pages generate from your content.",
+  },
 ];
 
 export type CompareRow = { feature: string; pagecraft: boolean; code: boolean; builders: boolean };
@@ -511,28 +645,47 @@ export const COMPARISON: CompareRow[] = [
 
 export type Faq = { q: string; a: string };
 export const FAQ: Faq[] = [
-  { q: "Do I need to know how to code?", a: "No. Pagecraft is fully visual — but you still get clean, fast output and pixel-level control." },
-  { q: "Can I use my own domain?", a: "Yes, custom domains are included on Pro and Team plans with automatic SSL." },
-  { q: "Is there a free plan?", a: "Yes — build and publish one site for free on a Pagecraft subdomain, forever." },
-  { q: "Can my whole team edit?", a: "Team plans add roles, permissions and a shared design system so everyone stays on-brand." },
-  { q: "What about SEO?", a: "Pages are server-rendered with full control over meta, Open Graph, sitemaps and clean markup." },
+  {
+    q: "Do I need to know how to code?",
+    a: "No. Pagecraft is fully visual — but you still get clean, fast output and pixel-level control.",
+  },
+  {
+    q: "Can I use my own domain?",
+    a: "Yes, custom domains are included on Pro and Team plans with automatic SSL.",
+  },
+  {
+    q: "Is there a free plan?",
+    a: "Yes — build and publish one site for free on a Pagecraft subdomain, forever.",
+  },
+  {
+    q: "Can my whole team edit?",
+    a: "Team plans add roles, permissions and a shared design system so everyone stays on-brand.",
+  },
+  {
+    q: "What about SEO?",
+    a: "Pages are server-rendered with full control over meta, Open Graph, sitemaps and clean markup.",
+  },
 ];
 ```
+
 (Verify the icon names `Rocket02, Image01, Grid01, File02` exist in `@untitledui/icons` via `node -e "..."` as in the base plan; swap any missing for the nearest real export.)
 
 - [ ] **Step 2: Rework `src/components/sections/Features.tsx` into a bento grid**
 
 Keep the existing `FEATURES` content + `Tilt`/`Reveal`. Replace the uniform `grid sm:grid-cols-2 lg:grid-cols-3` with an asymmetric bento (CSS grid with `col-span`/`row-span` variations — e.g. a 4-col grid where the first feature spans 2 cols and includes a small animated motif). Skeleton direction (elevate with frontend-design):
+
 ```tsx
 // grid: "grid grid-cols-1 gap-4 md:grid-cols-4 md:auto-rows-[200px]"
 // tile sizes per index, e.g.: [0]: md:col-span-2 md:row-span-2 (feature tile with a mini live block/cursor motif),
 //   [1]: md:col-span-2, [2]: md:col-span-1, [3]: md:col-span-1, [4]: md:col-span-2, [5]: md:col-span-2
 ```
+
 Each tile keeps icon/title/text from `FEATURES`; the large tile gets a small decorative animated element (e.g. a couple of drifting block chips reusing framer-motion). Preserve `id="features"`.
 
 - [ ] **Step 3: Create the four new sections** (skeletons — elevate with frontend-design)
 
 `src/components/sections/TemplateGallery.tsx` — two opposite-direction parallax rows of template cards:
+
 ```tsx
 "use client";
 import { useParallax } from "@/lib/motion/useParallax";
@@ -542,7 +695,10 @@ export function TemplateGallery() {
   const rowB = useParallax<HTMLDivElement>(-60);
   const half = Math.ceil(TEMPLATES.length / 2);
   const card = (t: string, i: number) => (
-    <div key={t + i} className="flex h-40 w-64 shrink-0 flex-col justify-end rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 shadow-xs">
+    <div
+      key={t + i}
+      className="flex h-40 w-64 shrink-0 flex-col justify-end rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4 shadow-xs"
+    >
       <div className="mb-auto h-16 rounded-lg bg-gradient-to-br from-brand-100 to-brand-50" />
       <span className="text-sm font-semibold text-gray-700">{t}</span>
     </div>
@@ -550,16 +706,26 @@ export function TemplateGallery() {
   return (
     <section className="overflow-hidden py-24">
       <div className="mx-auto max-w-2xl px-6 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Start from a template</h2>
-        <p className="mt-4 text-lg text-gray-600">Dozens of starting points — then make them yours.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          Start from a template
+        </h2>
+        <p className="mt-4 text-lg text-gray-600">
+          Dozens of starting points — then make them yours.
+        </p>
       </div>
-      <div ref={rowA} className="mt-12 flex gap-4 px-6">{TEMPLATES.slice(0, half).map(card)}</div>
-      <div ref={rowB} className="mt-4 flex gap-4 px-6">{TEMPLATES.slice(half).map(card)}</div>
+      <div ref={rowA} className="mt-12 flex gap-4 px-6">
+        {TEMPLATES.slice(0, half).map(card)}
+      </div>
+      <div ref={rowB} className="mt-4 flex gap-4 px-6">
+        {TEMPLATES.slice(half).map(card)}
+      </div>
     </section>
   );
 }
 ```
+
 `src/components/sections/UseCases.tsx` — persona cards from `USE_CASES` (icons via `@untitledui/icons` dynamic, wrap in `Reveal`):
+
 ```tsx
 "use client";
 import * as Icons from "@untitledui/icons";
@@ -568,14 +734,22 @@ import { USE_CASES } from "@/lib/content";
 export function UseCases() {
   return (
     <section className="mx-auto max-w-7xl px-6 py-24">
-      <div className="mx-auto max-w-2xl text-center"><h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Built for whatever you ship</h2></div>
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          Built for whatever you ship
+        </h2>
+      </div>
       <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {USE_CASES.map((u, i) => {
-          const Icon = (Icons as Record<string, React.ComponentType<{ className?: string }>>)[u.icon] ?? Icons.Star01;
+          const Icon =
+            (Icons as Record<string, React.ComponentType<{ className?: string }>>)[u.icon] ??
+            Icons.Star01;
           return (
             <Reveal key={u.title} delay={i * 0.05}>
               <div className="h-full rounded-2xl border border-gray-200 bg-white p-6 shadow-xs">
-                <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600"><Icon className="size-5" /></span>
+                <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                  <Icon className="size-5" />
+                </span>
                 <h3 className="mt-4 font-semibold text-gray-900">{u.title}</h3>
                 <p className="mt-1.5 text-sm text-gray-600">{u.text}</p>
               </div>
@@ -587,24 +761,37 @@ export function UseCases() {
   );
 }
 ```
+
 `src/components/sections/Comparison.tsx` — check-grid from `COMPARISON`:
+
 ```tsx
 import { Check, X } from "@untitledui/icons";
 import { COMPARISON } from "@/lib/content";
 export function Comparison() {
-  const cell = (v: boolean) => v ? <Check className="mx-auto size-5 text-brand-600" /> : <X className="mx-auto size-5 text-gray-300" />;
+  const cell = (v: boolean) =>
+    v ? (
+      <Check className="mx-auto size-5 text-brand-600" />
+    ) : (
+      <X className="mx-auto size-5 text-gray-300" />
+    );
   return (
     <section className="bg-gray-50 py-24">
       <div className="mx-auto max-w-4xl px-6">
-        <div className="mx-auto max-w-2xl text-center"><h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Why Pagecraft</h2></div>
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Why Pagecraft
+          </h2>
+        </div>
         <div className="mt-12 overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-200 text-gray-500">
-              <th className="p-4 text-left font-medium">Feature</th>
-              <th className="p-4 font-semibold text-brand-600">Pagecraft</th>
-              <th className="p-4 font-medium">Hand-coding</th>
-              <th className="p-4 font-medium">Other builders</th>
-            </tr></thead>
+            <thead>
+              <tr className="border-b border-gray-200 text-gray-500">
+                <th className="p-4 text-left font-medium">Feature</th>
+                <th className="p-4 font-semibold text-brand-600">Pagecraft</th>
+                <th className="p-4 font-medium">Hand-coding</th>
+                <th className="p-4 font-medium">Other builders</th>
+              </tr>
+            </thead>
             <tbody>
               {COMPARISON.map((r) => (
                 <tr key={r.feature} className="border-b border-gray-100 last:border-0">
@@ -622,20 +809,29 @@ export function Comparison() {
   );
 }
 ```
+
 (Confirm `Check`/`X` exist in `@untitledui/icons`; if named differently e.g. `Check`/`XClose`, use the real names.)
 
 `src/components/sections/FAQ.tsx` — accordion (native `<details>` is simplest + accessible; elevate styling with frontend-design):
+
 ```tsx
 import { FAQ as FAQS } from "@/lib/content";
 export function FAQ() {
   return (
     <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
-      <div className="text-center"><h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Frequently asked questions</h2></div>
+      <div className="text-center">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          Frequently asked questions
+        </h2>
+      </div>
       <div className="mt-12 divide-y divide-gray-200 rounded-2xl border border-gray-200 bg-white">
         {FAQS.map((f) => (
           <details key={f.q} className="group p-5">
             <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-gray-900">
-              {f.q}<span className="ml-4 text-gray-400 transition-transform group-open:rotate-45">+</span>
+              {f.q}
+              <span className="ml-4 text-gray-400 transition-transform group-open:rotate-45">
+                +
+              </span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-gray-600">{f.a}</p>
           </details>
@@ -667,11 +863,25 @@ import { Footer } from "@/components/sections/Footer";
 export default function Home() {
   return (
     <main className="bg-white">
-      <Nav /><Hero /><LogoCloud /><ProductShowcase /><Features /><TemplateGallery /><UseCases /><Stats /><Testimonials /><Comparison /><Pricing /><FAQ /><FinalCTA /><Footer />
+      <Nav />
+      <Hero />
+      <LogoCloud />
+      <ProductShowcase />
+      <Features />
+      <TemplateGallery />
+      <UseCases />
+      <Stats />
+      <Testimonials />
+      <Comparison />
+      <Pricing />
+      <FAQ />
+      <FinalCTA />
+      <Footer />
     </main>
   );
 }
 ```
+
 (The old `HowItWorks` section is superseded by `ProductShowcase` — remove it from the composition; the file may remain unused or be deleted if nothing imports it.)
 
 - [ ] **Step 5: Verify & commit**
@@ -687,6 +897,7 @@ git add -A && git commit -m "feat(sections): bento Features, TemplateGallery, Us
 ## Self-Review
 
 **Spec coverage:**
+
 - Motion stack (GSAP+ScrollTrigger+Lenis+Three.js on framer) → Task 1 deps + Tasks 1–4 ✓
 - SmoothScroll provider synced to GSAP, reduced-motion bypass → Task 1 ✓
 - Motion-env gating (reduced-motion + mobile/low-power) → Task 1 `env.ts`, consumed in Tasks 2–4 ✓

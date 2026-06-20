@@ -18,7 +18,10 @@ export async function POST(req: Request) {
   if (!row || !(await verifyPassword(current, row.passwordHash))) {
     return badRequest("Current password is incorrect");
   }
-  await prisma.user.update({ where: { id: u.user.id }, data: { passwordHash: await hashPassword(next) } });
+  await prisma.user.update({
+    where: { id: u.user.id },
+    data: { passwordHash: await hashPassword(next) },
+  });
   // invalidate all OTHER sessions (keep the current one so the user stays signed in)
   const currentToken = (await cookies()).get("pc_session")?.value;
   await prisma.session.deleteMany({

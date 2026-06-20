@@ -29,7 +29,7 @@ export async function GET() {
         meta: parseJsonObject(e.meta),
         actor: byId.get(e.actorId)?.name || byId.get(e.actorId)?.email || "Someone",
         createdAt: e.createdAt.toISOString(),
-      }))
+      })),
     );
   });
 }

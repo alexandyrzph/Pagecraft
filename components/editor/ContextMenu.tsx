@@ -55,7 +55,7 @@ export function ContextMenu() {
   if (!block || !loc) return null;
   const isComponent = block.type === "component";
   const siblingCount = loc.parentId
-    ? findBlockById(tree, loc.parentId)?.children.length ?? 0
+    ? (findBlockById(tree, loc.parentId)?.children.length ?? 0)
     : tree.length;
 
   const x = Math.min(ctx.x, window.innerWidth - MENU_W - 8);
@@ -83,13 +83,43 @@ export function ContextMenu() {
         className="fixed z-[61] overflow-hidden rounded-xl border border-zinc-200 bg-white p-1 shadow-2xl ring-1 ring-black/5"
         style={{ left: x, top: y, width: MENU_W }}
       >
-        <Item icon={<Copy size={14} />} label="Duplicate" shortcut="⌘D" onClick={() => run(() => duplicate(ctx.blockId))} />
-        <Item icon={<Copy size={14} />} label="Copy" shortcut="⌘C" onClick={() => run(() => copy(ctx.blockId))} />
-        <Item icon={<Scissors size={14} />} label="Cut" shortcut="⌘X" onClick={() => run(() => cut(ctx.blockId))} />
-        <Item icon={<ClipboardPaste size={14} />} label="Paste below" shortcut="⌘V" onClick={() => run(() => paste(ctx.blockId))} />
+        <Item
+          icon={<Copy size={14} />}
+          label="Duplicate"
+          shortcut="⌘D"
+          onClick={() => run(() => duplicate(ctx.blockId))}
+        />
+        <Item
+          icon={<Copy size={14} />}
+          label="Copy"
+          shortcut="⌘C"
+          onClick={() => run(() => copy(ctx.blockId))}
+        />
+        <Item
+          icon={<Scissors size={14} />}
+          label="Cut"
+          shortcut="⌘X"
+          onClick={() => run(() => cut(ctx.blockId))}
+        />
+        <Item
+          icon={<ClipboardPaste size={14} />}
+          label="Paste below"
+          shortcut="⌘V"
+          onClick={() => run(() => paste(ctx.blockId))}
+        />
         <Divider />
-        <Item icon={<Paintbrush size={14} />} label="Copy styles" shortcut="⌘⌥C" onClick={() => run(() => copyStyles(ctx.blockId))} />
-        <Item icon={<Paintbrush size={14} />} label="Paste styles" shortcut="⌘⌥V" onClick={() => run(() => pasteStyles(ctx.blockId))} />
+        <Item
+          icon={<Paintbrush size={14} />}
+          label="Copy styles"
+          shortcut="⌘⌥C"
+          onClick={() => run(() => copyStyles(ctx.blockId))}
+        />
+        <Item
+          icon={<Paintbrush size={14} />}
+          label="Paste styles"
+          shortcut="⌘⌥V"
+          onClick={() => run(() => pasteStyles(ctx.blockId))}
+        />
         <Divider />
         <Item
           icon={<CornerDownRight size={14} />}
@@ -119,7 +149,13 @@ export function ContextMenu() {
           </>
         )}
         <Divider />
-        <Item icon={<Trash2 size={14} />} label="Delete" shortcut="⌫" danger onClick={() => run(() => remove(ctx.blockId))} />
+        <Item
+          icon={<Trash2 size={14} />}
+          label="Delete"
+          shortcut="⌫"
+          danger
+          onClick={() => run(() => remove(ctx.blockId))}
+        />
       </motion.div>
     </>
   );
@@ -146,7 +182,7 @@ function Item({
       disabled={disabled}
       className={cn(
         "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-        danger ? "text-red-600 hover:bg-red-50" : "text-zinc-700 hover:bg-zinc-100"
+        danger ? "text-red-600 hover:bg-red-50" : "text-zinc-700 hover:bg-zinc-100",
       )}
     >
       <span className={cn("shrink-0", danger ? "text-red-500" : "text-zinc-400")}>{icon}</span>

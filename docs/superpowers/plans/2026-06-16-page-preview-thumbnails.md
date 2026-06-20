@@ -16,27 +16,27 @@ The spec proposed two fields on `Page` (`thumbnailUrl`, `thumbnailAt`). During p
 
 ## File structure
 
-| File | Responsibility | Action |
-|------|----------------|--------|
-| `prisma/schema.prisma` | `PageThumbnail` model + `Page.thumbnail` relation | Modify |
-| `lib/thumbnails/staleness.ts` | Pure staleness predicate | Create |
-| `lib/thumbnails/token.ts` | HMAC sign/verify of shot tokens | Create |
-| `lib/thumbnails/queue.ts` | Pure client-side concurrency limiter | Create |
-| `lib/thumbnails/screenshot.ts` | Server-only Playwright capture + singleton browser + per-page lock | Create |
-| `components/PageDocument.tsx` | Shared faithful page render (style + main) | Create |
-| `app/p/[slug]/page.tsx` | Public page — refactor to use `PageDocument` | Modify |
-| `app/internal/shot/[id]/page.tsx` | Token-gated render route for screenshots | Create |
-| `app/api/pages/[id]/thumbnail/route.ts` | POST: regenerate screenshot if stale | Create |
-| `app/api/pages/[id]/route.ts` | DELETE: best-effort delete PNG file | Modify |
-| `proxy.ts` | Add `/internal/` to public bypass | Modify |
+| File                                     | Responsibility                                                     | Action |
+| ---------------------------------------- | ------------------------------------------------------------------ | ------ |
+| `prisma/schema.prisma`                   | `PageThumbnail` model + `Page.thumbnail` relation                  | Modify |
+| `lib/thumbnails/staleness.ts`            | Pure staleness predicate                                           | Create |
+| `lib/thumbnails/token.ts`                | HMAC sign/verify of shot tokens                                    | Create |
+| `lib/thumbnails/queue.ts`                | Pure client-side concurrency limiter                               | Create |
+| `lib/thumbnails/screenshot.ts`           | Server-only Playwright capture + singleton browser + per-page lock | Create |
+| `components/PageDocument.tsx`            | Shared faithful page render (style + main)                         | Create |
+| `app/p/[slug]/page.tsx`                  | Public page — refactor to use `PageDocument`                       | Modify |
+| `app/internal/shot/[id]/page.tsx`        | Token-gated render route for screenshots                           | Create |
+| `app/api/pages/[id]/thumbnail/route.ts`  | POST: regenerate screenshot if stale                               | Create |
+| `app/api/pages/[id]/route.ts`            | DELETE: best-effort delete PNG file                                | Modify |
+| `proxy.ts`                               | Add `/internal/` to public bypass                                  | Modify |
 | `components/dashboard/PageThumbnail.tsx` | Card thumbnail: img / gradient fallback / shimmer + triggers regen | Create |
-| `components/dashboard/Dashboard.tsx` | Use `PageThumbnail`; extend `PageItem` | Modify |
-| `app/(app)/page.tsx` | Add thumbnail fields to the DTO | Modify |
-| `.env` | `THUMBNAIL_SECRET`, optional `APP_URL` | Modify |
-| `tests/thumbnail-staleness.test.ts` | Unit test | Create |
-| `tests/thumbnail-token.test.ts` | Unit test | Create |
-| `tests/thumbnail-queue.test.ts` | Unit test | Create |
-| `tests/page-thumbnail.dom.test.tsx` | Component render test | Create |
+| `components/dashboard/Dashboard.tsx`     | Use `PageThumbnail`; extend `PageItem`                             | Modify |
+| `app/(app)/page.tsx`                     | Add thumbnail fields to the DTO                                    | Modify |
+| `.env`                                   | `THUMBNAIL_SECRET`, optional `APP_URL`                             | Modify |
+| `tests/thumbnail-staleness.test.ts`      | Unit test                                                          | Create |
+| `tests/thumbnail-token.test.ts`          | Unit test                                                          | Create |
+| `tests/thumbnail-queue.test.ts`          | Unit test                                                          | Create |
+| `tests/page-thumbnail.dom.test.tsx`      | Component render test                                              | Create |
 
 **Testing philosophy (matches this codebase):** `tests/` holds pure-logic tests (`*.test.ts`) and component tests (`*.dom.test.tsx`). There are **no** route-handler/DB integration tests here, so we don't add one — instead we keep all decision logic in pure modules (staleness, token, queue) and test those, plus a dom test for the card. The screenshot service and routes are verified manually (Task 13).
 
@@ -47,6 +47,7 @@ The spec proposed two fields on `Page` (`thumbnailUrl`, `thumbnailAt`). During p
 ### Task 1: `PageThumbnail` model + relation
 
 **Files:**
+
 - Modify: `prisma/schema.prisma` (Page model ~lines 10-29; add new model after it)
 
 - [ ] **Step 1: Add the relation field to `Page`**
@@ -96,6 +97,7 @@ git commit -m "feat(db): add PageThumbnail model for cached page previews"
 ### Task 2: Pure staleness predicate (TDD)
 
 **Files:**
+
 - Create: `lib/thumbnails/staleness.ts`
 - Test: `tests/thumbnail-staleness.test.ts`
 
@@ -172,6 +174,7 @@ git commit -m "feat(thumbnails): pure staleness predicate"
 ### Task 3: Shot token sign/verify (TDD)
 
 **Files:**
+
 - Create: `lib/thumbnails/token.ts`
 - Test: `tests/thumbnail-token.test.ts`
 
@@ -263,6 +266,7 @@ git commit -m "feat(thumbnails): HMAC shot tokens for the internal render route"
 ### Task 4: Client concurrency limiter (TDD)
 
 **Files:**
+
 - Create: `lib/thumbnails/queue.ts`
 - Test: `tests/thumbnail-queue.test.ts`
 
@@ -316,7 +320,11 @@ describe("createLimiter", () => {
 
   it("propagates task rejections to the caller", async () => {
     const limit = createLimiter(1);
-    await expect(limit(async () => { throw new Error("boom"); })).rejects.toThrow("boom");
+    await expect(
+      limit(async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
   });
 });
 ```
@@ -380,6 +388,7 @@ git commit -m "feat(thumbnails): client concurrency limiter"
 ### Task 5: Extract `PageDocument` shared render
 
 **Files:**
+
 - Create: `components/PageDocument.tsx`
 - Modify: `app/p/[slug]/page.tsx`
 
@@ -442,11 +451,32 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <main style={themeVars(theme)}>
         {header.length > 0 && (
-          <BlockRenderer tree={header} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={header}
+            viewport="desktop"
+            animate={animate}
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
-        <BlockRenderer tree={tree} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+        <BlockRenderer
+          tree={tree}
+          viewport="desktop"
+          animate={animate}
+          inlineStyles={false}
+          components={components}
+          collections={collections}
+        />
         {footer.length > 0 && (
-          <BlockRenderer tree={footer} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={footer}
+            viewport="desktop"
+            animate={animate}
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
       </main>
     </>
@@ -487,11 +517,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const page = await prisma.page.findUnique({ where: { slug } });
   if (!page || !page.published) notFound();
@@ -537,6 +563,7 @@ git commit -m "refactor(render): extract shared PageDocument from public page"
 ### Task 6: Token-gated internal render route + proxy bypass
 
 **Files:**
+
 - Create: `app/internal/shot/[id]/page.tsx`
 - Modify: `proxy.ts`
 
@@ -545,16 +572,16 @@ git commit -m "refactor(render): extract shared PageDocument from public page"
 In `proxy.ts`, update the never-gate check (currently `/api`, `/p/`, `/c/`):
 
 ```ts
-  // Never gate: API (handlers enforce), published pages, the internal
-  // screenshot render route (token-gated), Next internals.
-  if (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/p/") ||
-    pathname.startsWith("/c/") ||
-    pathname.startsWith("/internal/")
-  ) {
-    return NextResponse.next();
-  }
+// Never gate: API (handlers enforce), published pages, the internal
+// screenshot render route (token-gated), Next internals.
+if (
+  pathname.startsWith("/api") ||
+  pathname.startsWith("/p/") ||
+  pathname.startsWith("/c/") ||
+  pathname.startsWith("/internal/")
+) {
+  return NextResponse.next();
+}
 ```
 
 - [ ] **Step 2: Create the internal shot route**
@@ -599,6 +626,7 @@ Expected: PASS.
 - [ ] **Step 4: Manually confirm token gating**
 
 With `next dev` running:
+
 - Open `http://localhost:3000/internal/shot/<realPageId>` (no token) → expect the 404 page (NOT a redirect to `/login`).
 - In a node REPL or temporary script, `signShotToken(id)` and open `http://localhost:3000/internal/shot/<id>?t=<token>` → expect the rendered page (works even for an unpublished draft).
 
@@ -614,6 +642,7 @@ git commit -m "feat(thumbnails): token-gated internal render route for screensho
 ### Task 7: Screenshot service (Playwright)
 
 **Files:**
+
 - Create: `lib/thumbnails/screenshot.ts`
 
 > Not unit-tested (drives a real browser); verified in Task 13. Keep it thin — all decision logic lives in the pure modules already tested.
@@ -677,7 +706,9 @@ async function run(pageId: string): Promise<ShotResult> {
       waitUntil: "networkidle",
       timeout: 20_000,
     });
-    await pg.evaluate(() => (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready).catch(() => {});
+    await pg
+      .evaluate(() => (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready)
+      .catch(() => {});
 
     await mkdir(THUMB_DIR, { recursive: true });
     await pg.screenshot({ path: path.join(THUMB_DIR, `${pageId}.png`) }); // top of viewport (1280x800)
@@ -712,6 +743,7 @@ git commit -m "feat(thumbnails): Playwright screenshot service with singleton br
 ### Task 8: Generation API route
 
 **Files:**
+
 - Create: `app/api/pages/[id]/thumbnail/route.ts`
 
 - [ ] **Step 1: Write the route**
@@ -773,6 +805,7 @@ git commit -m "feat(thumbnails): POST /api/pages/:id/thumbnail generation endpoi
 ### Task 9: `PageThumbnail` card component (TDD for fallback)
 
 **Files:**
+
 - Create: `components/dashboard/PageThumbnail.tsx`
 - Test: `tests/page-thumbnail.dom.test.tsx`
 
@@ -786,7 +819,10 @@ import { PageThumbnail } from "@/components/dashboard/PageThumbnail";
 
 describe("PageThumbnail", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("no network in test"))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("no network in test"))),
+    );
   });
 
   it("shows the cached image (cache-busted) when one exists and it is fresh", () => {
@@ -921,6 +957,7 @@ git commit -m "feat(thumbnails): PageThumbnail card component with gradient fall
 ### Task 10: Wire the dashboard DTO + card
 
 **Files:**
+
 - Modify: `app/(app)/page.tsx`
 - Modify: `components/dashboard/Dashboard.tsx`
 
@@ -933,22 +970,22 @@ import { isThumbnailStale } from "@/lib/thumbnails/staleness";
 ```
 
 ```tsx
-  const pages = await prisma.page.findMany({
-    where: { workspaceId: workspace.id },
-    orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { submissions: true } }, thumbnail: true },
-  });
-  const dto = pages.map((p) => ({
-    id: p.id,
-    title: p.title,
-    slug: p.slug,
-    published: p.published,
-    updatedAt: p.updatedAt.toISOString(),
-    submissions: p._count.submissions,
-    thumbnailUrl: p.thumbnail?.url ?? null,
-    thumbnailVersion: p.thumbnail?.takenForUpdatedAt.getTime() ?? null,
-    thumbnailStale: isThumbnailStale(p.thumbnail?.takenForUpdatedAt, p.updatedAt),
-  }));
+const pages = await prisma.page.findMany({
+  where: { workspaceId: workspace.id },
+  orderBy: { updatedAt: "desc" },
+  include: { _count: { select: { submissions: true } }, thumbnail: true },
+});
+const dto = pages.map((p) => ({
+  id: p.id,
+  title: p.title,
+  slug: p.slug,
+  published: p.published,
+  updatedAt: p.updatedAt.toISOString(),
+  submissions: p._count.submissions,
+  thumbnailUrl: p.thumbnail?.url ?? null,
+  thumbnailVersion: p.thumbnail?.takenForUpdatedAt.getTime() ?? null,
+  thumbnailStale: isThumbnailStale(p.thumbnail?.takenForUpdatedAt, p.updatedAt),
+}));
 ```
 
 - [ ] **Step 2: Extend `PageItem` and import the component in `Dashboard.tsx`**
@@ -962,9 +999,9 @@ import { PageThumbnail } from "./PageThumbnail";
 Extend the `PageItem` type (after `submissions: number;`):
 
 ```tsx
-  thumbnailUrl: string | null;
-  thumbnailVersion: number | null;
-  thumbnailStale: boolean;
+thumbnailUrl: string | null;
+thumbnailVersion: number | null;
+thumbnailStale: boolean;
 ```
 
 - [ ] **Step 3: Replace the gradient block with `PageThumbnail`**
@@ -972,23 +1009,23 @@ Extend the `PageItem` type (after `submissions: number;`):
 In the card's `<Link href={`/editor/${p.id}`} className="block">`, replace the existing gradient `<div className={cn("relative h-32 ...")}>...</div>` (the block containing the centered letter and the LIVE badge) with:
 
 ```tsx
-                <Link href={`/editor/${p.id}`} className="block">
-                  <div className="relative">
-                    <PageThumbnail
-                      pageId={p.id}
-                      title={p.title}
-                      gradient={GRADIENTS[i % GRADIENTS.length]}
-                      initialUrl={p.thumbnailUrl}
-                      version={p.thumbnailVersion}
-                      stale={p.thumbnailStale}
-                    />
-                    {p.published && (
-                      <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600 shadow-xs">
-                        Live
-                      </span>
-                    )}
-                  </div>
-                </Link>
+<Link href={`/editor/${p.id}`} className="block">
+  <div className="relative">
+    <PageThumbnail
+      pageId={p.id}
+      title={p.title}
+      gradient={GRADIENTS[i % GRADIENTS.length]}
+      initialUrl={p.thumbnailUrl}
+      version={p.thumbnailVersion}
+      stale={p.thumbnailStale}
+    />
+    {p.published && (
+      <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600 shadow-xs">
+        Live
+      </span>
+    )}
+  </div>
+</Link>
 ```
 
 (`GRADIENTS` and `cn` stay in `Dashboard.tsx`; `cn` is still used elsewhere. The `group-hover:scale-110` on the fallback letter resolves against the card's existing `group` class on the `motion.div`.)
@@ -1010,6 +1047,7 @@ git commit -m "feat(thumbnails): show cached page previews on the dashboard"
 ### Task 11: Delete the PNG when a page is deleted
 
 **Files:**
+
 - Modify: `app/api/pages/[id]/route.ts` (DELETE handler ~lines 48-55)
 
 - [ ] **Step 1: Add file cleanup to the DELETE handler**
@@ -1030,7 +1068,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     const result = await prisma.page.deleteMany({ where: { id, workspaceId: ws.workspace.id } });
     if (result.count === 0) return notFound();
     // best-effort: remove the cached preview screenshot
-    await unlink(path.join(process.cwd(), "public", "uploads", "thumbnails", `${id}.png`)).catch(() => {});
+    await unlink(path.join(process.cwd(), "public", "uploads", "thumbnails", `${id}.png`)).catch(
+      () => {},
+    );
     return json({ ok: true });
   });
 }
@@ -1053,6 +1093,7 @@ git commit -m "feat(thumbnails): delete cached preview file on page delete"
 ### Task 12: Environment configuration
 
 **Files:**
+
 - Modify: `.env`
 
 - [ ] **Step 1: Add the secret (and optional app URL) to `.env`**
@@ -1108,6 +1149,7 @@ Delete a page from the dashboard, then `ls public/uploads/thumbnails/` — its P
 ## Self-Review
 
 **Spec coverage:**
+
 - Cached screenshot via Playwright → Tasks 7, 8. ✅
 - Lazy regen on dashboard view → Tasks 9, 10 (client triggers stale cards). ✅
 - Storage under `public/uploads` → Task 7 (`/uploads/thumbnails/<id>.png`). ✅

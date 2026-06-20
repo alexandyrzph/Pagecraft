@@ -159,13 +159,39 @@ export function extractJsonArray(text: string): unknown {
 
 // Allowed style keys — must mirror StyleProps in lib/types.ts.
 const STYLE_KEYS = new Set<string>([
-  "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
-  "marginTop", "marginRight", "marginBottom", "marginLeft",
-  "color", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "textAlign", "textTransform", "fontFamily",
-  "backgroundColor", "backgroundImage", "backgroundSize", "backgroundPosition",
-  "borderRadius", "borderWidth", "borderColor", "borderStyle",
-  "boxShadow", "opacity",
-  "width", "maxWidth", "minHeight", "display", "gap", "alignItems", "justifyContent",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "color",
+  "fontSize",
+  "fontWeight",
+  "lineHeight",
+  "letterSpacing",
+  "textAlign",
+  "textTransform",
+  "fontFamily",
+  "backgroundColor",
+  "backgroundImage",
+  "backgroundSize",
+  "backgroundPosition",
+  "borderRadius",
+  "borderWidth",
+  "borderColor",
+  "borderStyle",
+  "boxShadow",
+  "opacity",
+  "width",
+  "maxWidth",
+  "minHeight",
+  "display",
+  "gap",
+  "alignItems",
+  "justifyContent",
 ]);
 
 /** A style value is injected into a stylesheet, so reject CSS-injection vectors. */
@@ -174,7 +200,10 @@ function safeStyleValue(raw: unknown): string | null {
   const v = String(raw).trim();
   if (!v || v.length > 240) return null;
   if (/[{}<>;]/.test(v)) return null; // no rule break-out / markup
-  if (/javascript:|expression\s*\(|@import|url\(\s*['"]?\s*(?:javascript:|data:text\/html)/i.test(v)) return null;
+  if (
+    /javascript:|expression\s*\(|@import|url\(\s*['"]?\s*(?:javascript:|data:text\/html)/i.test(v)
+  )
+    return null;
   return v;
 }
 
@@ -281,12 +310,40 @@ export const MOCK_BLOCKS = [
 
 /** Canned full page for the "mock" provider. */
 export const MOCK_PAGE = [
-  { type: "navbar", props: { brand: "Acme", links: ["Home", "Features", "Pricing"], ctaText: "Get started", ctaHref: "#" } },
+  {
+    type: "navbar",
+    props: {
+      brand: "Acme",
+      links: ["Home", "Features", "Pricing"],
+      ctaText: "Get started",
+      ctaHref: "#",
+    },
+  },
   ...MOCK_BLOCKS,
   {
     type: "cta",
-    props: { title: "Ready to dive in?", subtitle: "Start building today.", buttonText: "Get started", buttonHref: "#" },
-    styles: { desktop: { backgroundImage: "linear-gradient(135deg, #3b2f7a, #0b1020)", color: "#ffffff", paddingTop: "112px", paddingBottom: "112px" } },
+    props: {
+      title: "Ready to dive in?",
+      subtitle: "Start building today.",
+      buttonText: "Get started",
+      buttonHref: "#",
+    },
+    styles: {
+      desktop: {
+        backgroundImage: "linear-gradient(135deg, #3b2f7a, #0b1020)",
+        color: "#ffffff",
+        paddingTop: "112px",
+        paddingBottom: "112px",
+      },
+    },
   },
-  { type: "footer", props: { brand: "Acme", tagline: "Built with AI.", links: ["Home", "About"], copyright: "© 2026 Acme" } },
+  {
+    type: "footer",
+    props: {
+      brand: "Acme",
+      tagline: "Built with AI.",
+      links: ["Home", "About"],
+      copyright: "© 2026 Acme",
+    },
+  },
 ];

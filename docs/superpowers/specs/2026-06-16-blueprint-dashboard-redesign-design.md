@@ -31,17 +31,17 @@ page screenshots** shipped previously (`PageThumbnail`), reframed into the 16:10
 Mapped onto the existing Tailwind v4 / Geist setup. Reference hexes used as arbitrary
 Tailwind values where they differ from the default scale:
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| paper | `#f7f8fa` | app background |
-| surface | `#ffffff` | cards, sidebar |
-| hairline | `#e8eaed` | borders/dividers |
-| inset | `#f1f3f5` | search pill, segmented track |
-| ink | `#111827` | primary text, "New page" button |
-| secondary | `#4b5563` / `#6b7280` | nav text, subtitles |
-| muted | `#9aa1ac` / `#aeb4bd` | slugs, section labels, icons-idle |
-| accent | indigo-600 `#4f46e5` | active state, AI sparkle, badges |
-| live | `#047857` text + `#10b981` dot | published status |
+| Token     | Value                          | Usage                             |
+| --------- | ------------------------------ | --------------------------------- |
+| paper     | `#f7f8fa`                      | app background                    |
+| surface   | `#ffffff`                      | cards, sidebar                    |
+| hairline  | `#e8eaed`                      | borders/dividers                  |
+| inset     | `#f1f3f5`                      | search pill, segmented track      |
+| ink       | `#111827`                      | primary text, "New page" button   |
+| secondary | `#4b5563` / `#6b7280`          | nav text, subtitles               |
+| muted     | `#9aa1ac` / `#aeb4bd`          | slugs, section labels, icons-idle |
+| accent    | indigo-600 `#4f46e5`           | active state, AI sparkle, badges  |
+| live      | `#047857` text + `#10b981` dot | published status                  |
 
 `globals.css`: add `--font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;`
 to `@theme inline` so `font-mono` resolves to Geist Mono.
@@ -54,11 +54,12 @@ to `@theme inline` so `font-mono` resolves to Geist Mono.
 tone `bg-[#f7f8fa]`. Structure (sidebar + `<main>`) unchanged.
 
 **`components/app-shell/Sidebar.tsx`** — reskin only (no structural/logic change):
+
 - Hairline borders `border-[#e8eaed]`, white surface.
 - Search row → inset pill `bg-[#f1f3f5]`, muted "Search" + `⌘K` kbd (existing handler).
 - Section labels → `text-[10.5px] font-bold uppercase tracking-[0.13em] text-[#aeb4bd]`.
 - **Active nav item** changes from `bg-indigo-600 text-white` to a white card: `bg-white
-  border border-[#e8eaed] shadow-xs text-[#111827] font-semibold`, an absolute 3px indigo
+border border-[#e8eaed] shadow-xs text-[#111827] font-semibold`, an absolute 3px indigo
   left-bar (`bg-indigo-600 rounded`), and an indigo icon. Idle = `text-[#4b5563]`, hover =
   faint wash. Settings link follows the same active treatment.
 - Collapsed (68px) rail: icon-only; active = `bg-indigo-50 text-indigo-600`.
@@ -75,11 +76,12 @@ muted email; menu behavior unchanged.
 
 **`components/dashboard/Dashboard.tsx`** (orchestrator — keeps all state, data, modals,
 `hasAi` gate, `?new=1` handling, `generatePage`, `create`, `remove`, skeleton gate):
+
 - Container: `mx-auto max-w-[1320px] px-6 py-10 lg:px-12`.
 - **Header** (flex, items-end, justify-between, wrap):
   - mono breadcrumb `WORKSPACE / Pages`; `h1` "Your pages" (`text-[32px] font-bold
-    tracking-tight`); subtitle `${count} pages · ${liveCount} live · create, edit and
-    publish in one click`.
+tracking-tight`); subtitle `${count} pages · ${liveCount} live · create, edit and
+publish in one click`.
   - Right: "Generate with AI" (white, border, indigo `Sparkles`, gated by `hasAi`, opens
     `aiModal`) + "New page" (`bg-zinc-900 text-white`, opens template modal).
 - **Toolbar** (flex, justify-between, wrap):
@@ -93,6 +95,7 @@ muted email; menu behavior unchanged.
 - **Filtering:** replace the inline query filter with `filterPages(pages, query, filter)`.
 
 **`lib/dashboard/filter.ts`** (new, pure):
+
 ```
 type Filter = "all" | "live" | "drafts";
 filterPages(pages, query, filter): PageItem[]
@@ -105,6 +108,7 @@ filterPages(pages, query, filter): PageItem[]
 track; `value` + `onChange` props.
 
 **`components/dashboard/PageCard.tsx`** (new — extracted from the inline card map):
+
 - Props: the `PageItem` plus the action callbacks (`onOpenSubmissions`, `onDelete`,
   `deleting`) — mirrors the data Dashboard already has.
 - White card, `border-[#e8eaed]`, `rounded-[14px]`, overflow-hidden, hover lift

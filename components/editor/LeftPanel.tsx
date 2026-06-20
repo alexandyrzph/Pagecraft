@@ -55,14 +55,22 @@ export function LeftPanel() {
       {/* icon rail */}
       <div className="flex w-[54px] flex-col items-center gap-1 overflow-y-auto border-r border-zinc-200 bg-white py-2.5">
         {RAIL.map((r) => (
-          <RailBtn key={r.id} active={section === r.id} onClick={() => setSection(r.id)} icon={<r.icon size={18} />} label={r.label} />
+          <RailBtn
+            key={r.id}
+            active={section === r.id}
+            onClick={() => setSection(r.id)}
+            icon={<r.icon size={18} />}
+            label={r.label}
+          />
         ))}
       </div>
 
       {/* nested panel */}
       <div className="flex w-60 flex-col border-r border-zinc-200 bg-zinc-50/60">
         <div className="flex h-11 shrink-0 items-center border-b border-zinc-200 px-3.5">
-          <span className="text-sm font-semibold tracking-tight text-zinc-800">{TITLES[section]}</span>
+          <span className="text-sm font-semibold tracking-tight text-zinc-800">
+            {TITLES[section]}
+          </span>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
@@ -126,7 +134,9 @@ function RailBtn({
       title={label}
       className={cn(
         "relative flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 text-[9px] font-semibold transition-colors",
-        active ? "bg-indigo-50 text-indigo-600" : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+        active
+          ? "bg-indigo-50 text-indigo-600"
+          : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600",
       )}
     >
       {active && (

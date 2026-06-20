@@ -4,7 +4,7 @@
 
 **Goal:** Make adding/finding a block easy and the registry maintainable — by turning each block definition into pure data co-located with its Render component, splitting the 726-line `lib/registry.ts` into a thin collector over per-file definition arrays, and moving the hardcoded `columns` child-rendering rule onto the definition.
 
-**Architecture:** Two steps. (1) Make definitions self-describing data: replace the `createChildren` *function* with a `defaultChildren: string[]` array, add a `containerStrategy` field, and make `EditorBlock` render containers generically. (2) Move each block's `BlockDefinition` into its existing co-located component file (e.g. `components/blocks/basic.tsx`) as an exported array; `lib/registry.ts` becomes a collector that assembles `REGISTRY` + keeps explicit `CATEGORIES` + the `createBlock`/`getDefinition` helpers. A registry-integrity test (written first) guards the split.
+**Architecture:** Two steps. (1) Make definitions self-describing data: replace the `createChildren` _function_ with a `defaultChildren: string[]` array, add a `containerStrategy` field, and make `EditorBlock` render containers generically. (2) Move each block's `BlockDefinition` into its existing co-located component file (e.g. `components/blocks/basic.tsx`) as an exported array; `lib/registry.ts` becomes a collector that assembles `REGISTRY` + keeps explicit `CATEGORIES` + the `createBlock`/`getDefinition` helpers. A registry-integrity test (written first) guards the split.
 
 **Tech Stack:** Next.js 16, React 19, Vitest 4 (node + jsdom projects), TypeScript 5, lucide-react.
 
@@ -22,14 +22,14 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `lib/registry-types.ts` | `BlockDefinition`: drop `createChildren`, add `defaultChildren?: string[]`, `containerStrategy?: "slotted" \| "fixed"`, `emptyMinHeight?: number` | 1 |
-| `lib/registry.ts` | T1: `createBlock` resolves `defaultChildren`; `columns`/`column`/`section` get the new fields. T2: becomes a thin collector over per-file definition arrays | 1, 2 |
-| `components/editor/EditorBlock.tsx` | Render containers via `containerStrategy` (no `columns` special-case) | 1 |
-| `tests/registry.test.ts` | Registry-integrity test (keys↔types, categories, defaultChildren, createBlock) | 1 |
-| `components/blocks/shared.tsx` | Export shared `ALIGN_OPTIONS` | 2 |
-| `components/blocks/{layout,basic,embed,file,navbar,form,sections,collection}.tsx` | Each exports a `BlockDefinition[]` co-located with its Render components | 2 |
+| File                                                                              | Responsibility                                                                                                                                              | Task |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `lib/registry-types.ts`                                                           | `BlockDefinition`: drop `createChildren`, add `defaultChildren?: string[]`, `containerStrategy?: "slotted" \| "fixed"`, `emptyMinHeight?: number`           | 1    |
+| `lib/registry.ts`                                                                 | T1: `createBlock` resolves `defaultChildren`; `columns`/`column`/`section` get the new fields. T2: becomes a thin collector over per-file definition arrays | 1, 2 |
+| `components/editor/EditorBlock.tsx`                                               | Render containers via `containerStrategy` (no `columns` special-case)                                                                                       | 1    |
+| `tests/registry.test.ts`                                                          | Registry-integrity test (keys↔types, categories, defaultChildren, createBlock)                                                                              | 1    |
+| `components/blocks/shared.tsx`                                                    | Export shared `ALIGN_OPTIONS`                                                                                                                               | 2    |
+| `components/blocks/{layout,basic,embed,file,navbar,form,sections,collection}.tsx` | Each exports a `BlockDefinition[]` co-located with its Render components                                                                                    | 2    |
 
 ---
 
@@ -38,6 +38,7 @@
 This task changes the data model and the canvas container rendering **on the current monolithic `lib/registry.ts`**, and adds the integrity test. No files are split yet.
 
 **Files:**
+
 - Modify: `lib/registry-types.ts`, `lib/registry.ts`, `components/editor/EditorBlock.tsx`
 - Test: `tests/registry.test.ts`
 
@@ -131,11 +132,14 @@ Replace it with:
 - [ ] **Step 5: Update `lib/registry.ts`**
 
 (a) In the `columns` definition, replace:
+
 ```ts
     Render: ColumnsBlock,
     createChildren: () => [createBlock("column"), createBlock("column")],
 ```
+
 with:
+
 ```ts
     Render: ColumnsBlock,
     containerStrategy: "fixed",
@@ -143,18 +147,21 @@ with:
 ```
 
 (b) In the `column` definition, add `emptyMinHeight: 64` (any position among its props), e.g. after `isContainer: true,`:
+
 ```ts
     isContainer: true,
     emptyMinHeight: 64,
 ```
 
 (c) In the `section` definition, add `emptyMinHeight: 80` after `isContainer: true,`:
+
 ```ts
     isContainer: true,
     emptyMinHeight: 80,
 ```
 
 (d) Update `createBlock` to resolve `defaultChildren`:
+
 ```ts
 export function createBlock(type: string): Block {
   const def = REGISTRY[type];
@@ -172,42 +179,46 @@ export function createBlock(type: string): Block {
 - [ ] **Step 6: Make `EditorBlock` render containers generically**
 
 In `components/editor/EditorBlock.tsx`, replace the `columns` special-case block (currently):
+
 ```tsx
-    let children: ReactNode = undefined;
-    if (def!.type === "columns") {
-      children = block.children.map((c, i) => (
-        <EditorBlock key={c.id} block={c} parentId={block.id} parentType="columns" index={i} />
-      ));
-    } else if (def!.isContainer) {
-      children = (
-        <SlottedChildren
-          parentId={block.id}
-          parentType={block.type}
-          items={block.children}
-          emptyMinHeight={block.type === "column" ? 64 : 80}
-        />
-      );
-    }
+let children: ReactNode = undefined;
+if (def!.type === "columns") {
+  children = block.children.map((c, i) => (
+    <EditorBlock key={c.id} block={c} parentId={block.id} parentType="columns" index={i} />
+  ));
+} else if (def!.isContainer) {
+  children = (
+    <SlottedChildren
+      parentId={block.id}
+      parentType={block.type}
+      items={block.children}
+      emptyMinHeight={block.type === "column" ? 64 : 80}
+    />
+  );
+}
 ```
+
 with:
+
 ```tsx
-    let children: ReactNode = undefined;
-    if (def!.isContainer) {
-      children =
-        def!.containerStrategy === "fixed"
-          ? block.children.map((c, i) => (
-              <EditorBlock key={c.id} block={c} parentId={block.id} parentType={block.type} index={i} />
-            ))
-          : (
-              <SlottedChildren
-                parentId={block.id}
-                parentType={block.type}
-                items={block.children}
-                emptyMinHeight={def!.emptyMinHeight}
-              />
-            );
-    }
+let children: ReactNode = undefined;
+if (def!.isContainer) {
+  children =
+    def!.containerStrategy === "fixed" ? (
+      block.children.map((c, i) => (
+        <EditorBlock key={c.id} block={c} parentId={block.id} parentType={block.type} index={i} />
+      ))
+    ) : (
+      <SlottedChildren
+        parentId={block.id}
+        parentType={block.type}
+        items={block.children}
+        emptyMinHeight={def!.emptyMinHeight}
+      />
+    );
+}
 ```
+
 (Behavior preserved: `columns` → `"fixed"` → direct map with `parentType="columns"`; `column` → slotted, `emptyMinHeight=64`; `section` → slotted, `emptyMinHeight=80`. `SlottedChildren.emptyMinHeight` is already optional.)
 
 - [ ] **Step 7: Run the integrity test + full verification**
@@ -234,24 +245,25 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 Move each block's `BlockDefinition` out of `lib/registry.ts` into its existing co-located component file as an exported array, and rewrite `lib/registry.ts` as a thin collector. The integrity test from Task 1 + `tsc` + `build` are the safety net.
 
-> **⚠️ DEVIATION (as built — supersedes the "put arrays in the `.tsx`" instruction below):** Putting each `BlockDefinition[]` array directly inside its `"use client"` `*.tsx` file **breaks `npm run build`** in Next 16: server code that imports the registry (e.g. `lib/ai.ts` ← `/api/ai`) receives the array as a *client-reference proxy* (non-iterable), so `Object.entries`/spreads throw at runtime. The shipped solution instead puts each array in a **companion server-safe `components/blocks/*.defs.ts` file (NO `"use client"`)** that imports the Render components from the adjacent `*.tsx`; `lib/registry.ts` imports the arrays from the `*.defs.ts` files. Only leaf `Render` references cross the client boundary (held as values, rendered client-side) — this is the idiomatic RSC data-vs-component split. `ALIGN_OPTIONS` lives once in a server-safe `components/blocks/shared.defs.ts`. The `.tsx` files do NOT re-export the arrays (that would create a `.tsx`↔`.defs.ts` cycle). The mapping table, collector code, and integrity guarantees below are unchanged — only the array's home file is `*.defs.ts` rather than `*.tsx`.
+> **⚠️ DEVIATION (as built — supersedes the "put arrays in the `.tsx`" instruction below):** Putting each `BlockDefinition[]` array directly inside its `"use client"` `*.tsx` file **breaks `npm run build`** in Next 16: server code that imports the registry (e.g. `lib/ai.ts` ← `/api/ai`) receives the array as a _client-reference proxy_ (non-iterable), so `Object.entries`/spreads throw at runtime. The shipped solution instead puts each array in a **companion server-safe `components/blocks/*.defs.ts` file (NO `"use client"`)** that imports the Render components from the adjacent `*.tsx`; `lib/registry.ts` imports the arrays from the `*.defs.ts` files. Only leaf `Render` references cross the client boundary (held as values, rendered client-side) — this is the idiomatic RSC data-vs-component split. `ALIGN_OPTIONS` lives once in a server-safe `components/blocks/shared.defs.ts`. The `.tsx` files do NOT re-export the arrays (that would create a `.tsx`↔`.defs.ts` cycle). The mapping table, collector code, and integrity guarantees below are unchanged — only the array's home file is `*.defs.ts` rather than `*.tsx`.
 
 > **This is a behavior-preserving code MOVE.** The definition objects already exist verbatim in `lib/registry.ts`; move each one unchanged (every `type`/`label`/`icon`/`defaultProps`/`defaultStyles`/`fields`/`styleGroups`/`Render`/etc. preserved exactly). Do not rewrite or "improve" any definition's contents. Only their location and the surrounding imports change.
 
 **Definition → destination file (and the array export name):**
 
-| Component file | Block types to move there (in this order) | Export |
-|----------------|-------------------------------------------|--------|
-| `components/blocks/layout.tsx` | section, columns, column, spacer, divider | `export const layoutBlocks: BlockDefinition[]` |
-| `components/blocks/basic.tsx` | heading, text, button, image, icon, video, list, quote | `export const basicBlocks: BlockDefinition[]` |
-| `components/blocks/embed.tsx` | embed, code | `export const embedBlocks: BlockDefinition[]` |
-| `components/blocks/file.tsx` | file | `export const fileBlocks: BlockDefinition[]` |
-| `components/blocks/navbar.tsx` | navbar | `export const navbarBlocks: BlockDefinition[]` |
-| `components/blocks/form.tsx` | form | `export const formBlocks: BlockDefinition[]` |
-| `components/blocks/sections.tsx` | hero, features, pricing, testimonial, stats, cta, footer | `export const sectionBlocks: BlockDefinition[]` |
-| `components/blocks/collection.tsx` | collection | `export const collectionBlocks: BlockDefinition[]` |
+| Component file                     | Block types to move there (in this order)                | Export                                             |
+| ---------------------------------- | -------------------------------------------------------- | -------------------------------------------------- |
+| `components/blocks/layout.tsx`     | section, columns, column, spacer, divider                | `export const layoutBlocks: BlockDefinition[]`     |
+| `components/blocks/basic.tsx`      | heading, text, button, image, icon, video, list, quote   | `export const basicBlocks: BlockDefinition[]`      |
+| `components/blocks/embed.tsx`      | embed, code                                              | `export const embedBlocks: BlockDefinition[]`      |
+| `components/blocks/file.tsx`       | file                                                     | `export const fileBlocks: BlockDefinition[]`       |
+| `components/blocks/navbar.tsx`     | navbar                                                   | `export const navbarBlocks: BlockDefinition[]`     |
+| `components/blocks/form.tsx`       | form                                                     | `export const formBlocks: BlockDefinition[]`       |
+| `components/blocks/sections.tsx`   | hero, features, pricing, testimonial, stats, cta, footer | `export const sectionBlocks: BlockDefinition[]`    |
+| `components/blocks/collection.tsx` | collection                                               | `export const collectionBlocks: BlockDefinition[]` |
 
 **Files:**
+
 - Modify: all 8 block files above, `components/blocks/shared.tsx`, `lib/registry.ts`
 
 - [ ] **Step 1: Export shared `ALIGN_OPTIONS` from `components/blocks/shared.tsx`**
@@ -270,6 +282,7 @@ export const ALIGN_OPTIONS = [
 - [ ] **Step 2: Move definitions into each block file**
 
 For EACH file in the table: add an exported `BlockDefinition[]` array containing that file's block definitions (moved verbatim from `lib/registry.ts`), and add the imports those definitions need at the top of the file:
+
 - `import type { BlockDefinition } from "@/lib/registry-types";`
 - the lucide icons each definition uses (move them from `lib/registry.ts`'s import — e.g. `Heading, Type, MousePointerClick, Image as ImageIcon, Star, Video as VideoIcon, List as ListIcon, Quote as QuoteIcon` for `basic.tsx`),
 - `import { ALIGN_OPTIONS } from "./shared";` where a definition uses it (`basic.tsx` for button/icon, `file.tsx`, `sections.tsx` for hero),
@@ -315,8 +328,36 @@ export const REGISTRY: Record<string, BlockDefinition> = Object.fromEntries(
 // definition order, and the child-only "column" block is omitted on purpose).
 export const CATEGORIES: { name: BlockCategory; types: string[] }[] = [
   { name: "Layout", types: ["section", "columns", "spacer", "divider"] },
-  { name: "Basic", types: ["heading", "text", "button", "image", "icon", "video", "list", "quote", "file", "embed", "code"] },
-  { name: "Sections", types: ["navbar", "hero", "features", "pricing", "testimonial", "stats", "cta", "form", "footer"] },
+  {
+    name: "Basic",
+    types: [
+      "heading",
+      "text",
+      "button",
+      "image",
+      "icon",
+      "video",
+      "list",
+      "quote",
+      "file",
+      "embed",
+      "code",
+    ],
+  },
+  {
+    name: "Sections",
+    types: [
+      "navbar",
+      "hero",
+      "features",
+      "pricing",
+      "testimonial",
+      "stats",
+      "cta",
+      "form",
+      "footer",
+    ],
+  },
   { name: "Dynamic", types: ["collection"] },
 ];
 
@@ -383,5 +424,6 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Deferred / not in this plan
+
 - Removing the now-explicit `CATEGORIES` in favor of derivation — kept explicit because palette order ≠ definition order and `column` is intentionally excluded; the integrity test guards drift instead.
 - Per-block dynamic import / lazy registration (code-splitting the block bundle) — out of scope.

@@ -28,7 +28,7 @@ We want each card to show a **real rendered preview** of its page.
 ## Existing building blocks (reused, not rebuilt)
 
 - `app/p/[slug]/page.tsx` — faithful public render: `designSystemCss(...) +
-  responsiveCss(...)` injected as `<style>`, `themeVars(theme)` on `<main>`, header/footer
+responsiveCss(...)` injected as `<style>`, `themeVars(theme)` on `<main>`, header/footer
   from `Site`, `components` and `collections` resolved from the DB, rendered via
   `BlockRenderer` with `inlineStyles={false}`. **Gated by `page.published`.**
 - `components/BlockRenderer.tsx` — chrome-free recursive renderer. Takes an `animate` prop

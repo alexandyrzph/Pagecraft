@@ -5,7 +5,7 @@ responsive pages from a rich block library, manage content with a built-in CMS,
 collaborate across workspaces, then **publish to a public URL** or **export
 standalone HTML**.
 
-This document is a complete catalogue of what the app can do. For the *why*
+This document is a complete catalogue of what the app can do. For the _why_
 behind the design, see the [Architecture Decision Records](./adr/README.md); for
 diagrams, see [architecture.md](./architecture.md).
 
@@ -39,6 +39,7 @@ so what you see matches the published page (including responsive CSS at the true
 device width).
 
 **Building**
+
 - **Drag-and-drop** blocks from the palette onto the canvas; reorder and move
   blocks; drop into container slots (sections, columns).
 - **Inline editing** directly on the canvas — click headings, hero copy, feature
@@ -49,6 +50,7 @@ device width).
   shortcut for adding whole sections.
 
 **Selecting**
+
 - Click to select; **multi-select** with Shift/Cmd-click.
 - **Floating selection toolbar**: drag handle, duplicate, delete, save as
   component (component instances also get Edit / Detach).
@@ -57,6 +59,7 @@ device width).
 - Hover outlines and block labels while editing.
 
 **Editing operations**
+
 - **Undo / redo** with a 100-step history.
 - **Copy / cut / paste** blocks, **duplicate**, and **delete**.
 - **Copy / paste styles** — lift a block's full responsive style set onto another.
@@ -64,6 +67,7 @@ device width).
   insert section below, move up/down, save as component, delete.
 
 **Workspace UI**
+
 - **Top bar**: inline page-title editing, AI, zoom, breakpoints, undo/redo, DOM
   tree, preview, version history, export HTML, save status, publish/unpublish.
 - **Left rail panels**: Blocks, Layers, Pages, Site, Design, SEO, CMS.
@@ -77,6 +81,7 @@ device width).
 - **Zoom** — in/out, presets (50–200%), **Fit to width**, and ⌘+/⌘-/⌘0.
 
 **Saving**
+
 - **Autosave** (debounced ~1.2s) plus manual save (⌘S).
 - **Unsaved-changes guard** when switching pages or leaving the editor, including
   a browser unload warning.
@@ -92,44 +97,48 @@ components, the site header/footer, and CMS detail templates.
 keeps the palette, canvas, and inspector in sync.
 
 ### Layout
-| Block | Description |
-| --- | --- |
+
+| Block       | Description                                                              |
+| ----------- | ------------------------------------------------------------------------ |
 | **Section** | Full-width container with background, spacing, border, and layout styles |
-| **Columns** | Multi-column layout with presets: 1, 1-1, 1-1-1, 1-1-1-1, 1-2, 2-1 |
-| **Spacer** | Adjustable vertical space |
-| **Divider** | Horizontal rule with color, thickness, width, and line style |
+| **Columns** | Multi-column layout with presets: 1, 1-1, 1-1-1, 1-1-1-1, 1-2, 2-1       |
+| **Spacer**  | Adjustable vertical space                                                |
+| **Divider** | Horizontal rule with color, thickness, width, and line style             |
 
 ### Basic
-| Block | Description |
-| --- | --- |
-| **Heading** | Text with level h1–h6 |
-| **Text** | Rich-text paragraph (inline editing) |
-| **Button** | Label, link, and alignment |
-| **Image** | Asset-picker source, alt text, object fit |
-| **Icon** | 60 curated Lucide icons with size, color, alignment |
-| **Video** | YouTube, Vimeo, or MP4 URL |
-| **List** | Bulleted list with custom bullet icon and color |
-| **Quote** | Quotation with author |
-| **File** | Downloadable file with title and description |
-| **Embed / HTML** | Raw HTML or iframe snippet |
-| **Code** | Code block with a language label |
+
+| Block            | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| **Heading**      | Text with level h1–h6                               |
+| **Text**         | Rich-text paragraph (inline editing)                |
+| **Button**       | Label, link, and alignment                          |
+| **Image**        | Asset-picker source, alt text, object fit           |
+| **Icon**         | 60 curated Lucide icons with size, color, alignment |
+| **Video**        | YouTube, Vimeo, or MP4 URL                          |
+| **List**         | Bulleted list with custom bullet icon and color     |
+| **Quote**        | Quotation with author                               |
+| **File**         | Downloadable file with title and description        |
+| **Embed / HTML** | Raw HTML or iframe snippet                          |
+| **Code**         | Code block with a language label                    |
 
 ### Sections
-| Block | Description |
-| --- | --- |
-| **Navbar** | Brand, nav links, and a CTA button |
-| **Hero** | Eyebrow, title, subtitle, button, alignment |
-| **Feature grid** | 2/3/4-column features with icon, title, text |
-| **Pricing** | Plans with price, period, feature list, featured flag |
-| **Testimonial** | Quote, author, role, avatar, 1–5 star rating |
-| **Stats** | Value/label statistic items |
-| **Call to action** | Title, subtitle, button |
-| **Form** | Contact form with configurable fields (see §9) |
-| **Footer** | Brand, tagline, nav links, copyright |
+
+| Block              | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| **Navbar**         | Brand, nav links, and a CTA button                    |
+| **Hero**           | Eyebrow, title, subtitle, button, alignment           |
+| **Feature grid**   | 2/3/4-column features with icon, title, text          |
+| **Pricing**        | Plans with price, period, feature list, featured flag |
+| **Testimonial**    | Quote, author, role, avatar, 1–5 star rating          |
+| **Stats**          | Value/label statistic items                           |
+| **Call to action** | Title, subtitle, button                               |
+| **Form**           | Contact form with configurable fields (see §9)        |
+| **Footer**         | Brand, tagline, nav links, copyright                  |
 
 ### Dynamic
-| Block | Description |
-| --- | --- |
+
+| Block               | Description                                  |
+| ------------------- | -------------------------------------------- |
 | **Collection List** | Renders items from a CMS collection (see §7) |
 
 > Two internal block types support the system: **Column** (auto-created inside
@@ -144,6 +153,7 @@ The inspector has two tabs: **Content** and **Style**.
 **Content** — fields are defined per block and include text, textarea, code,
 number, select, color, image, URL, boolean, icon, file, string-list, and
 repeatable item lists. Every block also exposes:
+
 - **HTML ID** and **CSS classes**
 - **Text style** picker (apply or save a site-wide preset)
 - **Copy / paste styles**
@@ -177,6 +187,7 @@ slide-right, with adjustable delay. Plays in preview and on published pages.
 ## 5. Pages & dashboard
 
 **Dashboard**
+
 - Grid of page cards with **thumbnail previews** (with stale detection), live/draft
   badges, slug, and last-updated time.
 - **Filter** (All / Live / Drafts) and **search** by title.
@@ -194,6 +205,7 @@ share preview.
 `/p/{slug}`.
 
 **Version history**
+
 - Manual **Save version** snapshots.
 - Automatic **"Published"** snapshot on each publish.
 - Automatic **"Before restore"** snapshot when restoring.
@@ -207,6 +219,7 @@ share preview.
 (6 presets).
 
 **Site-wide shared styles**
+
 - **Color styles** — named colors exposed as CSS variables and reusable anywhere.
 - **Text styles** — named typography presets applied via the inspector.
 - Managed in the editor **Design** rail or the standalone **/design** page.
@@ -299,12 +312,12 @@ Multi-tenant workspaces with role-based access.
 
 **Roles**: OWNER > ADMIN > EDITOR > VIEWER.
 
-| Role | Can |
-| --- | --- |
-| **Viewer** | View the dashboard, pages, and assets |
+| Role       | Can                                                                          |
+| ---------- | ---------------------------------------------------------------------------- |
+| **Viewer** | View the dashboard, pages, and assets                                        |
 | **Editor** | Create/edit pages, CMS, components; publish; upload; use AI; manage versions |
-| **Admin** | Everything above, plus invite/manage members and rename the workspace |
-| **Owner** | Everything above, plus delete the workspace |
+| **Admin**  | Everything above, plus invite/manage members and rename the workspace        |
+| **Owner**  | Everything above, plus delete the workspace                                  |
 
 - **Workspace switcher** to move between workspaces.
 - **Settings** (Admin+): rename workspace, manage members and roles, **invite by
@@ -327,34 +340,34 @@ Multi-tenant workspaces with role-based access.
 
 ## 15. Keyboard shortcuts
 
-| Shortcut | Action |
-| --- | --- |
-| ⌘K | Command palette |
-| ⌘S | Save |
-| ⌘Z / ⌘⇧Z | Undo / Redo |
-| ⌘C / ⌘X / ⌘V | Copy / Cut / Paste |
-| ⌘D | Duplicate |
-| ⌘⌥C / ⌘⌥V | Copy / Paste styles |
-| ⌘+ / ⌘- / ⌘0 | Zoom in / out / reset |
-| Delete / Backspace | Delete selected |
-| Escape | Deselect / close panel |
+| Shortcut           | Action                 |
+| ------------------ | ---------------------- |
+| ⌘K                 | Command palette        |
+| ⌘S                 | Save                   |
+| ⌘Z / ⌘⇧Z           | Undo / Redo            |
+| ⌘C / ⌘X / ⌘V       | Copy / Cut / Paste     |
+| ⌘D                 | Duplicate              |
+| ⌘⌥C / ⌘⌥V          | Copy / Paste styles    |
+| ⌘+ / ⌘- / ⌘0       | Zoom in / out / reset  |
+| Delete / Backspace | Delete selected        |
+| Escape             | Deselect / close panel |
 
 ---
 
 ## 16. Route map
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Pages dashboard |
-| `/editor/[id]` | Page editor |
-| `/component/[id]` | Component editor |
-| `/site/header`, `/site/footer` | Site header/footer editors |
-| `/collection/[id]/template` | CMS detail template editor |
-| `/p/[slug]` | Published page |
-| `/c/[slug]/[item]` | Published CMS item detail |
-| `/design`, `/site`, `/cms`, `/components`, `/assets`, `/forms`, `/activity` | App sections |
-| `/settings`, `/account` | Workspace & user settings |
-| `/login`, `/signup`, `/forgot`, `/reset`, `/onboarding`, `/invite/[token]` | Auth & onboarding |
+| Route                                                                       | Purpose                    |
+| --------------------------------------------------------------------------- | -------------------------- |
+| `/`                                                                         | Pages dashboard            |
+| `/editor/[id]`                                                              | Page editor                |
+| `/component/[id]`                                                           | Component editor           |
+| `/site/header`, `/site/footer`                                              | Site header/footer editors |
+| `/collection/[id]/template`                                                 | CMS detail template editor |
+| `/p/[slug]`                                                                 | Published page             |
+| `/c/[slug]/[item]`                                                          | Published CMS item detail  |
+| `/design`, `/site`, `/cms`, `/components`, `/assets`, `/forms`, `/activity` | App sections               |
+| `/settings`, `/account`                                                     | Workspace & user settings  |
+| `/login`, `/signup`, `/forgot`, `/reset`, `/onboarding`, `/invite/[token]`  | Auth & onboarding          |
 
 ---
 

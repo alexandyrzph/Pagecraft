@@ -12,7 +12,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const body = await req.json().catch(() => ({}));
     const published = body.published !== false;
 
-    const result = await prisma.page.updateMany({ where: { id, workspaceId: ws.workspace.id }, data: { published } });
+    const result = await prisma.page.updateMany({
+      where: { id, workspaceId: ws.workspace.id },
+      data: { published },
+    });
     if (result.count === 0) return notFound();
     const page = await prisma.page.findFirst({ where: { id, workspaceId: ws.workspace.id } });
     await logActivity(ws.workspace.id, ws.user.id, "page.published", id);

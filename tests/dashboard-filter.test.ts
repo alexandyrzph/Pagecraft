@@ -19,7 +19,10 @@ describe("filterPages", () => {
     expect(filterPages(pages, "untitled", "all").map((p) => p.slug)).toEqual(["untitled-page"]);
   });
   it("filters live and drafts", () => {
-    expect(filterPages(pages, "", "live").map((p) => p.slug)).toEqual(["portfolio", "acme-landing"]);
+    expect(filterPages(pages, "", "live").map((p) => p.slug)).toEqual([
+      "portfolio",
+      "acme-landing",
+    ]);
     expect(filterPages(pages, "", "drafts").map((p) => p.slug)).toEqual(["untitled-page"]);
   });
   it("combines query and filter", () => {

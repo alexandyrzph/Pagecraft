@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bold, Italic, Link2, List, ListOrdered, Loader2, Sparkles, Strikethrough, Unlink } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
+  Loader2,
+  Sparkles,
+  Strikethrough,
+  Unlink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRichText } from "@/store/richtext";
 import { useIframe } from "./iframe-context";
@@ -92,25 +102,49 @@ export function RichTextToolbar() {
       style={{ left, top }}
       onMouseDown={(e) => e.preventDefault()}
     >
-      <TBtn active={editor.isActive("bold")} onClick={() => run(() => editor.chain().focus().toggleBold().run())} title="Bold (⌘B)">
+      <TBtn
+        active={editor.isActive("bold")}
+        onClick={() => run(() => editor.chain().focus().toggleBold().run())}
+        title="Bold (⌘B)"
+      >
         <Bold size={14} />
       </TBtn>
-      <TBtn active={editor.isActive("italic")} onClick={() => run(() => editor.chain().focus().toggleItalic().run())} title="Italic (⌘I)">
+      <TBtn
+        active={editor.isActive("italic")}
+        onClick={() => run(() => editor.chain().focus().toggleItalic().run())}
+        title="Italic (⌘I)"
+      >
         <Italic size={14} />
       </TBtn>
-      <TBtn active={editor.isActive("strike")} onClick={() => run(() => editor.chain().focus().toggleStrike().run())} title="Strikethrough">
+      <TBtn
+        active={editor.isActive("strike")}
+        onClick={() => run(() => editor.chain().focus().toggleStrike().run())}
+        title="Strikethrough"
+      >
         <Strikethrough size={14} />
       </TBtn>
       <Sep />
-      <TBtn active={editor.isActive("bulletList")} onClick={() => run(() => editor.chain().focus().toggleBulletList().run())} title="Bullet list">
+      <TBtn
+        active={editor.isActive("bulletList")}
+        onClick={() => run(() => editor.chain().focus().toggleBulletList().run())}
+        title="Bullet list"
+      >
         <List size={14} />
       </TBtn>
-      <TBtn active={editor.isActive("orderedList")} onClick={() => run(() => editor.chain().focus().toggleOrderedList().run())} title="Numbered list">
+      <TBtn
+        active={editor.isActive("orderedList")}
+        onClick={() => run(() => editor.chain().focus().toggleOrderedList().run())}
+        title="Numbered list"
+      >
         <ListOrdered size={14} />
       </TBtn>
       <Sep />
       {editor.isActive("link") ? (
-        <TBtn active onClick={() => run(() => editor.chain().focus().unsetLink().run())} title="Remove link">
+        <TBtn
+          active
+          onClick={() => run(() => editor.chain().focus().unsetLink().run())}
+          title="Remove link"
+        >
           <Unlink size={14} />
         </TBtn>
       ) : (
@@ -150,7 +184,7 @@ export function RichTextToolbar() {
               onClick={() => setAiOpen((o) => !o)}
               className={cn(
                 "flex h-7 items-center gap-1 rounded-lg px-1.5 text-[12px] font-semibold transition-colors",
-                aiOpen ? "bg-indigo-600 text-white" : "text-indigo-600 hover:bg-indigo-50"
+                aiOpen ? "bg-indigo-600 text-white" : "text-indigo-600 hover:bg-indigo-50",
               )}
             >
               {aiBusy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />} AI
@@ -197,7 +231,7 @@ function TBtn({
       onClick={onClick}
       className={cn(
         "flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
-        active ? "bg-indigo-500 text-white" : "text-zinc-300 hover:bg-zinc-700 hover:text-white"
+        active ? "bg-indigo-500 text-white" : "text-zinc-300 hover:bg-zinc-700 hover:text-white",
       )}
     >
       {children}

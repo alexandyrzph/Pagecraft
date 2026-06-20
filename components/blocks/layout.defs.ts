@@ -1,12 +1,6 @@
 import { Layout as SectionIcon, Columns3, Square, MoveVertical, Minus } from "lucide-react";
 import type { BlockDefinition } from "@/lib/blocks/registry-types";
-import {
-  SectionBlock,
-  ColumnsBlock,
-  ColumnBlock,
-  SpacerBlock,
-  DividerBlock,
-} from "./layout";
+import { SectionBlock, ColumnsBlock, ColumnBlock, SpacerBlock, DividerBlock } from "./layout";
 
 export const layoutBlocks: BlockDefinition[] = [
   {

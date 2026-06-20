@@ -11,7 +11,9 @@ import type { OAuthProfile, Provider } from "@/lib/auth/oauth";
  */
 export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile): Promise<string> {
   const linked = await prisma.oAuthAccount.findUnique({
-    where: { provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId } },
+    where: {
+      provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId },
+    },
   });
   if (linked) return linked.userId;
 
@@ -20,7 +22,9 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
   if (email && profile.emailVerified) {
     const byEmail = await prisma.user.findUnique({ where: { email } });
     if (byEmail) {
-      await prisma.oAuthAccount.create({ data: { provider, providerAccountId: profile.providerAccountId, userId: byEmail.id } });
+      await prisma.oAuthAccount.create({
+        data: { provider, providerAccountId: profile.providerAccountId, userId: byEmail.id },
+      });
       return byEmail.id;
     }
   }
@@ -30,9 +34,14 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
     if (taken) throw new Error("email_in_use"); // unverified provider email — don't take over
   }
 
-  const finalEmail = email || `${provider}-${profile.providerAccountId}@users.noreply.pagecraft.local`;
-  const user = await prisma.user.create({ data: { email: finalEmail, name: profile.name || "", passwordHash: null } });
-  await prisma.oAuthAccount.create({ data: { provider, providerAccountId: profile.providerAccountId, userId: user.id } });
+  const finalEmail =
+    email || `${provider}-${profile.providerAccountId}@users.noreply.pagecraft.local`;
+  const user = await prisma.user.create({
+    data: { email: finalEmail, name: profile.name || "", passwordHash: null },
+  });
+  await prisma.oAuthAccount.create({
+    data: { provider, providerAccountId: profile.providerAccountId, userId: user.id },
+  });
   await createWorkspace(user.id, `${(profile.name || "My").trim() || "My"}'s Workspace`);
   return user.id;
 }

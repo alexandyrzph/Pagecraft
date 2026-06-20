@@ -2,10 +2,15 @@ import type { ColorToken, DesignSystem, TextStyle } from "@/lib/types";
 import { styleDeclarations } from "@/lib/blocks/styles";
 
 /** Parse the Site row's stored JSON into a usable design system. */
-export function parseDesignSystem(site: {
-  colors?: string | null;
-  textStyles?: string | null;
-} | null | undefined): DesignSystem {
+export function parseDesignSystem(
+  site:
+    | {
+        colors?: string | null;
+        textStyles?: string | null;
+      }
+    | null
+    | undefined,
+): DesignSystem {
   const arr = (json: string | null | undefined) => {
     if (!json) return [];
     try {
@@ -30,10 +35,7 @@ export function parseDesignSystem(site: {
 //    specificity → source order decides).
 // ---------------------------------------------------------------------------
 
-export function designSystemCss(
-  colors: ColorToken[] = [],
-  textStyles: TextStyle[] = []
-): string {
+export function designSystemCss(colors: ColorToken[] = [], textStyles: TextStyle[] = []): string {
   const parts: string[] = [];
 
   const vars = colors

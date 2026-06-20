@@ -25,7 +25,7 @@ function parseFields(s: string): CollectionField[] {
   }
 }
 
-export function parseItemData(s: string): Record<string, any> {
+export function parseItemData(s: string): Record<string, string> {
   try {
     const v = JSON.parse(s);
     return v && typeof v === "object" && !Array.isArray(v) ? v : {};

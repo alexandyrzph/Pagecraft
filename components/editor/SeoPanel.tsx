@@ -11,7 +11,11 @@ export function SeoPanel() {
   return (
     <div className="space-y-4 p-3">
       <Field label="Meta title">
-        <TextInput value={seo.metaTitle ?? ""} onChange={(v) => setSeo({ metaTitle: v })} placeholder={title} />
+        <TextInput
+          value={seo.metaTitle ?? ""}
+          onChange={(v) => setSeo({ metaTitle: v })}
+          placeholder={title}
+        />
       </Field>
       <Field label="Meta description">
         <TextArea
@@ -39,7 +43,8 @@ export function SeoPanel() {
             <p className="text-[10px] uppercase tracking-wide text-zinc-400">pagecraft.app</p>
             <p className="truncate text-sm font-semibold text-zinc-800">{seo.metaTitle || title}</p>
             <p className="line-clamp-2 text-xs text-zinc-500">
-              {seo.metaDescription || "Add a meta description to control how this page looks when shared."}
+              {seo.metaDescription ||
+                "Add a meta description to control how this page looks when shared."}
             </p>
           </div>
         </div>

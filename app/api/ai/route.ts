@@ -43,11 +43,19 @@ export async function GET() {
   return json({ providers, default: providers[0] ?? null });
 }
 
-async function callAnthropic(model: string, system: string, prompt: string, maxTokens: number, temperature: number): Promise<string> {
+async function callAnthropic(
+  model: string,
+  system: string,
+  prompt: string,
+  maxTokens: number,
+  temperature: number,
+): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
@@ -64,7 +72,13 @@ async function callAnthropic(model: string, system: string, prompt: string, maxT
   return data?.content?.[0]?.text ?? "";
 }
 
-async function callOpenAI(model: string, system: string, prompt: string, maxTokens: number, temperature: number): Promise<string> {
+async function callOpenAI(
+  model: string,
+  system: string,
+  prompt: string,
+  maxTokens: number,
+  temperature: number,
+): Promise<string> {
   const r = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -92,7 +106,7 @@ async function callModel(
   system: string,
   prompt: string,
   maxTokens: number,
-  temperature: number
+  temperature: number,
 ): Promise<string> {
   return provider === "openai"
     ? callOpenAI(models.openai, system, prompt, maxTokens, temperature)
@@ -102,58 +116,81 @@ async function callModel(
 // POST /api/ai — generate blocks from a prompt
 export async function POST(req: Request) {
   return instrumentApi("/api/ai", req, () =>
-    withRole("EDITOR", async (_ws) => {
-    const providers = available();
-    if (!providers.length) {
-      return badRequest("No AI provider configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env.");
-    }
+    withRole("EDITOR", async () => {
+      const providers = available();
+      if (!providers.length) {
+        return badRequest(
+          "No AI provider configured. Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env.",
+        );
+      }
 
-    const body = await req.json().catch(() => ({}));
-    const mode =
-      body.mode === "rewrite" ? "rewrite" : body.mode === "page" ? "page" : "generate";
-    const provider = providers.includes(body.provider) ? body.provider : providers[0];
+      const body = await req.json().catch(() => ({}));
+      const mode = body.mode === "rewrite" ? "rewrite" : body.mode === "page" ? "page" : "generate";
+      const provider = providers.includes(body.provider) ? body.provider : providers[0];
 
-    try {
-      // --- rewrite / improve text ---
-      if (mode === "rewrite") {
-        const text = String(body.text || "").slice(0, 4000).trim();
-        if (!text) return badRequest("No text to rewrite");
-        const instruction = REWRITE_INSTRUCTIONS[body.action as string] ?? REWRITE_INSTRUCTIONS.improve;
-        if (provider === "mock") {
-          return json({ provider, text: `${text} (improved)` });
+      try {
+        // --- rewrite / improve text ---
+        if (mode === "rewrite") {
+          const text = String(body.text || "")
+            .slice(0, 4000)
+            .trim();
+          if (!text) return badRequest("No text to rewrite");
+          const instruction =
+            REWRITE_INSTRUCTIONS[body.action as string] ?? REWRITE_INSTRUCTIONS.improve;
+          if (provider === "mock") {
+            return json({ provider, text: `${text} (improved)` });
+          }
+          const out = await callModel(
+            provider,
+            REWRITE_MODEL,
+            REWRITE_SYSTEM,
+            `${instruction}:\n\n${text}`,
+            1000,
+            0.5,
+          );
+          const cleaned = out.trim().replace(/^["']|["']$/g, "");
+          if (!cleaned) return error(422, "No rewrite returned");
+          return json({ provider, text: cleaned });
         }
-        const out = await callModel(provider, REWRITE_MODEL, REWRITE_SYSTEM, `${instruction}:\n\n${text}`, 1000, 0.5);
-        const cleaned = out.trim().replace(/^["']|["']$/g, "");
-        if (!cleaned) return error(422, "No rewrite returned");
-        return json({ provider, text: cleaned });
-      }
 
-      // --- generate section(s) or a whole page ---
-      const prompt = String(body.prompt || "").slice(0, 1000).trim();
-      if (!prompt) return badRequest("Prompt is required");
-      const isPage = mode === "page";
-      if (provider === "mock") {
-        return json({ provider, blocks: sanitizeGeneratedBlocks(isPage ? MOCK_PAGE : MOCK_BLOCKS) });
+        // --- generate section(s) or a whole page ---
+        const prompt = String(body.prompt || "")
+          .slice(0, 1000)
+          .trim();
+        if (!prompt) return badRequest("Prompt is required");
+        const isPage = mode === "page";
+        if (provider === "mock") {
+          return json({
+            provider,
+            blocks: sanitizeGeneratedBlocks(isPage ? MOCK_PAGE : MOCK_BLOCKS),
+          });
+        }
+        const style = DESIGN_STYLE_KEYS.includes(body.style) ? body.style : "auto";
+        const system = isPage ? pageSystemPrompt(style) : sectionSystemPrompt(style);
+        // styled output is larger; give it room. Higher temperature → more distinctive.
+        const t0 = performance.now();
+        const raw = await callModel(
+          provider,
+          GEN_MODEL,
+          system,
+          prompt,
+          isPage ? 8000 : 4000,
+          0.85,
+        );
+        logger.info("ai.generate", {
+          provider,
+          mode,
+          style,
+          upstream_ms: Math.round(performance.now() - t0),
+        });
+        const blocks = sanitizeGeneratedBlocks(extractJsonArray(raw));
+        if (!blocks.length) {
+          return error(422, "The model returned no usable blocks. Try rephrasing.");
+        }
+        return json({ provider, blocks });
+      } catch (e) {
+        return error(502, e instanceof Error ? e.message : "Generation failed");
       }
-      const style = DESIGN_STYLE_KEYS.includes(body.style) ? body.style : "auto";
-      const system = isPage ? pageSystemPrompt(style) : sectionSystemPrompt(style);
-      // styled output is larger; give it room. Higher temperature → more distinctive.
-      const t0 = performance.now();
-      const raw = await callModel(provider, GEN_MODEL, system, prompt, isPage ? 8000 : 4000, 0.85);
-      logger.info("ai.generate", {
-        provider,
-        mode,
-        style,
-        upstream_ms: Math.round(performance.now() - t0),
-      });
-      const blocks = sanitizeGeneratedBlocks(extractJsonArray(raw));
-      if (!blocks.length) {
-        return error(422, "The model returned no usable blocks. Try rephrasing.");
-      }
-      return json({ provider, blocks });
-    } catch (e) {
-      return error(502, e instanceof Error ? e.message : "Generation failed");
-    }
     }),
   );
 }

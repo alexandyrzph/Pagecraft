@@ -99,7 +99,12 @@ export function useEditorPersistence(opts: {
     const s = useEditor.getState();
     const body = exportRef.current?.innerHTML ?? "";
     const ds = useDesignSystem.getState();
-    const html = buildExportDocument(s.title, body, s.tree, designSystemCss(ds.colors, ds.textStyles));
+    const html = buildExportDocument(
+      s.title,
+      body,
+      s.tree,
+      designSystemCss(ds.colors, ds.textStyles),
+    );
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

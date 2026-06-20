@@ -15,7 +15,9 @@ export default async function ComponentsPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Components</h1>
-      <p className="mt-1 text-sm text-zinc-500">Reusable sections you've saved from the editor.</p>
+      <p className="mt-1 text-sm text-zinc-500">
+        Reusable sections you&apos;ve saved from the editor.
+      </p>
 
       <div className="mt-8">
         {components.length === 0 ? (
@@ -37,7 +39,10 @@ export default async function ComponentsPage() {
                 className="group rounded-2xl border border-zinc-200 bg-white p-5 transition-shadow hover:shadow-md"
               >
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 group-hover:bg-indigo-50 transition-colors">
-                  <Component size={20} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
+                  <Component
+                    size={20}
+                    className="text-zinc-400 group-hover:text-indigo-500 transition-colors"
+                  />
                 </div>
                 <p className="truncate text-sm font-semibold text-zinc-800">{c.name}</p>
                 <p className="mt-0.5 text-xs text-zinc-400">

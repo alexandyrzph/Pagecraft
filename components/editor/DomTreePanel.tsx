@@ -2,7 +2,15 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { GripHorizontal, Maximize2, Move, Network, PanelBottom, StretchHorizontal, X } from "lucide-react";
+import {
+  GripHorizontal,
+  Maximize2,
+  Move,
+  Network,
+  PanelBottom,
+  StretchHorizontal,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDefinition } from "@/lib/blocks/registry";
 import { blockHtmlClass, blockHtmlId } from "@/lib/blocks/styles";
@@ -15,12 +23,31 @@ import { useIframe } from "./iframe-context";
 // panel reads like a real DOM/elements tree rather than the friendly labels the
 // Layers panel already provides.
 const TAGS: Record<string, string> = {
-  section: "section", hero: "section", features: "section", pricing: "section",
-  testimonial: "section", stats: "section", cta: "section", form: "form",
-  collection: "section", footer: "footer", navbar: "nav",
-  text: "div", button: "a", image: "img", icon: "div", video: "div",
-  list: "ul", quote: "blockquote", columns: "div", column: "div",
-  spacer: "div", divider: "div", file: "div", embed: "div", code: "div",
+  section: "section",
+  hero: "section",
+  features: "section",
+  pricing: "section",
+  testimonial: "section",
+  stats: "section",
+  cta: "section",
+  form: "form",
+  collection: "section",
+  footer: "footer",
+  navbar: "nav",
+  text: "div",
+  button: "a",
+  image: "img",
+  icon: "div",
+  video: "div",
+  list: "ul",
+  quote: "blockquote",
+  columns: "div",
+  column: "div",
+  spacer: "div",
+  divider: "div",
+  file: "div",
+  embed: "div",
+  code: "div",
   component: "div",
 };
 
@@ -52,7 +79,9 @@ function DomNode({ block, depth }: { block: Block; depth: number }) {
   const classList = [...new Set(blockHtmlClass(block).split(/\s+/).filter(Boolean))].join(" ");
   const selected = selectedId === block.id;
   const hovered = hoveredId === block.id;
-  const text = block.props?.text || block.props?.title || block.props?.brand;
+  const text = (block.props?.text || block.props?.title || block.props?.brand) as
+    | string
+    | undefined;
 
   return (
     <>
@@ -63,7 +92,7 @@ function DomNode({ block, depth }: { block: Block; depth: number }) {
         style={{ paddingLeft: 10 + depth * 14 }}
         className={cn(
           "cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap rounded py-[3px] pr-2 font-mono text-[12px] leading-5 transition-colors",
-          selected ? "bg-indigo-100" : hovered ? "bg-zinc-100" : "hover:bg-zinc-100"
+          selected ? "bg-indigo-100" : hovered ? "bg-zinc-100" : "hover:bg-zinc-100",
         )}
       >
         <span className="text-zinc-400">&lt;</span>
@@ -93,6 +122,36 @@ function DomNode({ block, depth }: { block: Block; depth: number }) {
   );
 }
 
+function ModeBtn({
+  m,
+  icon,
+  title,
+  active,
+  onSelect,
+}: {
+  m: Mode;
+  icon: React.ReactNode;
+  title: string;
+  active: boolean;
+  onSelect: (m: Mode) => void;
+}) {
+  return (
+    <button
+      data-no-drag
+      onClick={() => onSelect(m)}
+      title={title}
+      className={cn(
+        "rounded-md p-1 transition-colors",
+        active
+          ? "bg-indigo-100 text-indigo-600"
+          : "text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600",
+      )}
+    >
+      {icon}
+    </button>
+  );
+}
+
 export function DomTreePanel() {
   const open = useEditorUI((s) => s.domTree);
   const close = useEditorUI((s) => s.closeDomTree);
@@ -105,7 +164,7 @@ export function DomTreePanel() {
   const [dragging, setDragging] = useState(false);
   const [dockHint, setDockHint] = useState(false);
   const fltInit = useRef(false);
-  const lastDock = useRef<Mode>("dock"); // which docked mode to restore on re-dock
+  const [lastDock, setLastDock] = useState<Mode>("dock"); // which docked mode to restore on re-dock
 
   // While dragging/resizing, make the iframe pointer-inert so it doesn't
   // swallow pointermove/up (same gotcha the FloatingInspector handles).
@@ -132,11 +191,13 @@ export function DomTreePanel() {
   // floating one under the cursor. Releasing over the bottom dock zone re-docks it.
   const onHeaderDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("[data-no-drag]")) return;
-    const sx = e.clientX, sy = e.clientY;
+    const sx = e.clientX,
+      sy = e.clientY;
     const startMode = mode;
     const startFlt = flt;
     let started = false;
-    let grabX = 0, grabY = 0; // cursor offset within the floating panel
+    let grabX = 0,
+      grabY = 0; // cursor offset within the floating panel
 
     const move = (ev: PointerEvent) => {
       if (!started) {
@@ -171,7 +232,7 @@ export function DomTreePanel() {
       setDragging(false);
       passthrough(false);
       setDockHint(false);
-      if (ev.clientY > window.innerHeight - DOCK_ZONE) setMode(lastDock.current);
+      if (ev.clientY > window.innerHeight - DOCK_ZONE) setMode(lastDock);
     };
 
     window.addEventListener("pointermove", move);
@@ -181,18 +242,27 @@ export function DomTreePanel() {
   // Resize handles. `dims` selects which dimensions an edge affects.
   const onResizeDown = (e: React.PointerEvent, dims: "h-top" | "w" | "h" | "wh") => {
     e.stopPropagation();
-    const sx = e.clientX, sy = e.clientY;
+    const sx = e.clientX,
+      sy = e.clientY;
     const start = { height, w: flt.w, h: flt.h };
     passthrough(true);
     const move = (ev: PointerEvent) => {
       if (dims === "h-top") {
         // docked: dragging the top edge up grows the panel
-        setHeight(Math.max(140, Math.min(start.height + (sy - ev.clientY), window.innerHeight - 100)));
+        setHeight(
+          Math.max(140, Math.min(start.height + (sy - ev.clientY), window.innerHeight - 100)),
+        );
       } else {
         setFlt((f) => ({
           ...f,
-          w: dims === "w" || dims === "wh" ? Math.max(280, Math.min(start.w + (ev.clientX - sx), window.innerWidth - f.x - 8)) : f.w,
-          h: dims === "h" || dims === "wh" ? Math.max(160, Math.min(start.h + (ev.clientY - sy), window.innerHeight - f.y - 8)) : f.h,
+          w:
+            dims === "w" || dims === "wh"
+              ? Math.max(280, Math.min(start.w + (ev.clientX - sx), window.innerWidth - f.x - 8))
+              : f.w,
+          h:
+            dims === "h" || dims === "wh"
+              ? Math.max(160, Math.min(start.h + (ev.clientY - sy), window.innerHeight - f.y - 8))
+              : f.h,
         }));
       }
     };
@@ -218,24 +288,10 @@ export function DomTreePanel() {
       ensureFloat();
       setMode("float");
     } else {
-      lastDock.current = m;
+      setLastDock(m);
       setMode(m);
     }
   };
-
-  const ModeBtn = ({ m, icon, title }: { m: Mode; icon: React.ReactNode; title: string }) => (
-    <button
-      data-no-drag
-      onClick={() => selectMode(m)}
-      title={title}
-      className={cn(
-        "rounded-md p-1 transition-colors",
-        mode === m ? "bg-indigo-100 text-indigo-600" : "text-zinc-400 hover:bg-zinc-200 hover:text-zinc-600"
-      )}
-    >
-      {icon}
-    </button>
-  );
 
   return (
     <>
@@ -251,7 +307,7 @@ export function DomTreePanel() {
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
             className={cn(
               "pointer-events-none fixed bottom-0 right-0 z-[34] flex h-28 items-end justify-center border-t-2 border-dashed border-indigo-400 bg-gradient-to-t from-indigo-500/15 to-transparent",
-              lastDock.current === "dock" ? "left-0 lg:left-[294px]" : "left-0"
+              lastDock === "dock" ? "left-0 lg:left-[294px]" : "left-0",
             )}
           >
             <motion.span
@@ -264,94 +320,120 @@ export function DomTreePanel() {
           </motion.div>
         )}
       </AnimatePresence>
-    <AnimatePresence>
-      {open && (
-        <motion.aside
-          // keyed on dock-vs-float so detaching/re-docking replays the entrance
-          // animation (a pop when it detaches, a slide-up when it re-docks).
-          // Position/size are inline styles (not framer-animated), so dragging
-          // and resizing stay instant regardless of this transition.
-          key={float ? "domtree-float" : "domtree-dock"}
-          initial={float ? { opacity: 0, scale: 0.9, y: 8 } : { y: "100%" }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={float ? { opacity: 0, scale: 0.92 } : { opacity: 0, y: 60 }}
-          transition={{ type: "spring", stiffness: 460, damping: 34 }}
-          className={cn(
-            "fixed z-[35] flex flex-col border-zinc-200 bg-white",
-            float
-              ? "rounded-xl border shadow-2xl ring-1 ring-black/5"
-              : cn(
-                  "right-0 border-t shadow-[0_-8px_24px_rgba(0,0,0,0.08)]",
-                  mode === "dock" ? "left-0 lg:left-[294px]" : "left-0"
-                )
-          )}
-          style={positionStyle}
-        >
-          {/* top resize handle (docked modes) */}
-          {!float && (
-            <div
-              onPointerDown={(e) => onResizeDown(e, "h-top")}
-              className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
-              title="Drag to resize"
-            />
-          )}
-
-          {/* header (drag to move / detach) */}
-          <div
-            onPointerDown={onHeaderDown}
+      <AnimatePresence>
+        {open && (
+          <motion.aside
+            // keyed on dock-vs-float so detaching/re-docking replays the entrance
+            // animation (a pop when it detaches, a slide-up when it re-docks).
+            // Position/size are inline styles (not framer-animated), so dragging
+            // and resizing stay instant regardless of this transition.
+            key={float ? "domtree-float" : "domtree-dock"}
+            initial={float ? { opacity: 0, scale: 0.9, y: 8 } : { y: "100%" }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={float ? { opacity: 0, scale: 0.92 } : { opacity: 0, y: 60 }}
+            transition={{ type: "spring", stiffness: 460, damping: 34 }}
             className={cn(
-              "flex h-9 shrink-0 select-none items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-3",
-              float ? "cursor-grab active:cursor-grabbing" : "cursor-grab"
+              "fixed z-[35] flex flex-col border-zinc-200 bg-white",
+              float
+                ? "rounded-xl border shadow-2xl ring-1 ring-black/5"
+                : cn(
+                    "right-0 border-t shadow-[0_-8px_24px_rgba(0,0,0,0.08)]",
+                    mode === "dock" ? "left-0 lg:left-[294px]" : "left-0",
+                  ),
             )}
+            style={positionStyle}
           >
-            <Network size={14} className="text-indigo-500" />
-            <span className="text-xs font-bold tracking-tight text-zinc-700">DOM tree</span>
-            <span className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-zinc-500">
-              {countNodes(tree)} elements
-            </span>
-            {float && <GripHorizontal size={14} className="ml-1 text-zinc-300" />}
-            <div className="ml-auto flex items-center gap-0.5">
-              <ModeBtn m="dock" icon={<PanelBottom size={14} />} title="Dock to canvas" />
-              <ModeBtn m="full" icon={<StretchHorizontal size={14} />} title="Full width" />
-              <ModeBtn m="float" icon={<Move size={14} />} title="Detach / float" />
-              <div className="mx-1 h-4 w-px bg-zinc-200" />
-              <button
-                data-no-drag
-                onClick={close}
-                title="Hide DOM tree"
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600"
-              >
-                <X size={15} />
-              </button>
-            </div>
-          </div>
-
-          {/* tree */}
-          <div className="min-h-0 flex-1 overflow-auto py-1.5">
-            {tree.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-zinc-400">No elements yet — add a block to see the DOM tree.</p>
-            ) : (
-              tree.map((b) => <DomNode key={b.id} block={b} depth={0} />)
-            )}
-          </div>
-
-          {/* float resize handles: right edge, bottom edge, SE corner */}
-          {float && (
-            <>
-              <div onPointerDown={(e) => onResizeDown(e, "w")} className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize" />
-              <div onPointerDown={(e) => onResizeDown(e, "h")} className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize" />
+            {/* top resize handle (docked modes) */}
+            {!float && (
               <div
-                onPointerDown={(e) => onResizeDown(e, "wh")}
-                className="absolute bottom-0 right-0 flex h-3.5 w-3.5 cursor-nwse-resize items-end justify-end p-0.5"
-                title="Resize"
-              >
-                <Maximize2 size={9} className="rotate-90 text-zinc-300" />
+                onPointerDown={(e) => onResizeDown(e, "h-top")}
+                className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+                title="Drag to resize"
+              />
+            )}
+
+            {/* header (drag to move / detach) */}
+            <div
+              onPointerDown={onHeaderDown}
+              className={cn(
+                "flex h-9 shrink-0 select-none items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-3",
+                float ? "cursor-grab active:cursor-grabbing" : "cursor-grab",
+              )}
+            >
+              <Network size={14} className="text-indigo-500" />
+              <span className="text-xs font-bold tracking-tight text-zinc-700">DOM tree</span>
+              <span className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-zinc-500">
+                {countNodes(tree)} elements
+              </span>
+              {float && <GripHorizontal size={14} className="ml-1 text-zinc-300" />}
+              <div className="ml-auto flex items-center gap-0.5">
+                <ModeBtn
+                  m="dock"
+                  icon={<PanelBottom size={14} />}
+                  title="Dock to canvas"
+                  active={mode === "dock"}
+                  onSelect={selectMode}
+                />
+                <ModeBtn
+                  m="full"
+                  icon={<StretchHorizontal size={14} />}
+                  title="Full width"
+                  active={mode === "full"}
+                  onSelect={selectMode}
+                />
+                <ModeBtn
+                  m="float"
+                  icon={<Move size={14} />}
+                  title="Detach / float"
+                  active={mode === "float"}
+                  onSelect={selectMode}
+                />
+                <div className="mx-1 h-4 w-px bg-zinc-200" />
+                <button
+                  data-no-drag
+                  onClick={close}
+                  title="Hide DOM tree"
+                  className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600"
+                >
+                  <X size={15} />
+                </button>
               </div>
-            </>
-          )}
-        </motion.aside>
-      )}
-    </AnimatePresence>
+            </div>
+
+            {/* tree */}
+            <div className="min-h-0 flex-1 overflow-auto py-1.5">
+              {tree.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-zinc-400">
+                  No elements yet — add a block to see the DOM tree.
+                </p>
+              ) : (
+                tree.map((b) => <DomNode key={b.id} block={b} depth={0} />)
+              )}
+            </div>
+
+            {/* float resize handles: right edge, bottom edge, SE corner */}
+            {float && (
+              <>
+                <div
+                  onPointerDown={(e) => onResizeDown(e, "w")}
+                  className="absolute inset-y-0 right-0 w-1.5 cursor-ew-resize"
+                />
+                <div
+                  onPointerDown={(e) => onResizeDown(e, "h")}
+                  className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+                />
+                <div
+                  onPointerDown={(e) => onResizeDown(e, "wh")}
+                  className="absolute bottom-0 right-0 flex h-3.5 w-3.5 cursor-nwse-resize items-end justify-end p-0.5"
+                  title="Resize"
+                >
+                  <Maximize2 size={9} className="rotate-90 text-zinc-300" />
+                </div>
+              </>
+            )}
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </>
   );
 }

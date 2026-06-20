@@ -10,7 +10,9 @@ import { useEffect, useRef } from "react";
  */
 export function useDismissOnOutsideClick(open: boolean, close: () => void) {
   const cb = useRef(close);
-  cb.current = close;
+  useEffect(() => {
+    cb.current = close;
+  });
   useEffect(() => {
     if (!open) return;
     const onClick = () => cb.current();

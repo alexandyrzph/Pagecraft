@@ -7,21 +7,13 @@ import { Modal } from "./Modal";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/dialog-provider";
 import { cn } from "@/lib/utils";
-import type { CmsFieldType, CollectionField } from "@/lib/types";
-import {
-  blankItemData,
-  CMS_FIELD_TYPES,
-  uniqueFieldKey,
-} from "@/lib/cms/cms";
+import type { CmsFieldType, CollectionField, CollectionItem } from "@/lib/types";
+import { blankItemData, CMS_FIELD_TYPES, uniqueFieldKey } from "@/lib/cms/cms";
 import { useCollections } from "./collections-context";
-import {
-  SelectInput,
-  Toggle,
-  inputCls,
-} from "./controls";
+import { SelectInput, Toggle, inputCls } from "./controls";
 import { LEAF_INPUTS } from "@/lib/field-inputs";
 
-type Editing = { id: string; data: Record<string, any> } | null;
+type Editing = { id: string; data: Record<string, unknown> } | null;
 
 export function CmsManagerModal({
   collectionId,
@@ -42,9 +34,11 @@ export function CmsManagerModal({
   const [newLabel, setNewLabel] = useState("");
   const [newType, setNewType] = useState<CmsFieldType>("text");
 
-  useEffect(() => {
-    if (collection) setName(collection.name);
-  }, [collection?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [syncedCollectionId, setSyncedCollectionId] = useState<string | undefined>(undefined);
+  if (collection && collection.id !== syncedCollectionId) {
+    setSyncedCollectionId(collection.id);
+    setName(collection.name);
+  }
 
   // Collection vanished (deleted) — close.
   useEffect(() => {
@@ -55,7 +49,7 @@ export function CmsManagerModal({
   const fields = collection.fields;
 
   // --- persistence helpers --------------------------------------------------
-  async function patchCollection(body: Record<string, any>) {
+  async function patchCollection(body: Record<string, unknown>) {
     setBusy(true);
     try {
       await fetch(`/api/collections/${collectionId}`, {
@@ -73,7 +67,10 @@ export function CmsManagerModal({
 
   function addField() {
     const label = newLabel.trim() || "New field";
-    const key = uniqueFieldKey(label, fields.map((f) => f.key));
+    const key = uniqueFieldKey(
+      label,
+      fields.map((f) => f.key),
+    );
     void saveFields([...fields, { key, label, type: newType }]);
     setNewLabel("");
     setNewType("text");
@@ -139,79 +136,91 @@ export function CmsManagerModal({
 
   return (
     <Modal onClose={onClose} className="flex max-h-[86vh] max-w-2xl flex-col overflow-hidden">
-          {/* header */}
-          <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
-              <Database size={18} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() => name.trim() && name !== collection.name && patchCollection({ name: name.trim() })}
-                className="w-full truncate rounded-md px-1 py-0.5 text-sm font-bold tracking-tight text-zinc-900 outline-none transition-colors hover:bg-zinc-50 focus:bg-zinc-50 focus:ring-2 focus:ring-indigo-100"
-              />
-              <span className="px-1 text-[11px] text-zinc-400">/{collection.slug}</span>
-            </div>
-            {busy && <Loader2 size={15} className="animate-spin text-zinc-300" />}
-            <Button variant="ghost" size="icon" aria-label="Delete collection" onPress={deleteCollection} className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={15} /></Button>
-            <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}><X size={16} /></Button>
-          </div>
+      {/* header */}
+      <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-3.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+          <Database size={18} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() =>
+              name.trim() && name !== collection.name && patchCollection({ name: name.trim() })
+            }
+            className="w-full truncate rounded-md px-1 py-0.5 text-sm font-bold tracking-tight text-zinc-900 outline-none transition-colors hover:bg-zinc-50 focus:bg-zinc-50 focus:ring-2 focus:ring-indigo-100"
+          />
+          <span className="px-1 text-[11px] text-zinc-400">/{collection.slug}</span>
+        </div>
+        {busy && <Loader2 size={15} className="animate-spin text-zinc-300" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Delete collection"
+          onPress={deleteCollection}
+          className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+        >
+          <Trash2 size={15} />
+        </Button>
+        <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}>
+          <X size={16} />
+        </Button>
+      </div>
 
-          {/* tabs */}
-          <div className="flex shrink-0 gap-1 border-b border-zinc-200 px-3 py-2">
-            {(["fields", "items", "detail"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
-                  tab === t ? "bg-brand-50 text-brand-600" : "text-fg-muted hover:text-fg"
-                )}
-              >
-                {t === "detail" ? "Detail page" : t}
-                {t !== "detail" && (
-                  <span className="ml-1.5 text-[10px] text-zinc-400">
-                    {t === "fields" ? fields.length : collection.items.length}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto p-5">
-            {tab === "fields" ? (
-              <FieldsTab
-                fields={fields}
-                onSave={saveFields}
-                newLabel={newLabel}
-                setNewLabel={setNewLabel}
-                newType={newType}
-                setNewType={setNewType}
-                onAdd={addField}
-              />
-            ) : tab === "items" ? (
-              <ItemsTab
-                fields={fields}
-                items={collection.items}
-                editing={editing}
-                setEditing={setEditing}
-                onAddItem={addItem}
-                onSaveItem={saveItem}
-                onDeleteItem={deleteItem}
-                busy={busy}
-              />
-            ) : (
-              <DetailTab
-                slug={collection.slug}
-                fields={fields}
-                enabled={!!collection.detailEnabled}
-                firstItemId={collection.items[0]?.id}
-                onToggle={(v) => patchCollection({ detailEnabled: v })}
-                onEdit={() => router.push(`/collection/${collectionId}/template`)}
-              />
+      {/* tabs */}
+      <div className="flex shrink-0 gap-1 border-b border-zinc-200 px-3 py-2">
+        {(["fields", "items", "detail"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
+              tab === t ? "bg-brand-50 text-brand-600" : "text-fg-muted hover:text-fg",
             )}
-          </div>
+          >
+            {t === "detail" ? "Detail page" : t}
+            {t !== "detail" && (
+              <span className="ml-1.5 text-[10px] text-zinc-400">
+                {t === "fields" ? fields.length : collection.items.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        {tab === "fields" ? (
+          <FieldsTab
+            fields={fields}
+            onSave={saveFields}
+            newLabel={newLabel}
+            setNewLabel={setNewLabel}
+            newType={newType}
+            setNewType={setNewType}
+            onAdd={addField}
+          />
+        ) : tab === "items" ? (
+          <ItemsTab
+            fields={fields}
+            items={collection.items}
+            editing={editing}
+            setEditing={setEditing}
+            onAddItem={addItem}
+            onSaveItem={saveItem}
+            onDeleteItem={deleteItem}
+            busy={busy}
+          />
+        ) : (
+          <DetailTab
+            slug={collection.slug}
+            fields={fields}
+            enabled={!!collection.detailEnabled}
+            firstItemId={collection.items[0]?.id}
+            onToggle={(v) => patchCollection({ detailEnabled: v })}
+            onEdit={() => router.push(`/collection/${collectionId}/template`)}
+          />
+        )}
+      </div>
     </Modal>
   );
 }
@@ -251,7 +260,10 @@ function FieldsTab({
     <div className="space-y-4">
       <div className="space-y-2">
         {fields.map((f) => (
-          <div key={f.key} className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/60 p-2">
+          <div
+            key={f.key}
+            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/60 p-2"
+          >
             <input
               value={labels[f.key] ?? f.label}
               onChange={(e) => setLabels((l) => ({ ...l, [f.key]: e.target.value }))}
@@ -264,11 +276,23 @@ function FieldsTab({
             <div className="w-32 shrink-0">
               <SelectInput
                 value={f.type}
-                onChange={(v) => onSave(fields.map((x) => (x.key === f.key ? { ...x, type: v as CmsFieldType } : x)))}
+                onChange={(v) =>
+                  onSave(
+                    fields.map((x) => (x.key === f.key ? { ...x, type: v as CmsFieldType } : x)),
+                  )
+                }
                 options={CMS_FIELD_TYPES}
               />
             </div>
-            <Button variant="ghost" size="icon" aria-label="Remove field" onPress={() => onSave(fields.filter((x) => x.key !== f.key))} className="shrink-0 text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={14} /></Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Remove field"
+              onPress={() => onSave(fields.filter((x) => x.key !== f.key))}
+              className="shrink-0 text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+            >
+              <Trash2 size={14} />
+            </Button>
           </div>
         ))}
         {fields.length === 0 && (
@@ -292,9 +316,15 @@ function FieldsTab({
         </label>
         <div className="w-32">
           <span className="mb-1 block text-[11px] font-medium text-zinc-500">Type</span>
-          <SelectInput value={newType} onChange={(v) => setNewType(v as CmsFieldType)} options={CMS_FIELD_TYPES} />
+          <SelectInput
+            value={newType}
+            onChange={(v) => setNewType(v as CmsFieldType)}
+            options={CMS_FIELD_TYPES}
+          />
         </div>
-        <Button variant="neutral" onPress={onAdd} leadingIcon={<Plus size={15} />}>Add</Button>
+        <Button variant="neutral" onPress={onAdd} leadingIcon={<Plus size={15} />}>
+          Add
+        </Button>
       </div>
     </div>
   );
@@ -313,7 +343,7 @@ function ItemsTab({
   busy,
 }: {
   fields: CollectionField[];
-  items: { id: string; data: Record<string, any>; order: number }[];
+  items: CollectionItem[];
   editing: Editing;
   setEditing: (e: Editing) => void;
   onAddItem: () => void;
@@ -329,10 +359,11 @@ function ItemsTab({
     );
   }
 
-  const summary = (data: Record<string, any>) => {
+  const summary = (data: Record<string, unknown>): string => {
     const first = fields.find((f) => f.type === "text" || f.type === "textarea");
     const v = first ? data[first.key] : Object.values(data)[0];
-    return (v && String(v)) || "Untitled item";
+    const text = v ? String(v) : "";
+    return text || "Untitled item";
   };
 
   return (
@@ -358,24 +389,46 @@ function ItemsTab({
               </span>
               {isEditing ? (
                 <>
-                  <Button variant="neutral" size="sm" onPress={onSaveItem} isDisabled={busy}>Save</Button>
-                  <Button variant="ghost" size="sm" onPress={() => setEditing(null)}>Cancel</Button>
+                  <Button variant="neutral" size="sm" onPress={onSaveItem} isDisabled={busy}>
+                    Save
+                  </Button>
+                  <Button variant="ghost" size="sm" onPress={() => setEditing(null)}>
+                    Cancel
+                  </Button>
                 </>
               ) : (
-                <Button variant="ghost" size="sm" onPress={() => setEditing({ id: it.id, data: { ...it.data } })}>Edit</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setEditing({ id: it.id, data: { ...it.data } })}
+                >
+                  Edit
+                </Button>
               )}
-              <Button variant="ghost" size="icon" aria-label="Delete item" onPress={() => onDeleteItem(it.id)} className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={14} /></Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Delete item"
+                onPress={() => onDeleteItem(it.id)}
+                className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+              >
+                <Trash2 size={14} />
+              </Button>
             </div>
 
             {isEditing && editing && (
               <div className="space-y-3 border-t border-zinc-200 p-3">
                 {fields.map((f) => (
                   <label key={f.key} className="block">
-                    <span className="mb-1 block text-[11px] font-medium text-zinc-500">{f.label}</span>
+                    <span className="mb-1 block text-[11px] font-medium text-zinc-500">
+                      {f.label}
+                    </span>
                     <ItemFieldInput
                       field={f}
                       value={editing.data[f.key]}
-                      onChange={(v) => setEditing({ ...editing, data: { ...editing.data, [f.key]: v } })}
+                      onChange={(v) =>
+                        setEditing({ ...editing, data: { ...editing.data, [f.key]: v } })
+                      }
                     />
                   </label>
                 ))}
@@ -394,11 +447,13 @@ function ItemFieldInput({
   onChange,
 }: {
   field: CollectionField;
-  value: any;
-  onChange: (v: any) => void;
+  value: unknown;
+  onChange: (v: unknown) => void;
 }) {
   const render = LEAF_INPUTS[field.type] ?? LEAF_INPUTS.text;
-  return <>{render({ value, onChange, placeholder: field.type === "url" ? "https://…" : undefined })}</>;
+  return (
+    <>{render({ value, onChange, placeholder: field.type === "url" ? "https://…" : undefined })}</>
+  );
 }
 
 // --- Detail page tab --------------------------------------------------------
@@ -425,8 +480,8 @@ function DetailTab({
           <p className="text-sm font-semibold text-zinc-800">Detail pages</p>
           <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
             Auto-generate a page for every item at{" "}
-            <code className="rounded bg-zinc-200/70 px-1 text-[11px]">/c/{slug}/&lt;item&gt;</code>. Collection
-            List cards link to it automatically.
+            <code className="rounded bg-zinc-200/70 px-1 text-[11px]">/c/{slug}/&lt;item&gt;</code>.
+            Collection List cards link to it automatically.
           </p>
         </div>
         <Toggle value={enabled} onChange={onToggle} />
@@ -434,22 +489,32 @@ function DetailTab({
 
       {enabled && (
         <>
-          <Button variant="neutral" className="w-full" onPress={onEdit} leadingIcon={<Pencil size={14} />}>Edit detail template</Button>
+          <Button
+            variant="neutral"
+            className="w-full"
+            onPress={onEdit}
+            leadingIcon={<Pencil size={14} />}
+          >
+            Edit detail template
+          </Button>
 
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
               Insert item data with tokens
             </p>
             <p className="mb-2 text-xs leading-relaxed text-zinc-400">
-              In the template, type these tokens into any text, heading, button or image — they're replaced with
-              each item's values.
+              In the template, type these tokens into any text, heading, button or image —
+              they&apos;re replaced with each item&apos;s values.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {fields.length === 0 ? (
                 <span className="text-xs text-zinc-400">Add fields first.</span>
               ) : (
                 fields.map((f) => (
-                  <code key={f.key} className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600">
+                  <code
+                    key={f.key}
+                    className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600"
+                  >
                     {`{{${f.key}}}`}
                   </code>
                 ))

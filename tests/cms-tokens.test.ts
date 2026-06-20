@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { applyTokens } from "@/lib/cms/cms-tokens";
 import type { Block } from "@/lib/types";
 
-const mk = (props: Record<string, any>, children: Block[] = []): Block => ({
+const mk = (props: Block["props"], children: Block[] = []): Block => ({
   id: "x",
   type: "heading",
   props,
@@ -22,9 +22,12 @@ describe("applyTokens", () => {
   });
 
   it("fills nested objects/arrays; missing keys become empty", () => {
-    const out = applyTokens([mk({ items: [{ title: "{{name}}", text: "by {{author}}" }] })], { name: "Pro" });
-    expect(out[0].props.items[0].title).toBe("Pro");
-    expect(out[0].props.items[0].text).toBe("by ");
+    const out = applyTokens([mk({ items: [{ title: "{{name}}", text: "by {{author}}" }] })], {
+      name: "Pro",
+    });
+    const filled = out[0].props.items as { title: string; text: string }[];
+    expect(filled[0].title).toBe("Pro");
+    expect(filled[0].text).toBe("by ");
   });
 
   it("recurses into children", () => {

@@ -4,7 +4,14 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDraggable } from "@dnd-kit/core";
 import { motion } from "framer-motion";
-import { Component as ComponentIcon, Copy, GripVertical, Pencil, Trash2, Unlink } from "lucide-react";
+import {
+  Component as ComponentIcon,
+  Copy,
+  GripVertical,
+  Pencil,
+  Trash2,
+  Unlink,
+} from "lucide-react";
 import { getDefinition } from "@/lib/blocks/registry";
 import { findBlockById } from "@/lib/blocks/tree";
 import { cn } from "@/lib/utils";
@@ -101,14 +108,48 @@ export function CanvasOverlay() {
     <div
       ref={containerRef}
       className="pointer-events-none fixed z-30 overflow-hidden transition-opacity duration-100"
-      style={{ top: fb.top, left: fb.left, width: fb.width, height: fb.height, opacity: dragActive ? 0 : 1 }}
+      style={{
+        top: fb.top,
+        left: fb.left,
+        width: fb.width,
+        height: fb.height,
+        opacity: dragActive ? 0 : 1,
+      }}
     >
       <div ref={contentRef} className="absolute inset-0" style={{ willChange: "transform" }}>
-        {showHover && <BlockChrome key={"h:" + hoveredId} blockId={hoveredId!} selected={false} frame={frame} dragActive={dragActive} hideToolbar={false} zoom={zoom} />}
+        {showHover && hoveredId && (
+          <BlockChrome
+            key={"h:" + hoveredId}
+            blockId={hoveredId}
+            selected={false}
+            frame={frame}
+            dragActive={dragActive}
+            hideToolbar={false}
+            zoom={zoom}
+          />
+        )}
         {secondary.map((id) => (
-          <BlockChrome key={"m:" + id} blockId={id} selected frame={frame} dragActive={dragActive} hideToolbar zoom={zoom} />
+          <BlockChrome
+            key={"m:" + id}
+            blockId={id}
+            selected
+            frame={frame}
+            dragActive={dragActive}
+            hideToolbar
+            zoom={zoom}
+          />
         ))}
-        {selectedId && <BlockChrome key={"s:" + selectedId} blockId={selectedId} selected frame={frame} dragActive={dragActive} hideToolbar={editingText || multi} zoom={zoom} />}
+        {selectedId && (
+          <BlockChrome
+            key={"s:" + selectedId}
+            blockId={selectedId}
+            selected
+            frame={frame}
+            dragActive={dragActive}
+            hideToolbar={editingText || multi}
+            zoom={zoom}
+          />
+        )}
       </div>
     </div>
   );
@@ -170,8 +211,8 @@ function BlockChrome({
   const sH = r.height * zoom;
 
   const def = getDefinition(block.type);
-  const comp = isComponent ? components.map[block.props?.componentId] : undefined;
-  const label = isComponent ? comp?.name ?? "Component" : def?.label ?? block.type;
+  const comp = isComponent ? components.map[block.props?.componentId as string] : undefined;
+  const label = isComponent ? (comp?.name ?? "Component") : (def?.label ?? block.type);
 
   return (
     <>
@@ -184,62 +225,72 @@ function BlockChrome({
               : "outline-dashed outline-1 outline-violet-300"
             : selected
               ? "outline outline-2 outline-indigo-500"
-              : "outline-dashed outline-1 outline-indigo-300"
+              : "outline-dashed outline-1 outline-indigo-300",
         )}
         style={{ top: sTop, left: sLeft, width: sW, height: sH, outlineOffset: -1 }}
       />
 
       {!hideToolbar && (
-      <div
-        className={cn(
-          "pointer-events-auto absolute z-10 flex items-center gap-0.5 rounded-lg px-1 py-0.5 text-[11px] font-medium text-white shadow-lg ring-1 ring-black/5",
-          isComponent ? "bg-violet-600" : selected ? "bg-zinc-900" : "bg-zinc-900/85 backdrop-blur-sm"
-        )}
-        // Sit just ABOVE the block (top-left) so it never covers the content;
-        // drop just inside the top edge when there's no room above. The toolbar
-        // itself stays unscaled (readable at any zoom) — only its anchor scales.
-        style={{ top: sTop >= 30 ? sTop - 28 : sTop + 4, left: Math.max(sLeft, 2) }}
-        // The toolbar is pointer-events-auto, so it would otherwise swallow the
-        // wheel; forward it to the iframe so scrolling over the toolbar scrolls
-        // the canvas like everywhere else.
-        onWheel={(e) => frame.el.contentWindow?.scrollBy({ left: e.deltaX, top: e.deltaY })}
-      >
-        <button
-          ref={setActivatorNodeRef}
-          {...listeners}
-          {...attributes}
-          className="flex cursor-grab touch-none items-center rounded-md p-1 transition-colors hover:bg-white/15 active:cursor-grabbing"
-          title="Drag to move"
-          aria-label="Drag to move"
+        <div
+          className={cn(
+            "pointer-events-auto absolute z-10 flex items-center gap-0.5 rounded-lg px-1 py-0.5 text-[11px] font-medium text-white shadow-lg ring-1 ring-black/5",
+            isComponent
+              ? "bg-violet-600"
+              : selected
+                ? "bg-zinc-900"
+                : "bg-zinc-900/85 backdrop-blur-sm",
+          )}
+          // Sit just ABOVE the block (top-left) so it never covers the content;
+          // drop just inside the top edge when there's no room above. The toolbar
+          // itself stays unscaled (readable at any zoom) — only its anchor scales.
+          style={{ top: sTop >= 30 ? sTop - 28 : sTop + 4, left: Math.max(sLeft, 2) }}
+          // The toolbar is pointer-events-auto, so it would otherwise swallow the
+          // wheel; forward it to the iframe so scrolling over the toolbar scrolls
+          // the canvas like everywhere else.
+          onWheel={(e) => frame.el.contentWindow?.scrollBy({ left: e.deltaX, top: e.deltaY })}
         >
-          <GripVertical size={13} />
-        </button>
-        <span className="flex items-center gap-1 px-1">
-          {isComponent && <ComponentIcon size={11} />}
-          {label}
-        </span>
+          <button
+            ref={setActivatorNodeRef}
+            {...listeners}
+            {...attributes}
+            className="flex cursor-grab touch-none items-center rounded-md p-1 transition-colors hover:bg-white/15 active:cursor-grabbing"
+            title="Drag to move"
+            aria-label="Drag to move"
+          >
+            <GripVertical size={13} />
+          </button>
+          <span className="flex items-center gap-1 px-1">
+            {isComponent && <ComponentIcon size={11} />}
+            {label}
+          </span>
 
-        {isComponent ? (
-          <>
-            <ToolBtn title="Edit component" onClick={() => router.push(`/component/${block.props.componentId}`)}>
-              <Pencil size={13} />
+          {isComponent ? (
+            <>
+              <ToolBtn
+                title="Edit component"
+                onClick={() => router.push(`/component/${block.props.componentId}`)}
+              >
+                <Pencil size={13} />
+              </ToolBtn>
+              <ToolBtn
+                title="Detach"
+                onClick={() => comp && detachComponent(block.id, comp.content)}
+              >
+                <Unlink size={13} />
+              </ToolBtn>
+            </>
+          ) : (
+            <ToolBtn title="Save as component" onClick={() => actions.saveAsComponent(block)}>
+              <ComponentIcon size={13} />
             </ToolBtn>
-            <ToolBtn title="Detach" onClick={() => comp && detachComponent(block.id, comp.content)}>
-              <Unlink size={13} />
-            </ToolBtn>
-          </>
-        ) : (
-          <ToolBtn title="Save as component" onClick={() => actions.saveAsComponent(block)}>
-            <ComponentIcon size={13} />
+          )}
+          <ToolBtn title="Duplicate" onClick={() => duplicate(block.id)}>
+            <Copy size={13} />
           </ToolBtn>
-        )}
-        <ToolBtn title="Duplicate" onClick={() => duplicate(block.id)}>
-          <Copy size={13} />
-        </ToolBtn>
-        <ToolBtn title="Delete" danger onClick={() => remove(block.id)}>
-          <Trash2 size={13} />
-        </ToolBtn>
-      </div>
+          <ToolBtn title="Delete" danger onClick={() => remove(block.id)}>
+            <Trash2 size={13} />
+          </ToolBtn>
+        </div>
       )}
     </>
   );
@@ -261,7 +312,10 @@ function ToolBtn({
       whileTap={{ scale: 0.85 }}
       title={title}
       onClick={onClick}
-      className={cn("rounded-md p-1 transition-colors hover:bg-white/15", danger && "hover:text-red-300")}
+      className={cn(
+        "rounded-md p-1 transition-colors hover:bg-white/15",
+        danger && "hover:text-red-300",
+      )}
     >
       {children}
     </motion.button>

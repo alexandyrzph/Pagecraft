@@ -7,11 +7,7 @@ import { EditorClient } from "@/components/editor/EditorClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ComponentEditorPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ComponentEditorPage({ params }: { params: Promise<{ id: string }> }) {
   await requireUser();
   const { workspace } = await requireWorkspace();
   const { id } = await params;

@@ -12,7 +12,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const invite = await prisma.invite.findUnique({ where: { token }, include: { workspace: true } });
   if (!invite) return notFound("Invalid invite");
   const valid = !invite.acceptedAt && invite.expiresAt > new Date();
-  return json({ valid, email: invite.email, role: invite.role, workspaceName: invite.workspace.name });
+  return json({
+    valid,
+    email: invite.email,
+    role: invite.role,
+    workspaceName: invite.workspace.name,
+  });
 }
 
 // POST /api/invites/[token] — accept (must be signed in)

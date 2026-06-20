@@ -4,6 +4,11 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Modal } from "@/components/editor/Modal";
 
+function must<T>(v: T | null | undefined): T {
+  if (v == null) throw new Error("expected a value");
+  return v;
+}
+
 describe("Modal (harness smoke)", () => {
   it("renders its children when open", () => {
     render(
@@ -32,7 +37,7 @@ describe("Modal (harness smoke)", () => {
     );
     // The dialog stops propagation; the backdrop is its parent. Walk up from the
     // text node: <p> -> dialog -> backdrop.
-    const backdrop = screen.getByText("inner").parentElement!.parentElement!;
+    const backdrop = must(must(screen.getByText("inner").parentElement).parentElement);
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(1);
   });

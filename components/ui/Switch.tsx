@@ -1,9 +1,5 @@
 "use client";
-import {
-  SwitchField,
-  SwitchButton,
-  type SwitchFieldProps,
-} from "react-aria-components";
+import { SwitchField, SwitchButton, type SwitchFieldProps } from "react-aria-components";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 

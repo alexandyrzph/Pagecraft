@@ -48,7 +48,9 @@ async function run(pageId: string): Promise<ShotResult> {
       waitUntil: "networkidle",
       timeout: 20_000,
     });
-    await pg.evaluate(() => (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready).catch(() => {});
+    await pg
+      .evaluate(() => (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready)
+      .catch(() => {});
 
     await mkdir(THUMB_DIR, { recursive: true });
     await pg.screenshot({ path: path.join(THUMB_DIR, `${pageId}.png`) }); // top of viewport (1280x800)

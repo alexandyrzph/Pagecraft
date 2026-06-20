@@ -44,7 +44,7 @@ function CompItem({ c }: { c: ComponentItem }) {
       title={`Insert "${c.name}"`}
       className={cn(
         "group flex cursor-grab touch-none items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-2 shadow-xs transition-colors hover:border-violet-300 hover:bg-violet-50/50 active:cursor-grabbing",
-        isDragging && "opacity-40"
+        isDragging && "opacity-40",
       )}
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-violet-100 text-violet-600">
@@ -78,8 +78,8 @@ export function ReusableComponents() {
     return (
       <div className="rounded-xl border border-dashed border-zinc-200 p-3 text-xs leading-relaxed text-zinc-400">
         No saved components yet. Select any block on the canvas and choose{" "}
-        <span className="font-semibold text-zinc-500">Save as component</span> to reuse it
-        across pages — edits sync everywhere.
+        <span className="font-semibold text-zinc-500">Save as component</span> to reuse it across
+        pages — edits sync everywhere.
       </div>
     );
   }

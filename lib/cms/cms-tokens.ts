@@ -8,18 +8,18 @@ import type { Block } from "@/lib/types";
 
 const TOKEN = /\{\{\s*([\w-]+)\s*\}\}/g;
 
-function fillString(s: string, data: Record<string, any>): string {
+function fillString(s: string, data: Record<string, unknown>): string {
   return s.replace(TOKEN, (_, key) => {
     const v = data[key];
     return v === undefined || v === null ? "" : String(v);
   });
 }
 
-function fillValue(v: any, data: Record<string, any>): any {
+function fillValue(v: unknown, data: Record<string, unknown>): unknown {
   if (typeof v === "string") return fillString(v, data);
   if (Array.isArray(v)) return v.map((x) => fillValue(x, data));
   if (v && typeof v === "object") {
-    const out: Record<string, any> = {};
+    const out: Record<string, unknown> = {};
     for (const [k, val] of Object.entries(v)) out[k] = fillValue(val, data);
     return out;
   }
@@ -27,10 +27,10 @@ function fillValue(v: any, data: Record<string, any>): any {
 }
 
 /** Deep-clone a block tree with all {{token}} props filled from `data`. */
-export function applyTokens(tree: Block[], data: Record<string, any>): Block[] {
+export function applyTokens(tree: Block[], data: Record<string, unknown>): Block[] {
   return tree.map((b) => ({
     ...b,
-    props: fillValue(b.props ?? {}, data) as Record<string, any>,
+    props: fillValue(b.props ?? {}, data) as Record<string, unknown>,
     children: applyTokens(b.children ?? [], data),
   }));
 }

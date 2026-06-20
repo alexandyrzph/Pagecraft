@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from "framer-motion";
-import { Image, LayoutGrid, Square, Type } from "lucide-react";
+import { ImageIcon, LayoutGrid, Square, Type } from "lucide-react";
 
 type Block = {
   id: string;
@@ -35,7 +35,9 @@ const BLOCKS: Block[] = [
     children: (
       <div className="space-y-2.5">
         <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/20 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-200"><Type size={12} /></span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/20 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-200">
+            <Type size={12} />
+          </span>
           <div className={`h-2 w-20 rounded-full ${BAR_STRONG}`} />
         </div>
         <div className={`h-2 w-full rounded-full ${BAR_MED}`} />
@@ -55,7 +57,7 @@ const BLOCKS: Block[] = [
     children: (
       <div className="space-y-2.5">
         <div className="flex h-20 w-full items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500/25 to-indigo-500/20 text-zinc-500/60 dark:text-white/40">
-          <Image size={26} />
+          <ImageIcon size={26} />
         </div>
         <div className={`h-2 w-2/3 rounded-full ${BAR_STRONG}`} />
       </div>
@@ -71,7 +73,10 @@ const BLOCKS: Block[] = [
     delay: 0.3,
     children: (
       <div className="space-y-2.5">
-        <div className="flex items-center gap-1.5 text-zinc-500/70 dark:text-white/40"><LayoutGrid size={13} /><div className={`h-2 w-16 rounded-full ${BAR_STRONG}`} /></div>
+        <div className="flex items-center gap-1.5 text-zinc-500/70 dark:text-white/40">
+          <LayoutGrid size={13} />
+          <div className={`h-2 w-16 rounded-full ${BAR_STRONG}`} />
+        </div>
         <div className="grid grid-cols-3 gap-1.5">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`aspect-square rounded-md ${BAR_FAINT}`} />
@@ -90,7 +95,9 @@ const BLOCKS: Block[] = [
     delay: 0.45,
     children: (
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-200"><Square size={16} /></span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-200">
+          <Square size={16} />
+        </span>
         <div className="flex-1 space-y-1.5">
           <div className={`h-2 w-full rounded-full ${BAR_STRONG}`} />
           <div className={`h-2 w-1/2 rounded-full ${BAR_FAINT}`} />
@@ -100,7 +107,15 @@ const BLOCKS: Block[] = [
   },
 ];
 
-function FloatingBlock({ block, px, py }: { block: Block; px: MotionValue<number>; py: MotionValue<number> }) {
+function FloatingBlock({
+  block,
+  px,
+  py,
+}: {
+  block: Block;
+  px: MotionValue<number>;
+  py: MotionValue<number>;
+}) {
   const x = useTransform(px, (v) => v * block.depth);
   const y = useTransform(py, (v) => v * block.depth);
 
@@ -168,7 +183,8 @@ export function AuthBackground() {
             "linear-gradient(to right, rgba(10,13,18,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(10,13,18,0.06) 1px, transparent 1px)",
           backgroundSize: "44px 44px",
           maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
         }}
       />
       {/* grid (dark): light lines */}
@@ -179,7 +195,8 @@ export function AuthBackground() {
             "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
           backgroundSize: "44px 44px",
           maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 80% 80% at 50% 50%, black 35%, transparent 100%)",
         }}
       />
 

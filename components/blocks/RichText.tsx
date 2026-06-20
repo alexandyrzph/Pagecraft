@@ -35,7 +35,9 @@ function RichView({ value, className, style, id }: Props) {
 
 function RichEditor({ value, onCommit, className, style, id }: Props) {
   const commit = useRef(onCommit);
-  commit.current = onCommit;
+  useEffect(() => {
+    commit.current = onCommit;
+  });
   const timer = useRef<number>(0);
 
   const editor = useEditor({
@@ -71,7 +73,7 @@ function RichEditor({ value, onCommit, className, style, id }: Props) {
     () => () => {
       if (useRichText.getState().editor === editor) useRichText.getState().setEditor(null);
     },
-    [editor]
+    [editor],
   );
 
   return <EditorContent editor={editor} id={id} style={style} />;

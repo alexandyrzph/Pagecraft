@@ -4,12 +4,7 @@
 // Kept framework-free so it can be unit-tested in isolation.
 // ---------------------------------------------------------------------------
 
-import type {
-  CardBindings,
-  CmsFieldType,
-  CollectionField,
-  CollectionItem,
-} from "@/lib/types";
+import type { CardBindings, CmsFieldType, CollectionField, CollectionItem } from "@/lib/types";
 
 /** Human labels + defaults for each CMS field type (drives field pickers). */
 export const CMS_FIELD_TYPES: { value: CmsFieldType; label: string }[] = [
@@ -59,7 +54,7 @@ export function uniqueFieldKey(label: string, existing: string[]): string {
 }
 
 /** A blank value appropriate for a field type (used when adding items). */
-export function blankValue(type: CmsFieldType): any {
+export function blankValue(type: CmsFieldType): string | number | boolean {
   switch (type) {
     case "boolean":
       return false;
@@ -71,8 +66,10 @@ export function blankValue(type: CmsFieldType): any {
 }
 
 /** Build an empty item data object seeded with blank values per field. */
-export function blankItemData(fields: CollectionField[]): Record<string, any> {
-  const data: Record<string, any> = {};
+export function blankItemData(
+  fields: CollectionField[],
+): Record<string, string | number | boolean> {
+  const data: Record<string, string | number | boolean> = {};
   for (const f of fields) data[f.key] = blankValue(f.type);
   return data;
 }
@@ -81,10 +78,7 @@ export function blankItemData(fields: CollectionField[]): Record<string, any> {
  * Pick a sensible default field key for a card slot, given a collection's
  * fields — used when a Collection List is first bound so it isn't blank.
  */
-export function suggestBinding(
-  slot: keyof CardBindings,
-  fields: CollectionField[]
-): string {
+export function suggestBinding(slot: keyof CardBindings, fields: CollectionField[]): string {
   if (!fields.length) return "";
   const byType = (t: CmsFieldType) => fields.find((f) => f.type === t)?.key;
   const byName = (re: RegExp) => fields.find((f) => re.test(f.key))?.key;
@@ -92,7 +86,9 @@ export function suggestBinding(
     case "image":
       return byType("image") ?? "";
     case "title":
-      return byName(/title|name|heading/) ?? fields.find((f) => f.type === "text")?.key ?? fields[0].key;
+      return (
+        byName(/title|name|heading/) ?? fields.find((f) => f.type === "text")?.key ?? fields[0].key
+      );
     case "subtitle":
       return byName(/subtitle|category|tag|author|date/) ?? byType("date") ?? "";
     case "text":
@@ -125,10 +121,11 @@ export type ResolvedCard = {
 };
 
 /** Read a bound value off an item, returning undefined for empty bindings. */
-function read(item: CollectionItem, key?: string): any {
+function read(item: CollectionItem, key?: string): string | undefined {
   if (!key) return undefined;
   const v = item.data?.[key];
-  return v === "" || v === null ? undefined : v;
+  if (v === null || v === undefined || v === "") return undefined;
+  return typeof v === "string" ? v : String(v);
 }
 
 /** Resolve a single item into the card slots described by `bindings`. */
@@ -150,7 +147,7 @@ export function resolveCard(item: CollectionItem, bindings: CardBindings): Resol
 export function resolveCards(
   items: CollectionItem[],
   bindings: CardBindings,
-  limit = 0
+  limit = 0,
 ): ResolvedCard[] {
   const sorted = [...items].sort((a, b) => a.order - b.order);
   const sliced = limit > 0 ? sorted.slice(0, limit) : sorted;

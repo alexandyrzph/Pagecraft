@@ -50,7 +50,7 @@ function SaveStatus() {
       <span
         className={cn(
           "mr-1.5 inline-block h-1.5 w-1.5 rounded-full",
-          dirty ? "bg-zinc-300" : "bg-emerald-500"
+          dirty ? "bg-zinc-300" : "bg-emerald-500",
         )}
       />
       {text}
@@ -99,7 +99,10 @@ function InlineTitle() {
       className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold tracking-tight text-zinc-800 transition-colors hover:bg-zinc-50"
     >
       <span className="max-w-[120px] truncate md:max-w-[200px]">{title || "Untitled"}</span>
-      <Pencil size={12} className="shrink-0 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100" />
+      <Pencil
+        size={12}
+        className="shrink-0 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100"
+      />
     </button>
   );
 }
@@ -135,8 +138,10 @@ function IconBtn({
         aria-label={label}
         className={cn(
           "flex items-center justify-center rounded-lg p-2 transition-colors",
-          active ? "bg-indigo-50 text-indigo-600" : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700",
-          disabled && "cursor-not-allowed opacity-30 hover:bg-transparent hover:text-zinc-500"
+          active
+            ? "bg-indigo-50 text-indigo-600"
+            : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700",
+          disabled && "cursor-not-allowed opacity-30 hover:bg-transparent hover:text-zinc-500",
         )}
       >
         {icon}
@@ -231,14 +236,38 @@ export function TopBar({
 
       {/* right: icon-only actions with tooltips */}
       <div className="flex items-center gap-0.5">
-        <IconBtn icon={<Undo2 size={16} />} label="Undo (⌘Z)" onClick={undo} disabled={past === 0} />
-        <IconBtn icon={<Redo2 size={16} />} label="Redo (⌘⇧Z)" onClick={redo} disabled={future === 0} />
+        <IconBtn
+          icon={<Undo2 size={16} />}
+          label="Undo (⌘Z)"
+          onClick={undo}
+          disabled={past === 0}
+        />
+        <IconBtn
+          icon={<Redo2 size={16} />}
+          label="Redo (⌘⇧Z)"
+          onClick={redo}
+          disabled={future === 0}
+        />
         <Divider />
-        <IconBtn icon={<Network size={16} />} label="DOM tree" onClick={toggleDomTree} active={domTree} />
-        <IconBtn icon={<Eye size={16} />} label="Preview" onClick={togglePreview} active={previewMode} />
+        <IconBtn
+          icon={<Network size={16} />}
+          label="DOM tree"
+          onClick={toggleDomTree}
+          active={domTree}
+        />
+        <IconBtn
+          icon={<Eye size={16} />}
+          label="Preview"
+          onClick={togglePreview}
+          active={previewMode}
+        />
         <Divider />
-        {mode === "page" && <IconBtn icon={<History size={16} />} label="Version history" onClick={onOpenHistory} />}
-        {!isComponentMode && <IconBtn icon={<Download size={16} />} label="Export HTML" onClick={onExport} />}
+        {mode === "page" && (
+          <IconBtn icon={<History size={16} />} label="Version history" onClick={onOpenHistory} />
+        )}
+        {!isComponentMode && (
+          <IconBtn icon={<Download size={16} />} label="Export HTML" onClick={onExport} />
+        )}
         <IconBtn icon={<Save size={16} />} label="Save (⌘S)" onClick={onSave} />
         <SaveStatus />
         <div className="mx-1.5" />
@@ -293,7 +322,11 @@ function PublishedMenu({ slug, onUnpublish }: { slug: string; onUnpublish?: () =
         <ChevronDown size={14} className={cn("transition-transform", open && "rotate-180")} />
       </motion.button>
 
-      <Popover open={open} onClose={() => setOpen(false)} className="right-0 top-11 w-48 overflow-hidden rounded-xl p-1">
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        className="right-0 top-11 w-48 overflow-hidden rounded-xl p-1"
+      >
         <a
           href={`/p/${slug}`}
           target="_blank"

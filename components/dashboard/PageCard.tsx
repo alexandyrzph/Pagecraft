@@ -87,7 +87,10 @@ export function PageCard({
       className="group overflow-hidden rounded-[14px] border border-[#e8eaed] bg-white shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d6dae0] hover:shadow-lg"
     >
       {/* thumbnail */}
-      <Link href={`/editor/${page.id}`} className="relative block aspect-[16/10] border-b border-[#eef0f2]">
+      <Link
+        href={`/editor/${page.id}`}
+        className="relative block aspect-[16/10] border-b border-[#eef0f2]"
+      >
         <PageThumbnail
           pageId={page.id}
           title={page.title}
@@ -101,7 +104,12 @@ export function PageCard({
             page.published ? "bg-white/90 text-emerald-700" : "bg-white/90 text-zinc-600",
           )}
         >
-          <span className={cn("h-1.5 w-1.5 rounded-full", page.published ? "bg-emerald-500" : "bg-zinc-400")} />
+          <span
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              page.published ? "bg-emerald-500" : "bg-zinc-400",
+            )}
+          />
           {page.published ? "Live" : "Draft"}
         </span>
         <span className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-zinc-900/[0.04] opacity-0 transition-opacity group-hover:opacity-100">

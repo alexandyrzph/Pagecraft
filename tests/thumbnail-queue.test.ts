@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createLimiter } from "@/lib/thumbnails/queue";
 
 /** A promise whose resolution we control manually. */
-function deferred<T>() {
+function deferred<T = void>() {
   let resolve!: (v: T) => void;
   const promise = new Promise<T>((r) => (resolve = r));
   return { promise, resolve };
@@ -13,7 +13,7 @@ describe("createLimiter", () => {
     const limit = createLimiter(2);
     let active = 0;
     let peak = 0;
-    const gates = Array.from({ length: 5 }, () => deferred<void>());
+    const gates = Array.from({ length: 5 }, () => deferred());
 
     const runs = gates.map((g, i) =>
       limit(async () => {
@@ -44,6 +44,10 @@ describe("createLimiter", () => {
 
   it("propagates task rejections to the caller", async () => {
     const limit = createLimiter(1);
-    await expect(limit(async () => { throw new Error("boom"); })).rejects.toThrow("boom");
+    await expect(
+      limit(async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
   });
 });

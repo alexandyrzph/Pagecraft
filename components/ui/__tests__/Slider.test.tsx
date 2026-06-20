@@ -3,9 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { Slider } from "../Slider";
 
+function must<T>(v: T | null | undefined): T {
+  if (v == null) throw new Error("expected a value");
+  return v;
+}
+
 describe("Slider", () => {
   it("renders an accessible slider with the current value", () => {
-    render(<Slider aria-label="Opacity" value={50} minValue={0} maxValue={100} onChange={vi.fn()} />);
+    render(
+      <Slider aria-label="Opacity" value={50} minValue={0} maxValue={100} onChange={vi.fn()} />,
+    );
     // RAC renders the slider role on a native <input type="range">, so the
     // value/bounds live on value/max (+ aria-valuetext) rather than aria-valuenow.
     const slider = screen.getByRole("slider") as HTMLInputElement;
@@ -16,12 +23,14 @@ describe("Slider", () => {
 
   it("reports an increased value on keyboard increment", async () => {
     const onChange = vi.fn();
-    render(<Slider aria-label="Opacity" value={50} minValue={0} maxValue={100} onChange={onChange} />);
+    render(
+      <Slider aria-label="Opacity" value={50} minValue={0} maxValue={100} onChange={onChange} />,
+    );
     const slider = screen.getByRole("slider");
     slider.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(onChange).toHaveBeenCalled();
-    const reported = onChange.mock.calls.at(-1)![0] as number;
+    const reported = must(onChange.mock.calls.at(-1))[0] as number;
     expect(reported).toBeGreaterThan(50);
   });
 });

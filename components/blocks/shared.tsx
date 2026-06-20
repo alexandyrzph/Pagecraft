@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as Icons from "lucide-react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ComponentType, HTMLAttributes, Ref } from "react";
 
 // ---------------------------------------------------------------------------
 // Shared primitives used by block render components.
@@ -20,8 +20,7 @@ export function DynamicIcon({
   className?: string;
   style?: CSSProperties;
 }) {
-  const Cmp =
-    (Icons as unknown as Record<string, Icons.LucideIcon>)[name] ?? Icons.Square;
+  const Cmp = (Icons as unknown as Record<string, Icons.LucideIcon>)[name] ?? Icons.Square;
   return <Cmp size={size} className={className} style={style} />;
 }
 
@@ -56,7 +55,9 @@ export function Editable({
   const ref = useRef<HTMLElement>(null);
   // Keep the latest callbacks available to the native listeners below.
   const cb = useRef({ onCommit, multiline });
-  cb.current = { onCommit, multiline };
+  useEffect(() => {
+    cb.current = { onCommit, multiline };
+  });
 
   // Seed text from `value` only while not focused (avoids caret jumps). Uses the
   // element's own document so it works inside the canvas iframe too.
@@ -93,7 +94,12 @@ export function Editable({
     };
   }, [editable]);
 
-  const Tag = as as any;
+  const Tag = as as unknown as ComponentType<
+    HTMLAttributes<HTMLElement> & {
+      "data-placeholder"?: string;
+      ref?: Ref<HTMLElement>;
+    }
+  >;
 
   if (!editable) {
     return (
@@ -105,7 +111,7 @@ export function Editable({
 
   return (
     <Tag
-      ref={ref as any}
+      ref={ref}
       id={id}
       className={className}
       style={style}

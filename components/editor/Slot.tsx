@@ -14,7 +14,7 @@ const STARTERS = ["hero", "features", "columns", "heading", "image", "cta"];
 function allowedDrop(
   parentId: string | null,
   parentType: string | null,
-  drag: ReturnType<typeof useDrag>
+  drag: ReturnType<typeof useDrag>,
 ) {
   if (!drag.type) return false;
   if (!canDrop(parentType, drag.type)) return false;
@@ -94,7 +94,11 @@ export function EmptyDrop({
         ref={setNodeRef}
         className={cn(
           "flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-sm font-medium transition-colors duration-200",
-          isOver ? "border-indigo-400 bg-indigo-50/70 text-indigo-600" : allowed ? "border-indigo-200 text-indigo-400" : "border-zinc-200 text-zinc-400"
+          isOver
+            ? "border-indigo-400 bg-indigo-50/70 text-indigo-600"
+            : allowed
+              ? "border-indigo-200 text-indigo-400"
+              : "border-zinc-200 text-zinc-400",
         )}
         style={{ minHeight: Math.max(minHeight, isRoot ? 360 : minHeight) }}
       >
@@ -125,7 +129,8 @@ export function EmptyDrop({
           <Sparkles size={16} className="text-indigo-600" /> Generate with AI
         </button>
         <div className="my-5 flex items-center gap-3 text-[11px] font-medium uppercase tracking-wide text-zinc-300">
-          <span className="h-px w-8 bg-zinc-200" /> or add a block <span className="h-px w-8 bg-zinc-200" />
+          <span className="h-px w-8 bg-zinc-200" /> or add a block{" "}
+          <span className="h-px w-8 bg-zinc-200" />
         </div>
         <div className="grid w-full max-w-lg grid-cols-2 gap-2.5 sm:grid-cols-3">
           {STARTERS.map((type) => {
@@ -143,7 +148,9 @@ export function EmptyDrop({
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600">
                   <Icon size={17} />
                 </span>
-                <span className="text-xs font-medium text-zinc-600 group-hover:text-indigo-700">{def.label}</span>
+                <span className="text-xs font-medium text-zinc-600 group-hover:text-indigo-700">
+                  {def.label}
+                </span>
               </button>
             );
           })}

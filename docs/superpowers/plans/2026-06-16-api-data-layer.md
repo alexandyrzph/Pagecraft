@@ -6,7 +6,7 @@
 
 **Architecture:** Introduce four small `lib/` modules — web-standard response helpers (`api-response.ts`), JSON parse helpers (`json-parse.ts`), guard-callback helpers (`api-handler.ts`), and zod request schemas (`schemas.ts`) — then migrate routes onto them. Routes keep Next 16's native `export async function GET/POST/...` signatures; the guard helpers take a callback rather than wrapping the export, so we never fight Next's route type validator.
 
-> **Scope of the tenancy guarantee (be precise):** `withWorkspace`/`withRole` make the *auth/membership guard* structurally unskippable — a handler body cannot run without a resolved `WorkspaceCtx`. They do **not** automate the `where: { workspaceId }` filter, which is still added manually in each query. Enforcing workspace scoping *at the query level* (a tenant-scoped Prisma client or a repository layer) is explicitly **out of scope** here and remains future work — do not read "impossible to skip the guard" as "impossible to forget the filter."
+> **Scope of the tenancy guarantee (be precise):** `withWorkspace`/`withRole` make the _auth/membership guard_ structurally unskippable — a handler body cannot run without a resolved `WorkspaceCtx`. They do **not** automate the `where: { workspaceId }` filter, which is still added manually in each query. Enforcing workspace scoping _at the query level_ (a tenant-scoped Prisma client or a repository layer) is explicitly **out of scope** here and remains future work — do not read "impossible to skip the guard" as "impossible to forget the filter."
 
 **Tech Stack:** Next.js 16 (App Router, `proxy.ts` instead of `middleware.ts`), Prisma 6 + SQLite, zod (new dependency), Vitest 4 (node env), TypeScript 5.
 
@@ -24,16 +24,17 @@
 
 ## File Structure
 
-| File | Responsibility | Created in |
-|------|----------------|------------|
-| `lib/json-parse.ts` | `parseJsonArray` / `parseJsonObject` — replace 4 inline `safeParse` copies | Task 1 |
-| `lib/api-response.ts` | `json` / `created` / `error` / `badRequest` / `unauthorized` / `forbidden` / `notFound` — one response envelope | Task 2 |
-| `lib/api-handler.ts` | `runGuarded` (pure core) + `withWorkspace` / `withRole` — run a handler only after the tenancy guard passes | Task 3 |
-| `lib/schemas.ts` | zod request schemas + `parseBody` helper | Task 4 |
-| `tests/json-parse.test.ts`, `tests/api-response.test.ts`, `tests/api-handler.test.ts`, `tests/schemas.test.ts` | unit tests for the above | Tasks 1–4 |
-| `app/api/**/route.ts` (~30 files) | migrate onto the new helpers | Tasks 5–7 |
+| File                                                                                                           | Responsibility                                                                                                  | Created in |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------- |
+| `lib/json-parse.ts`                                                                                            | `parseJsonArray` / `parseJsonObject` — replace 4 inline `safeParse` copies                                      | Task 1     |
+| `lib/api-response.ts`                                                                                          | `json` / `created` / `error` / `badRequest` / `unauthorized` / `forbidden` / `notFound` — one response envelope | Task 2     |
+| `lib/api-handler.ts`                                                                                           | `runGuarded` (pure core) + `withWorkspace` / `withRole` — run a handler only after the tenancy guard passes     | Task 3     |
+| `lib/schemas.ts`                                                                                               | zod request schemas + `parseBody` helper                                                                        | Task 4     |
+| `tests/json-parse.test.ts`, `tests/api-response.test.ts`, `tests/api-handler.test.ts`, `tests/schemas.test.ts` | unit tests for the above                                                                                        | Tasks 1–4  |
+| `app/api/**/route.ts` (~30 files)                                                                              | migrate onto the new helpers                                                                                    | Tasks 5–7  |
 
 Design notes that lock in the decomposition:
+
 - `api-response.ts` returns the **web-standard `Response`** (not `NextResponse`), exactly like the existing `res()` in `lib/workspace.ts:43-45`. This keeps the helpers importable in the Vitest node env with no Next runtime, and `JSON.stringify` serializes `Date` fields to ISO strings identically to `NextResponse.json` — so it is a drop-in for the current routes.
 - `api-handler.ts` splits the **pure** decision (`runGuarded`) from the **impure** adapters (`withWorkspace`/`withRole`, which call the cookie/DB-touching guards). Only the pure core is unit-tested; the adapters are three lines each.
 
@@ -45,6 +46,7 @@ There are 4 near-identical `safeParse`/`safe` copies today:
 `app/api/components/route.ts:7-14`, `app/api/components/[id]/route.ts:9-14`, `app/api/submissions/route.ts:52-58` (returns object), `app/api/activity/route.ts:37-43` (returns object).
 
 **Files:**
+
 - Create: `lib/json-parse.ts`
 - Test: `tests/json-parse.test.ts`
 
@@ -134,6 +136,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Routes today hand-roll responses three different ways: `NextResponse.json({error}, {status})`, `NextResponse.json({ok:true})`, and `new Response(JSON.stringify({error}),...)` (in `lib/workspace.ts`). This task gives one set of helpers, using the **web-standard `Response`** to match `lib/workspace.ts:43-45` and stay test-friendly.
 
 **Files:**
+
 - Create: `lib/api-response.ts`
 - Test: `tests/api-response.test.ts`
 
@@ -142,7 +145,15 @@ Routes today hand-roll responses three different ways: `NextResponse.json({error
 ```ts
 // tests/api-response.test.ts
 import { describe, it, expect } from "vitest";
-import { json, created, error, badRequest, unauthorized, forbidden, notFound } from "@/lib/api-response";
+import {
+  json,
+  created,
+  error,
+  badRequest,
+  unauthorized,
+  forbidden,
+  notFound,
+} from "@/lib/api-response";
 
 describe("api-response", () => {
   it("json() defaults to 200 and echoes data", async () => {
@@ -235,6 +246,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 The pattern `const a = await requireApiRole("EDITOR"); if ("response" in a) return a.response;` appears in ~28 routes. This task centralizes it. `runGuarded` is a pure function (no cookies/DB) so it is unit-tested; `withWorkspace`/`withRole` are thin adapters over the existing guards in `lib/workspace.ts:79-93`.
 
 **Files:**
+
 - Create: `lib/api-handler.ts`
 - Test: `tests/api-handler.test.ts`
 
@@ -338,6 +350,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Add request validation. zod is **not yet installed**. Use only the version-stable subset (`z.string`, `.min`, `.max`, `.regex`, `.optional`, `.array`, `.unknown`, `.object`, `.safeParse`, `z.infer`) and a **regex for email** (avoids the `z.string().email()` vs `z.email()` divergence between zod v3 and v4, and matches the regex the codebase already uses at `app/api/auth/signup/route.ts:16`).
 
 **Files:**
+
 - Modify: `package.json` (via `npm install`)
 - Create: `lib/schemas.ts`
 - Test: `tests/schemas.test.ts`
@@ -359,7 +372,9 @@ describe("createPageSchema", () => {
     expect(createPageSchema.safeParse({}).success).toBe(true);
   });
   it("accepts a valid title + content array", () => {
-    expect(createPageSchema.safeParse({ title: "Home", content: [{ type: "hero" }] }).success).toBe(true);
+    expect(createPageSchema.safeParse({ title: "Home", content: [{ type: "hero" }] }).success).toBe(
+      true,
+    );
   });
   it("rejects a non-string title", () => {
     expect(createPageSchema.safeParse({ title: 123 }).success).toBe(false);
@@ -461,6 +476,7 @@ This is the **reference migration** — the exact before→after for all three c
 > **No new tests here** (no route/Prisma harness exists). Safety net: existing `npm test` stays green, `npx tsc --noEmit` passes, `npm run build` passes, and a manual `curl` smoke check. The change is behavior-preserving.
 
 **Files:**
+
 - Modify: `app/api/components/route.ts`
 - Modify: `app/api/components/[id]/route.ts`
 
@@ -551,7 +567,9 @@ export async function PUT(req: Request, { params }: Ctx) {
 export async function DELETE(_req: Request, { params }: Ctx) {
   return withRole("EDITOR", async (ws) => {
     const { id } = await params;
-    const result = await prisma.component.deleteMany({ where: { id, workspaceId: ws.workspace.id } });
+    const result = await prisma.component.deleteMany({
+      where: { id, workspaceId: ws.workspace.id },
+    });
     if (result.count === 0) return notFound();
     return json({ ok: true });
   });
@@ -593,6 +611,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Apply the Task-5 transforms to the pages routes, and use `createPageSchema`/`parseBody` on POST as the first validation example.
 
 **Files:**
+
 - Modify: `app/api/pages/route.ts`
 - Modify: `app/api/pages/[id]/route.ts`
 
@@ -677,10 +696,14 @@ export async function PUT(req: Request, { params }: Ctx) {
     if (body.theme !== undefined) data.theme = JSON.stringify(body.theme);
     if (body.seo) {
       if (body.seo.metaTitle !== undefined) data.metaTitle = body.seo.metaTitle || null;
-      if (body.seo.metaDescription !== undefined) data.metaDescription = body.seo.metaDescription || null;
+      if (body.seo.metaDescription !== undefined)
+        data.metaDescription = body.seo.metaDescription || null;
       if (body.seo.ogImage !== undefined) data.ogImage = body.seo.ogImage || null;
     }
-    const result = await prisma.page.updateMany({ where: { id, workspaceId: ws.workspace.id }, data });
+    const result = await prisma.page.updateMany({
+      where: { id, workspaceId: ws.workspace.id },
+      data,
+    });
     if (result.count === 0) return notFound();
     const page = await prisma.page.findFirst({ where: { id, workspaceId: ws.workspace.id } });
     return json(page);
@@ -755,6 +778,7 @@ Apply the Task-5 transforms to every remaining route. **The transforms are exact
 - [ ] `app/api/ai/route.ts` (uses `requireApiRole`; keep AI logic intact, only swap guard + responses)
 
 For each file:
+
 - [ ] **Step A:** apply transforms 1–3 above.
 - [ ] **Step B:** `npx tsc --noEmit` (run after each file, or every few files) — fix any unused-import errors.
 
@@ -799,7 +823,9 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ## Follow-on plans (outline only — to be expanded into their own files)
 
 ### Plan 2 — Editor UI refactor (`docs/superpowers/plans/<date>-editor-ui.md`)
+
 Largest LOC reduction; mostly UI so verified by component tests + manual checks rather than pure unit TDD.
+
 - **Shared `<Modal>`** (`components/editor/Modal.tsx`): extract the Framer-Motion backdrop/dialog duplicated across `SaveComponentModal`, `UnsavedModal`, `CmsManagerModal`. Migrate all three.
 - **`FIELD_INPUT_MAP`** (`lib/field-inputs.ts`): one `fieldType → input component` map; replace the divergent switches in `Inspector.tsx` (`ContentField`, 12 cases) and `CmsManagerModal.tsx` (`ItemFieldInput`, 6 cases). Adding a field type becomes a one-line map entry.
 - **Data-driven style groups** (`lib/style-groups.ts`): a `STYLE_GROUP_SCHEMAS` config replacing the hardcoded `StyleGroupView` switch in `Inspector.tsx:200-262`.
@@ -809,7 +835,9 @@ Largest LOC reduction; mostly UI so verified by component tests + manual checks 
 - **Store cleanup:** resolve the `editor-store.viewport` vs `breakpoints.activeId` overlap into one source of truth.
 
 ### Plan 3 — Block registry as single-file plugins (`docs/superpowers/plans/<date>-block-registry.md`)
+
 Goal: adding a block touches **one file** instead of three spots.
+
 - **Co-locate definition + Render:** each block in `components/blocks/*.tsx` exports its own `BlockDefinition` (Render paired with schema/defaults/fields) instead of the definition living separately in `lib/registry.ts`.
 - **Split `lib/registry.ts` (726 LOC)** into `lib/blocks/{layout,basic,sections,dynamic}.ts`, each exporting `BlockDefinition[]`; `lib/registry.ts` becomes a thin collector (`Object.fromEntries`, `getDefinition`, `createBlock`, `CATEGORIES` derived from the modules).
 - **`containerStrategy` on `BlockDefinition`:** move the hardcoded `columns` special-case out of `EditorBlock.tsx:97-110` onto the definition, so container rendering is generic.

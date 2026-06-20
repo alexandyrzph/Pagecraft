@@ -7,14 +7,17 @@ import {
 } from "react-aria-components";
 import { cn } from "@/lib/utils";
 
-export interface SliderProps extends RACSliderProps<number> {}
+export type SliderProps = RACSliderProps<number>;
 
 export function Slider({ className, ...props }: SliderProps) {
   return (
     <RACSlider
       {...props}
       className={(rs) =>
-        cn("relative flex w-full touch-none select-none items-center", typeof className === "function" ? className(rs) : className)
+        cn(
+          "relative flex w-full touch-none select-none items-center",
+          typeof className === "function" ? className(rs) : className,
+        )
       }
     >
       <SliderTrack className="relative h-1.5 w-full rounded-full bg-bg-subtle">

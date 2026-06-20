@@ -35,12 +35,14 @@ describe("responsiveCss visibility", () => {
   it("uses a bounded range so tablet visibility is independent of mobile", () => {
     const css = responsiveCss([block("x", { props: { hidden: { tablet: true } } })]);
     expect(css).toContain(
-      `@media (min-width: ${BREAKPOINTS.mobile + 1}px) and (max-width: ${BREAKPOINTS.tablet}px)`
+      `@media (min-width: ${BREAKPOINTS.mobile + 1}px) and (max-width: ${BREAKPOINTS.tablet}px)`,
     );
   });
 
   it("ghosts (not removes) a hidden block in editor mode so it stays selectable", () => {
-    const css = responsiveCss([block("x", { props: { hidden: { desktop: true } } })], { editable: true });
+    const css = responsiveCss([block("x", { props: { hidden: { desktop: true } } })], {
+      editable: true,
+    });
     expect(css).toContain(`@media (min-width: ${BREAKPOINTS.tablet + 1}px)`);
     expect(css).toContain("opacity: 0.35 !important");
     expect(css).not.toContain("display: none");

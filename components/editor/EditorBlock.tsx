@@ -31,7 +31,13 @@ export function SlottedChildren({
     <>
       <AnimatePresence initial={false} mode="popLayout">
         {items.map((child, i) => (
-          <EditorBlock key={child.id} block={child} parentId={parentId} parentType={parentType} index={i} />
+          <EditorBlock
+            key={child.id}
+            block={child}
+            parentId={parentId}
+            parentType={parentType}
+            index={i}
+          />
         ))}
       </AnimatePresence>
       <Slot parentId={parentId} parentType={parentType} index={items.length} />
@@ -56,7 +62,7 @@ function EditorBlock({
   const components = useComponents();
   const def = getDefinition(block.type);
   const isComponent = block.type === "component";
-  const comp = isComponent ? components.map[block.props?.componentId] : undefined;
+  const comp = isComponent ? components.map[block.props?.componentId as string] : undefined;
 
   const viewport = useEditor((s) => s.viewport);
   const setProp = useEditor((s) => s.setProp);
@@ -83,7 +89,12 @@ function EditorBlock({
     body = (
       <div className="pointer-events-none">
         {comp ? (
-          <BlockRenderer tree={comp.content} viewport={viewport} inlineStyles={false} components={components.map} />
+          <BlockRenderer
+            tree={comp.content}
+            viewport={viewport}
+            inlineStyles={false}
+            components={components.map}
+          />
         ) : (
           <div className="flex items-center justify-center gap-2 bg-violet-50 p-8 text-sm font-medium text-violet-500">
             <ComponentIcon size={16} /> Component not found
@@ -92,22 +103,29 @@ function EditorBlock({
       </div>
     );
   } else {
-    const Cmp = def!.Render;
+    if (!def) return null;
+    const Cmp = def.Render;
     let children: ReactNode = undefined;
-    if (def!.isContainer) {
+    if (def.isContainer) {
       children =
-        def!.containerStrategy === "fixed"
-          ? block.children.map((c, i) => (
-              <EditorBlock key={c.id} block={c} parentId={block.id} parentType={block.type} index={i} />
-            ))
-          : (
-              <SlottedChildren
-                parentId={block.id}
-                parentType={block.type}
-                items={block.children}
-                emptyMinHeight={def!.emptyMinHeight}
-              />
-            );
+        def.containerStrategy === "fixed" ? (
+          block.children.map((c, i) => (
+            <EditorBlock
+              key={c.id}
+              block={c}
+              parentId={block.id}
+              parentType={block.type}
+              index={i}
+            />
+          ))
+        ) : (
+          <SlottedChildren
+            parentId={block.id}
+            parentType={block.type}
+            items={block.children}
+            emptyMinHeight={def.emptyMinHeight}
+          />
+        );
     }
     body = (
       // style is intentionally empty — the injected responsive stylesheet
@@ -118,7 +136,11 @@ function EditorBlock({
         editable
         selected={false}
         style={{}}
-        className={cn(`b-${block.id}`, block.props?.textStyle && `ts-${block.props.textStyle}`, blockHtmlClass(block))}
+        className={cn(
+          `b-${block.id}`,
+          (block.props?.textStyle as string) && `ts-${block.props.textStyle as string}`,
+          blockHtmlClass(block),
+        )}
         id={blockHtmlId(block)}
         setProp={(k, v) => setProp(block.id, k, v)}
       >

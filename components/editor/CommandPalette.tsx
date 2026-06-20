@@ -68,26 +68,65 @@ export function CommandPalette({
   const commands = useMemo<Command[]>(() => {
     const s = useEditor.getState();
     const insert: Command[] = CATEGORIES.flatMap((cat) =>
-      cat.types.map((type) => {
-        const def = getDefinition(type)!;
-        return {
-          id: `insert:${type}`,
-          group: "Insert block",
-          label: `Add ${def.label}`,
-          icon: def.icon,
-          keywords: `${cat.name} ${def.description ?? ""}`,
-          run: () => useEditor.getState().addBlock(type, null, useEditor.getState().tree.length),
-        };
-      })
+      cat.types.flatMap((type) => {
+        const def = getDefinition(type);
+        if (!def) return [];
+        return [
+          {
+            id: `insert:${type}`,
+            group: "Insert block",
+            label: `Add ${def.label}`,
+            icon: def.icon,
+            keywords: `${cat.name} ${def.description ?? ""}`,
+            run: () => useEditor.getState().addBlock(type, null, useEditor.getState().tree.length),
+          },
+        ];
+      }),
     );
 
     const actions: Command[] = [
-      { id: "vp:desktop", group: "View", label: "Desktop view", icon: Monitor, run: () => s.setViewport("desktop") },
-      { id: "vp:tablet", group: "View", label: "Tablet view", icon: Tablet, run: () => s.setViewport("tablet") },
-      { id: "vp:mobile", group: "View", label: "Mobile view", icon: Smartphone, run: () => s.setViewport("mobile") },
-      { id: "preview", group: "View", label: "Toggle preview", icon: Eye, run: () => useEditor.getState().togglePreview() },
-      { id: "undo", group: "Edit", label: "Undo", icon: Undo2, run: () => useEditor.getState().undo() },
-      { id: "redo", group: "Edit", label: "Redo", icon: Redo2, run: () => useEditor.getState().redo() },
+      {
+        id: "vp:desktop",
+        group: "View",
+        label: "Desktop view",
+        icon: Monitor,
+        run: () => s.setViewport("desktop"),
+      },
+      {
+        id: "vp:tablet",
+        group: "View",
+        label: "Tablet view",
+        icon: Tablet,
+        run: () => s.setViewport("tablet"),
+      },
+      {
+        id: "vp:mobile",
+        group: "View",
+        label: "Mobile view",
+        icon: Smartphone,
+        run: () => s.setViewport("mobile"),
+      },
+      {
+        id: "preview",
+        group: "View",
+        label: "Toggle preview",
+        icon: Eye,
+        run: () => useEditor.getState().togglePreview(),
+      },
+      {
+        id: "undo",
+        group: "Edit",
+        label: "Undo",
+        icon: Undo2,
+        run: () => useEditor.getState().undo(),
+      },
+      {
+        id: "redo",
+        group: "Edit",
+        label: "Redo",
+        icon: Redo2,
+        run: () => useEditor.getState().redo(),
+      },
       {
         id: "dup",
         group: "Edit",
@@ -111,7 +150,13 @@ export function CommandPalette({
       { id: "save", group: "Page", label: "Save page", icon: Save, run: onSave },
       { id: "publish", group: "Page", label: "Publish page", icon: Rocket, run: onPublish },
       { id: "export", group: "Page", label: "Export as HTML", icon: Download, run: onExport },
-      { id: "home", group: "Page", label: "Go to all pages", icon: LayoutDashboard, run: () => router.push("/") },
+      {
+        id: "home",
+        group: "Page",
+        label: "Go to all pages",
+        icon: LayoutDashboard,
+        run: () => router.push("/"),
+      },
     ];
 
     return [...actions, ...insert];
@@ -130,25 +175,33 @@ export function CommandPalette({
   const groups = useMemo(() => {
     const map = new Map<string, Command[]>();
     for (const c of results) {
-      if (!map.has(c.group)) map.set(c.group, []);
-      map.get(c.group)!.push(c);
+      const arr = map.get(c.group);
+      if (arr) arr.push(c);
+      else map.set(c.group, [c]);
     }
     return Array.from(map.entries());
   }, [results]);
 
   const flat = results;
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setQuery("");
       setActive(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
     }
-  }, [open]);
+  }
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    setActive(0);
+  }
 
   useEffect(() => {
-    setActive(0);
-  }, [query]);
+    if (!open) return;
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [open]);
 
   // keep active item scrolled into view
   useEffect(() => {
@@ -231,13 +284,17 @@ export function CommandPalette({
                         onClick={() => run(c)}
                         className={cn(
                           "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
-                          idx === active ? "bg-indigo-50 text-indigo-700" : "text-zinc-700 hover:bg-zinc-50"
+                          idx === active
+                            ? "bg-indigo-50 text-indigo-700"
+                            : "text-zinc-700 hover:bg-zinc-50",
                         )}
                       >
                         <span
                           className={cn(
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-                            idx === active ? "bg-white text-indigo-600 shadow-xs" : "bg-zinc-100 text-zinc-500"
+                            idx === active
+                              ? "bg-white text-indigo-600 shadow-xs"
+                              : "bg-zinc-100 text-zinc-500",
                           )}
                         >
                           <Icon size={14} />

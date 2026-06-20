@@ -96,7 +96,7 @@ type EditorState = {
   copyStyles: (id: string) => void;
   pasteStyles: (id: string) => void;
   moveRelative: (id: string, dir: -1 | 1) => void;
-  setProp: (id: string, key: string, value: any) => void;
+  setProp: (id: string, key: string, value: unknown) => void;
   setStyle: (id: string, vp: Viewport, key: keyof StyleProps, value: string) => void;
   replaceTree: (tree: Block[]) => void;
 
@@ -112,9 +112,7 @@ export const useEditor = create<EditorState>((set, get) => {
   const commit = (next: Block[], tag: string | null = null) => {
     set((s) => {
       const coalesce = tag !== null && tag === s.lastTag;
-      const past = coalesce
-        ? s.past
-        : [...s.past, s.tree].slice(-HISTORY_LIMIT);
+      const past = coalesce ? s.past : [...s.past, s.tree].slice(-HISTORY_LIMIT);
       return { tree: next, past, future: [], dirty: true, lastTag: tag };
     });
   };
@@ -350,10 +348,7 @@ export const useEditor = create<EditorState>((set, get) => {
       commit(updateBlockProp(get().tree, id, key, value), `prop:${id}:${key}`),
 
     setStyle: (id, vp, key, value) =>
-      commit(
-        updateBlockStyle(get().tree, id, vp, key, value),
-        `style:${id}:${vp}:${String(key)}`
-      ),
+      commit(updateBlockStyle(get().tree, id, vp, key, value), `style:${id}:${vp}:${String(key)}`),
 
     replaceTree: (tree) => {
       commit(tree);
@@ -395,7 +390,5 @@ export const useEditor = create<EditorState>((set, get) => {
 
 /** Convenience selector for the currently-selected block. */
 export function useSelectedBlock(): Block | null {
-  return useEditor((s) =>
-    s.selectedId ? findBlockById(s.tree, s.selectedId) : null
-  );
+  return useEditor((s) => (s.selectedId ? findBlockById(s.tree, s.selectedId) : null));
 }

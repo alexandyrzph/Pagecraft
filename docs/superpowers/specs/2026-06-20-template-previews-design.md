@@ -42,6 +42,7 @@ One clear responsibility: render a scaled, static thumbnail of a single template
 ## Testing
 
 `tests/template-preview.dom.test.tsx` (jsdom dom project):
+
 - For the `landing` template (`TEMPLATES.find(t => t.id === "landing").build()`), `TemplatePreview` renders the real hero title text **"Ship beautiful pages in minutes"** (proves it renders actual template content via `BlockRenderer`).
 - For an empty tree (`blocks={[]}`), it renders the placeholder (e.g. an element with the placeholder label / `Plus` icon) and does **not** attempt a block render.
 
@@ -57,4 +58,4 @@ Gate: `npx tsc --noEmit` (only the 2 pre-existing `components/editor/Canvas.tsx`
 ## Risks
 
 - **Responsive breakpoints:** Tailwind responsive utilities (`md:` etc.) resolve against the **window**, not the 1280px stage. On desktop screens this yields the intended desktop layout (the previews are desktop-width by design). Acceptable for a thumbnail; not pixel-perfect on very narrow windows.
-- **Boundary:** `TemplatePreview` is dashboard chrome that *renders* block output via the shared `BlockRenderer`; it must not be imported into the published-page render path (it's a chooser-only thumbnail).
+- **Boundary:** `TemplatePreview` is dashboard chrome that _renders_ block output via the shared `BlockRenderer`; it must not be imported into the published-page render path (it's a chooser-only thumbnail).

@@ -89,9 +89,17 @@ export const useDesignSystem = create<DesignSystemState>((set, get) => {
       set((s) => ({
         textStyles: s.textStyles.map((t) => {
           if (t.id !== id) return t;
+          if (value === "" || value == null) {
+            const cleaned: StyleProps = {};
+            const src = t.props as Record<string, string>;
+            const dst = cleaned as Record<string, string>;
+            for (const k of Object.keys(src)) {
+              if (k !== key) dst[k] = src[k];
+            }
+            return { ...t, props: cleaned };
+          }
           const props = { ...t.props };
-          if (value === "" || value == null) delete props[key];
-          else (props as Record<string, string>)[key] = value;
+          (props as Record<string, string>)[key] = value;
           return { ...t, props };
         }),
       }));

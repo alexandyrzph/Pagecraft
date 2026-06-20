@@ -14,7 +14,9 @@ describe("TextField", () => {
   });
 
   it("renders a description hint", () => {
-    render(<TextField label="Email" description="We'll never share this" value="" onChange={() => {}} />);
+    render(
+      <TextField label="Email" description="We'll never share this" value="" onChange={() => {}} />,
+    );
     expect(screen.getByText("We'll never share this")).toBeInTheDocument();
   });
 });

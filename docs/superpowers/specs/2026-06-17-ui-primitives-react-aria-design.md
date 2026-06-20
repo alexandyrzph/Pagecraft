@@ -17,7 +17,7 @@ This is a net-add of a primitives layer where none exists — not a rip-out. The
 
 ## Decisions (locked during brainstorming)
 
-1. **Adoption depth:** Build our own primitives on **`react-aria-components`** (MIT, free), styled by us, using Untitled UI as the *visual reference only*. No paid Untitled UI dependency; we borrow patterns + token conventions, not their code.
+1. **Adoption depth:** Build our own primitives on **`react-aria-components`** (MIT, free), styled by us, using Untitled UI as the _visual reference only_. No paid Untitled UI dependency; we borrow patterns + token conventions, not their code.
 2. **Token layer:** Tailwind v4 **`@theme`** semantic tokens (generate real utilities like `bg-brand-600`, `text-fg-muted`, `rounded-control`).
 3. **Scope:** **Everything** — app shell **and** editor — but sequenced (foundation → prove → fan out) so even a full migration is verifiable and low-risk.
 4. **Animation:** **framer-motion is retained.** It is not dropped from the app or the primitives. The Modal keeps its existing framer-motion shell; react-aria only adds focus management around it.
@@ -56,17 +56,17 @@ Generated utilities used by primitives: `bg-brand-600`, `text-fg-muted`, `border
 
 All `"use client"`, thin `react-aria-components` wrappers + Tailwind via the existing `cn()` helper. Barrel export from `components/ui/index.ts`.
 
-| Primitive | Built on | Notable API |
-|---|---|---|
-| `Button` | RAC `Button` | `variant`: primary·secondary·ghost·danger·link; `size`: sm·md·lg·icon; `isLoading`, `leadingIcon`/`trailingIcon` |
-| `TextField` (Input) | RAC `TextField`+`Input`+`Label`+`FieldError` | `label`, `description`, `errorMessage`, `size`, adornments |
-| `Textarea` | RAC `TextField`+`TextArea` | rows, optional autosize |
-| `Select` | RAC `Select`+`ListBox`+`Popover` | replaces native `<select>` |
-| `Menu` | RAC `MenuTrigger`+`Menu` | action menus (PageCard ⋯ etc.) |
-| `Dialog` | RAC `Modal`+`ModalOverlay`+`Dialog` | focus trap + restore + Esc |
-| `Checkbox` / `Switch` / `RadioGroup` | RAC equivalents | `Switch` replaces editor `Toggle` |
-| `Tooltip` | RAC `Tooltip` | for icon-only buttons |
-| `Popover` (low-level) | RAC `Popover` | reused by editor `ColorInput` etc. |
+| Primitive                            | Built on                                     | Notable API                                                                                                      |
+| ------------------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Button`                             | RAC `Button`                                 | `variant`: primary·secondary·ghost·danger·link; `size`: sm·md·lg·icon; `isLoading`, `leadingIcon`/`trailingIcon` |
+| `TextField` (Input)                  | RAC `TextField`+`Input`+`Label`+`FieldError` | `label`, `description`, `errorMessage`, `size`, adornments                                                       |
+| `Textarea`                           | RAC `TextField`+`TextArea`                   | rows, optional autosize                                                                                          |
+| `Select`                             | RAC `Select`+`ListBox`+`Popover`             | replaces native `<select>`                                                                                       |
+| `Menu`                               | RAC `MenuTrigger`+`Menu`                     | action menus (PageCard ⋯ etc.)                                                                                   |
+| `Dialog`                             | RAC `Modal`+`ModalOverlay`+`Dialog`          | focus trap + restore + Esc                                                                                       |
+| `Checkbox` / `Switch` / `RadioGroup` | RAC equivalents                              | `Switch` replaces editor `Toggle`                                                                                |
+| `Tooltip`                            | RAC `Tooltip`                                | for icon-only buttons                                                                                            |
+| `Popover` (low-level)                | RAC `Popover`                                | reused by editor `ColorInput` etc.                                                                               |
 
 `Table` and `Skeleton` stay as-is (presentational, already semantic).
 
@@ -82,21 +82,21 @@ framer-motion retained. The `Modal`/`Dialog` keeps its current framer-motion she
 
 Specialized controls **keep their behavior**, rebuilt on the new base:
 
-| Editor control | Becomes |
-|---|---|
-| `TextInput` / `NumberInput` / `TextArea` | wrappers over `TextField` / `Textarea` base |
-| `SelectInput` | `Select` |
-| `Toggle` | `Switch` |
-| editor `Popover` | shared low-level `Popover` (delete the duplicate) |
-| `Segmented` (e.g. text-align) | RAC `ToggleButtonGroup` (single-select) |
-| `Slider` | RAC `Slider` — gains keyboard + ARIA, keeps readout/styling |
-| `UnitInput` (drag-to-scrub) | keeps scrub logic; input on `TextField` base, unit picker on `Select` |
-| `ColorInput` (swatches/recent/tokens) | keeps all logic; popover → shared `Popover` |
-| `ImageInput` / `FileInput` / `Field` | keep; trigger buttons → `Button` |
-| `ContextMenu` | `Menu` (keyboard nav + focus) |
-| `TopBar` icon buttons | `Button` (icon variant) + `Tooltip` |
-| `RichTextToolbar` dropdown | `Menu`/`Popover` |
-| `CommandPalette` | bespoke logic stays; rows/inputs use primitives |
+| Editor control                           | Becomes                                                               |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| `TextInput` / `NumberInput` / `TextArea` | wrappers over `TextField` / `Textarea` base                           |
+| `SelectInput`                            | `Select`                                                              |
+| `Toggle`                                 | `Switch`                                                              |
+| editor `Popover`                         | shared low-level `Popover` (delete the duplicate)                     |
+| `Segmented` (e.g. text-align)            | RAC `ToggleButtonGroup` (single-select)                               |
+| `Slider`                                 | RAC `Slider` — gains keyboard + ARIA, keeps readout/styling           |
+| `UnitInput` (drag-to-scrub)              | keeps scrub logic; input on `TextField` base, unit picker on `Select` |
+| `ColorInput` (swatches/recent/tokens)    | keeps all logic; popover → shared `Popover`                           |
+| `ImageInput` / `FileInput` / `Field`     | keep; trigger buttons → `Button`                                      |
+| `ContextMenu`                            | `Menu` (keyboard nav + focus)                                         |
+| `TopBar` icon buttons                    | `Button` (icon variant) + `Tooltip`                                   |
+| `RichTextToolbar` dropdown               | `Menu`/`Popover`                                                      |
+| `CommandPalette`                         | bespoke logic stays; rows/inputs use primitives                       |
 
 ## Known risk: iframe outside-press dismissal
 

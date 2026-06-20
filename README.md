@@ -73,13 +73,13 @@ canvas, and settings panel all stay in sync from one source of truth.
 
 Deeper design and operations material lives in [`docs/`](docs/):
 
-| Doc | What it covers |
-| --- | -------------- |
-| [Features](docs/features.md) | Complete catalogue of everything the app can do |
-| [Architecture Decision Records](docs/adr/README.md) | Why each technology/pattern was chosen and the trade-offs (11 ADRs) |
-| [Architecture diagrams](docs/architecture.md) | Mermaid system context, request lifecycle, DnD sequence, ER, deployment |
-| [Observability](docs/observability.md) | Structured logs, Prometheus metrics, tracing, health checks |
-| [Performance post-mortem](docs/post-mortem.md) | Load-test findings: the bottlenecks hit and how they were fixed |
+| Doc                                                 | What it covers                                                          |
+| --------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Features](docs/features.md)                        | Complete catalogue of everything the app can do                         |
+| [Architecture Decision Records](docs/adr/README.md) | Why each technology/pattern was chosen and the trade-offs (11 ADRs)     |
+| [Architecture diagrams](docs/architecture.md)       | Mermaid system context, request lifecycle, DnD sequence, ER, deployment |
+| [Observability](docs/observability.md)              | Structured logs, Prometheus metrics, tracing, health checks             |
+| [Performance post-mortem](docs/post-mortem.md)      | Load-test findings: the bottlenecks hit and how they were fixed         |
 
 ### Observability at a glance
 

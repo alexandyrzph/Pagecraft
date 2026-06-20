@@ -5,7 +5,7 @@
 
 ## Context
 
-The canvas must render author content *exactly* as it will appear when
+The canvas must render author content _exactly_ as it will appear when
 published — including arbitrary author CSS, fonts, and responsive widths at a
 simulated device size — while the editor draws its own chrome (selection
 outlines, drag ghosts, insertion indicators) on top. Two problems follow:

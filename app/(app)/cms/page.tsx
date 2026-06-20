@@ -20,7 +20,8 @@ export default async function CmsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900">CMS</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Collections power dynamic content. Each collection has typed fields and a template for its detail pages.
+            Collections power dynamic content. Each collection has typed fields and a template for
+            its detail pages.
           </p>
         </div>
         <NewCollectionButton />
@@ -49,13 +50,18 @@ export default async function CmsPage() {
                 className="flex items-center gap-4 px-5 py-4 hover:bg-zinc-50 transition-colors group"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100 group-hover:bg-indigo-50 transition-colors">
-                  <LayoutGrid size={16} className="text-zinc-400 group-hover:text-indigo-500 transition-colors" />
+                  <LayoutGrid
+                    size={16}
+                    className="text-zinc-400 group-hover:text-indigo-500 transition-colors"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-zinc-800">{col.name}</p>
                   <p className="text-xs text-zinc-400">/{col.slug}</p>
                 </div>
-                <span className="shrink-0 text-xs text-zinc-400">{col._count.items} item{col._count.items !== 1 ? "s" : ""}</span>
+                <span className="shrink-0 text-xs text-zinc-400">
+                  {col._count.items} item{col._count.items !== 1 ? "s" : ""}
+                </span>
               </Link>
             ))}
           </div>

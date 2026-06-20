@@ -9,7 +9,7 @@ describe("Modal", () => {
       <Modal onClose={() => {}}>
         <button>a</button>
         <button>b</button>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByRole("button", { name: "a" })).toHaveFocus();
   });
@@ -19,7 +19,7 @@ describe("Modal", () => {
       <Modal onClose={() => {}}>
         <button>a</button>
         <button>b</button>
-      </Modal>
+      </Modal>,
     );
     const a = screen.getByRole("button", { name: "a" });
     const b = screen.getByRole("button", { name: "b" });

@@ -10,10 +10,11 @@
 
 ---
 
-> ⚠️ **Scope boundary (chosen deliberately):** this plan is the *verifiable, low-risk* slice of the larger editor refactor. It does **NOT** split `Inspector.tsx` (888 LOC) into multiple files, extract `EditorClient.tsx` hooks, consolidate the `editor-store.viewport` / `breakpoints.activeId` overlap, or touch the `FloatingInspector` re-render path. Those are deferred to a later plan, ideally after a React component-test harness exists.
+> ⚠️ **Scope boundary (chosen deliberately):** this plan is the _verifiable, low-risk_ slice of the larger editor refactor. It does **NOT** split `Inspector.tsx` (888 LOC) into multiple files, extract `EditorClient.tsx` hooks, consolidate the `editor-store.viewport` / `breakpoints.activeId` overlap, or touch the `FloatingInspector` re-render path. Those are deferred to a later plan, ideally after a React component-test harness exists.
 
 > **Verification reality:** there is **no React component-test harness** — Vitest runs in `node` env and `@testing-library/react` is not installed. So:
-> - **Tasks 2 & 4** add runtime *integrity* tests (the map/config covers every field-type / style-group) — real TDD.
+>
+> - **Tasks 2 & 4** add runtime _integrity_ tests (the map/config covers every field-type / style-group) — real TDD.
 > - **Tasks 1 & 3** are pure UI rewires verified by `npx tsc --noEmit` + `npm run build` + a manual editor smoke-check. There is no automated behavior test for them; this is called out per task.
 > - These refactors must be **behavior-preserving**. Where a micro-difference is unavoidable (one modal's spring constants), it is documented inline as acceptable.
 
@@ -28,18 +29,18 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `components/editor/Modal.tsx` | Shared modal backdrop + spring dialog shell (`open`, `onClose`, `className`, `children`) | 1 |
-| `components/editor/SaveComponentModal.tsx` | Rewired to use `<Modal>` (keeps its own inner form) | 1 |
-| `components/editor/UnsavedModal.tsx` | Rewired to use `<Modal>` | 1 |
-| `components/editor/CmsManagerModal.tsx` | Outer shell rewired to use `<Modal>` (Task 1); `ItemFieldInput` rewired to `LEAF_INPUTS` (Task 3) | 1, 3 |
-| `lib/field-inputs.tsx` | `LEAF_INPUTS` (type→renderer) + `ItemsEditor` (moved from `controls.tsx`) | 2 |
-| `lib/types.ts` | Add runtime `FIELD_TYPES` and `STYLE_GROUPS` arrays | 2, 4 |
-| `components/editor/controls.tsx` | `ItemsEditor` removed (moved to `field-inputs.tsx`) | 2 |
-| `components/editor/Inspector.tsx` | `ContentField` → `LEAF_INPUTS` (Task 2); `StyleGroupView` → `STYLE_GROUP_SCHEMAS` (Task 4) | 2, 4 |
-| `lib/style-groups.tsx` | `STYLE_GROUP_SCHEMAS` config + control-kind types + select-option constants | 4 |
-| `tests/field-inputs.test.ts`, `tests/style-groups.test.ts` | Integrity tests | 2, 4 |
+| File                                                       | Responsibility                                                                                    | Task |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---- |
+| `components/editor/Modal.tsx`                              | Shared modal backdrop + spring dialog shell (`open`, `onClose`, `className`, `children`)          | 1    |
+| `components/editor/SaveComponentModal.tsx`                 | Rewired to use `<Modal>` (keeps its own inner form)                                               | 1    |
+| `components/editor/UnsavedModal.tsx`                       | Rewired to use `<Modal>`                                                                          | 1    |
+| `components/editor/CmsManagerModal.tsx`                    | Outer shell rewired to use `<Modal>` (Task 1); `ItemFieldInput` rewired to `LEAF_INPUTS` (Task 3) | 1, 3 |
+| `lib/field-inputs.tsx`                                     | `LEAF_INPUTS` (type→renderer) + `ItemsEditor` (moved from `controls.tsx`)                         | 2    |
+| `lib/types.ts`                                             | Add runtime `FIELD_TYPES` and `STYLE_GROUPS` arrays                                               | 2, 4 |
+| `components/editor/controls.tsx`                           | `ItemsEditor` removed (moved to `field-inputs.tsx`)                                               | 2    |
+| `components/editor/Inspector.tsx`                          | `ContentField` → `LEAF_INPUTS` (Task 2); `StyleGroupView` → `STYLE_GROUP_SCHEMAS` (Task 4)        | 2, 4 |
+| `lib/style-groups.tsx`                                     | `STYLE_GROUP_SCHEMAS` config + control-kind types + select-option constants                       | 4    |
+| `tests/field-inputs.test.ts`, `tests/style-groups.test.ts` | Integrity tests                                                                                   | 2, 4 |
 
 ---
 
@@ -51,6 +52,7 @@
 > **Behavior note:** the dialog animation is unified to `scale: 0.96, y: 8`, spring `stiffness: 440, damping: 32`. `SaveComponentModal`/`UnsavedModal` already use exactly this. `CmsManagerModal` previously used `scale: 0.97, y: 10`, spring `420/32` — a visually imperceptible change, accepted to keep one shell.
 
 **Files:**
+
 - Create: `components/editor/Modal.tsx`
 - Modify: `components/editor/SaveComponentModal.tsx`, `components/editor/UnsavedModal.tsx`, `components/editor/CmsManagerModal.tsx`
 
@@ -112,53 +114,53 @@ export function Modal({
 Replace the `import { AnimatePresence, motion } from "framer-motion";` line with `import { Modal } from "./Modal";`, and replace the entire `return (...)` JSX (the `<AnimatePresence>…</AnimatePresence>` block) with:
 
 ```tsx
-  return (
-    <Modal open={open} onClose={onCancel} className="max-w-sm p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-          <ComponentIcon size={18} />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-sm font-bold tracking-tight text-zinc-900">Save as component</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Reuse this across pages. Editing the component updates every instance.
-          </p>
-        </div>
+return (
+  <Modal open={open} onClose={onCancel} className="max-w-sm p-5">
+    <div className="flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+        <ComponentIcon size={18} />
       </div>
+      <div className="flex-1">
+        <h2 className="text-sm font-bold tracking-tight text-zinc-900">Save as component</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Reuse this across pages. Editing the component updates every instance.
+        </p>
+      </div>
+    </div>
 
-      <div className="mt-4">
-        <label className="mb-1 block text-[11px] font-medium text-zinc-500">Component name</label>
-        <input
-          ref={inputRef}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-            if (e.key === "Escape") onCancel();
-          }}
-          placeholder="e.g. Site header"
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
-        />
-      </div>
+    <div className="mt-4">
+      <label className="mb-1 block text-[11px] font-medium text-zinc-500">Component name</label>
+      <input
+        ref={inputRef}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          if (e.key === "Escape") onCancel();
+        }}
+        placeholder="e.g. Site header"
+        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+      />
+    </div>
 
-      <div className="mt-5 flex items-center justify-end gap-2">
-        <button
-          onClick={onCancel}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={submit}
-          disabled={!name.trim() || saving}
-          className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-violet-700 disabled:opacity-60"
-        >
-          {saving && <Loader2 size={14} className="animate-spin" />}
-          Save component
-        </button>
-      </div>
-    </Modal>
-  );
+    <div className="mt-5 flex items-center justify-end gap-2">
+      <button
+        onClick={onCancel}
+        className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={submit}
+        disabled={!name.trim() || saving}
+        className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-violet-700 disabled:opacity-60"
+      >
+        {saving && <Loader2 size={14} className="animate-spin" />}
+        Save component
+      </button>
+    </div>
+  </Modal>
+);
 ```
 
 (`Loader2` and `ComponentIcon` imports stay. Drop `AnimatePresence, motion`.)
@@ -168,41 +170,41 @@ Replace the `import { AnimatePresence, motion } from "framer-motion";` line with
 Replace `import { AnimatePresence, motion } from "framer-motion";` with `import { Modal } from "./Modal";`, and replace the `return (...)` with:
 
 ```tsx
-  return (
-    <Modal open={open} onClose={onCancel} className="max-w-sm p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-500">
-          <TriangleAlert size={18} />
-        </div>
-        <div>
-          <h2 className="text-sm font-bold tracking-tight text-zinc-900">Unsaved changes</h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            You have unsaved changes on this page. Save them before leaving?
-          </p>
-        </div>
+return (
+  <Modal open={open} onClose={onCancel} className="max-w-sm p-5">
+    <div className="flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-500">
+        <TriangleAlert size={18} />
       </div>
-      <div className="mt-5 flex items-center justify-end gap-2">
-        <button
-          onClick={onCancel}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onDiscard}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-        >
-          Discard
-        </button>
-        <button
-          onClick={onSave}
-          className="rounded-lg bg-zinc-900 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-zinc-800"
-        >
-          Save &amp; continue
-        </button>
+      <div>
+        <h2 className="text-sm font-bold tracking-tight text-zinc-900">Unsaved changes</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          You have unsaved changes on this page. Save them before leaving?
+        </p>
       </div>
-    </Modal>
-  );
+    </div>
+    <div className="mt-5 flex items-center justify-end gap-2">
+      <button
+        onClick={onCancel}
+        className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={onDiscard}
+        className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+      >
+        Discard
+      </button>
+      <button
+        onClick={onSave}
+        className="rounded-lg bg-zinc-900 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-zinc-800"
+      >
+        Save &amp; continue
+      </button>
+    </div>
+  </Modal>
+);
 ```
 
 (`TriangleAlert` import stays. Drop `AnimatePresence, motion`.)
@@ -212,23 +214,23 @@ Replace `import { AnimatePresence, motion } from "framer-motion";` with `import 
 Replace `import { AnimatePresence, motion } from "framer-motion";` with `import { Modal } from "./Modal";`. Then replace the outer `return ( <AnimatePresence> <motion.div …backdrop…> <motion.div …dialog…> … </motion.div> </motion.div> </AnimatePresence> );` so the dialog's existing children (the header `div`, the tabs `div`, and the `<div className="min-h-0 flex-1 overflow-y-auto p-5">…</div>`) become the children of `<Modal>`:
 
 ```tsx
-  return (
-    <Modal onClose={onClose} className="flex max-h-[86vh] max-w-2xl flex-col overflow-hidden">
-      {/* header */}
-      <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-3.5">
-        {/* …unchanged header contents… */}
-      </div>
+return (
+  <Modal onClose={onClose} className="flex max-h-[86vh] max-w-2xl flex-col overflow-hidden">
+    {/* header */}
+    <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-3.5">
+      {/* …unchanged header contents… */}
+    </div>
 
-      {/* tabs */}
-      <div className="flex shrink-0 gap-1 border-b border-zinc-200 px-3 py-2">
-        {/* …unchanged tabs contents… */}
-      </div>
+    {/* tabs */}
+    <div className="flex shrink-0 gap-1 border-b border-zinc-200 px-3 py-2">
+      {/* …unchanged tabs contents… */}
+    </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {/* …unchanged body (FieldsTab / ItemsTab / DetailTab)… */}
-      </div>
-    </Modal>
-  );
+    <div className="min-h-0 flex-1 overflow-y-auto p-5">
+      {/* …unchanged body (FieldsTab / ItemsTab / DetailTab)… */}
+    </div>
+  </Modal>
+);
 ```
 
 Keep the three inner blocks exactly as they are today — only the outer `<AnimatePresence>` + two `<motion.div>` wrappers are replaced by `<Modal onClose={onClose} className="flex max-h-[86vh] max-w-2xl flex-col overflow-hidden">`. (`onClose` keeps backdrop-dismiss; the dialog stop-propagation is now handled inside `Modal`.) Drop the `AnimatePresence, motion` import.
@@ -264,6 +266,7 @@ Three switches render a control for a field type: `ContentField` (`Inspector.tsx
 > **Behavior-preserving.** Registry `itemFields` only use `icon/text/textarea/boolean/select` — all rendered identically by `LEAF_INPUTS`. `ContentField`'s `"code"` (bespoke monospace textarea) and `"items"` (recursive) cases are preserved: `code` is a map entry; `items` stays handled by the consumer.
 
 **Files:**
+
 - Modify: `lib/types.ts` (add `FIELD_TYPES`)
 - Create: `lib/field-inputs.tsx`
 - Test: `tests/field-inputs.test.ts`
@@ -328,7 +331,7 @@ describe("LEAF_INPUTS", () => {
 Run: `npx vitest run tests/field-inputs.test.ts`
 Expected: FAIL — cannot find module `@/lib/field-inputs`.
 
-> If, once the module exists (Step 4), this test fails to *import* because a transitive dependency touches `window`/`document` at module load, add `// @vitest-environment jsdom` as the very first line of `tests/field-inputs.test.ts` (jsdom is already a devDependency). It should not be necessary — `controls.tsx` has no top-level browser calls — but this is the sanctioned fallback.
+> If, once the module exists (Step 4), this test fails to _import_ because a transitive dependency touches `window`/`document` at module load, add `// @vitest-environment jsdom` as the very first line of `tests/field-inputs.test.ts` (jsdom is already a devDependency). It should not be necessary — `controls.tsx` has no top-level browser calls — but this is the sanctioned fallback.
 
 - [ ] **Step 4: Create `lib/field-inputs.tsx`**
 
@@ -556,6 +559,7 @@ The CMS item editor has its own field switch over `CmsFieldType` (`text/textarea
 > **No unit test** (UI). Verify: `tsc` + `build` + manual. **Behavior-preserving:** `url` keeps its `"https://…"` placeholder (passed explicitly); every other type maps 1:1.
 
 **Files:**
+
 - Modify: `components/editor/CmsManagerModal.tsx`
 
 - [ ] **Step 1: Replace `ItemFieldInput`**
@@ -573,7 +577,9 @@ function ItemFieldInput({
   onChange: (v: any) => void;
 }) {
   const render = LEAF_INPUTS[field.type] ?? LEAF_INPUTS.text;
-  return <>{render({ value, onChange, placeholder: field.type === "url" ? "https://…" : undefined })}</>;
+  return (
+    <>{render({ value, onChange, placeholder: field.type === "url" ? "https://…" : undefined })}</>
+  );
 }
 ```
 
@@ -601,11 +607,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ## Task 4: `STYLE_GROUP_SCHEMAS` data-driven style groups
 
-`StyleGroupView` in `Inspector.tsx` is a 6-case switch (`typography/spacing/background/border/effects/layout`), each emitting a `<Section>` of style controls. Move the *what* (which controls, in which layout) into a data config in `lib/style-groups.tsx`, and reduce the switch to a generic renderer. The control kinds (`SUnit`/`SColor`/`SSelect`/`SSegment`/`SOpacity`/`SpacingControl`/`SText`) and `Section` stay in `Inspector.tsx`.
+`StyleGroupView` in `Inspector.tsx` is a 6-case switch (`typography/spacing/background/border/effects/layout`), each emitting a `<Section>` of style controls. Move the _what_ (which controls, in which layout) into a data config in `lib/style-groups.tsx`, and reduce the switch to a generic renderer. The control kinds (`SUnit`/`SColor`/`SSelect`/`SSegment`/`SOpacity`/`SpacingControl`/`SText`) and `Section` stay in `Inspector.tsx`.
 
 > **Behavior-preserving.** Same titles, same `defaultOpen` flags (typography & spacing open; background/border/effects/layout collapsed), same grid-of-2 pairings, same control props/options.
 
 **Files:**
+
 - Modify: `lib/types.ts` (add `STYLE_GROUPS`)
 - Create: `lib/style-groups.tsx`
 - Test: `tests/style-groups.test.ts`
@@ -719,7 +726,12 @@ export type StyleFieldDef =
   | { control: "text"; label: string; k: K; placeholder?: string }
   | { control: "color"; label: string; k: K }
   | { control: "select"; label: string; k: K; options: SelectOption[] }
-  | { control: "segment"; label: string; k: K; options: { value: string; label: string; icon?: ReactNode }[] }
+  | {
+      control: "segment";
+      label: string;
+      k: K;
+      options: { value: string; label: string; icon?: ReactNode }[];
+    }
   | { control: "spacing"; label: string; keys: [K, K, K, K] }
   | { control: "opacity" };
 
@@ -736,22 +748,61 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
   typography: {
     title: "Typography",
     rows: [
-      [{ control: "unit", label: "Font size", k: "fontSize", units: ["px", "rem", "em"], placeholder: "16" }],
+      [
+        {
+          control: "unit",
+          label: "Font size",
+          k: "fontSize",
+          units: ["px", "rem", "em"],
+          placeholder: "16",
+        },
+      ],
       [{ control: "select", label: "Weight", k: "fontWeight", options: FONT_WEIGHTS }],
       [{ control: "color", label: "Text color", k: "color" }],
       [
-        { control: "unit", label: "Line height", k: "lineHeight", units: ["", "px", "rem"], placeholder: "1.5" },
-        { control: "unit", label: "Letter spacing", k: "letterSpacing", units: ["px", "em"], placeholder: "0" },
+        {
+          control: "unit",
+          label: "Line height",
+          k: "lineHeight",
+          units: ["", "px", "rem"],
+          placeholder: "1.5",
+        },
+        {
+          control: "unit",
+          label: "Letter spacing",
+          k: "letterSpacing",
+          units: ["px", "em"],
+          placeholder: "0",
+        },
       ],
       [{ control: "segment", label: "Align", k: "textAlign", options: ALIGN_SEG }],
-      [{ control: "select", label: "Transform", k: "textTransform", options: opt("none", "uppercase", "capitalize", "lowercase") }],
+      [
+        {
+          control: "select",
+          label: "Transform",
+          k: "textTransform",
+          options: opt("none", "uppercase", "capitalize", "lowercase"),
+        },
+      ],
     ],
   },
   spacing: {
     title: "Spacing",
     rows: [
-      [{ control: "spacing", label: "Padding", keys: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] }],
-      [{ control: "spacing", label: "Margin", keys: ["marginTop", "marginRight", "marginBottom", "marginLeft"] }],
+      [
+        {
+          control: "spacing",
+          label: "Padding",
+          keys: ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+        },
+      ],
+      [
+        {
+          control: "spacing",
+          label: "Margin",
+          keys: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+        },
+      ],
     ],
   },
   background: {
@@ -759,17 +810,37 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
     defaultOpen: false,
     rows: [
       [{ control: "color", label: "Background color", k: "backgroundColor" }],
-      [{ control: "text", label: "Background image / gradient", k: "backgroundImage", placeholder: "url(…) or linear-gradient(…)" }],
+      [
+        {
+          control: "text",
+          label: "Background image / gradient",
+          k: "backgroundImage",
+          placeholder: "url(…) or linear-gradient(…)",
+        },
+      ],
     ],
   },
   border: {
     title: "Border",
     defaultOpen: false,
     rows: [
-      [{ control: "unit", label: "Radius", k: "borderRadius", units: ["px", "%", "rem"], placeholder: "12" }],
+      [
+        {
+          control: "unit",
+          label: "Radius",
+          k: "borderRadius",
+          units: ["px", "%", "rem"],
+          placeholder: "12",
+        },
+      ],
       [
         { control: "unit", label: "Width", k: "borderWidth", units: ["px"], placeholder: "1" },
-        { control: "select", label: "Style", k: "borderStyle", options: opt("solid", "dashed", "dotted", "none") },
+        {
+          control: "select",
+          label: "Style",
+          k: "borderStyle",
+          options: opt("solid", "dashed", "dotted", "none"),
+        },
       ],
       [{ control: "color", label: "Border color", k: "borderColor" }],
     ],
@@ -787,13 +858,42 @@ export const STYLE_GROUP_SCHEMAS: Record<StyleGroup, StyleGroupSchema> = {
     defaultOpen: false,
     rows: [
       [
-        { control: "unit", label: "Max width", k: "maxWidth", units: ["px", "%", "rem"], placeholder: "auto" },
-        { control: "unit", label: "Min height", k: "minHeight", units: ["px", "vh", "rem", "auto"], placeholder: "auto" },
+        {
+          control: "unit",
+          label: "Max width",
+          k: "maxWidth",
+          units: ["px", "%", "rem"],
+          placeholder: "auto",
+        },
+        {
+          control: "unit",
+          label: "Min height",
+          k: "minHeight",
+          units: ["px", "vh", "rem", "auto"],
+          placeholder: "auto",
+        },
       ],
-      [{ control: "select", label: "Display", k: "display", options: opt("block", "flex", "grid", "inline-block", "none") }],
       [
-        { control: "select", label: "Align items", k: "alignItems", options: opt("flex-start", "center", "flex-end", "stretch") },
-        { control: "select", label: "Justify", k: "justifyContent", options: opt("flex-start", "center", "flex-end", "space-between", "space-around") },
+        {
+          control: "select",
+          label: "Display",
+          k: "display",
+          options: opt("block", "flex", "grid", "inline-block", "none"),
+        },
+      ],
+      [
+        {
+          control: "select",
+          label: "Align items",
+          k: "alignItems",
+          options: opt("flex-start", "center", "flex-end", "stretch"),
+        },
+        {
+          control: "select",
+          label: "Justify",
+          k: "justifyContent",
+          options: opt("flex-start", "center", "flex-end", "space-between", "space-around"),
+        },
       ],
       [{ control: "unit", label: "Gap", k: "gap", units: ["px", "rem"], placeholder: "16" }],
     ],
@@ -824,7 +924,14 @@ import { STYLE_GROUP_SCHEMAS, type StyleFieldDef } from "@/lib/style-groups";
 function StyleControl({ field }: { field: StyleFieldDef }) {
   switch (field.control) {
     case "unit":
-      return <SUnit label={field.label} k={field.k} units={field.units} placeholder={field.placeholder} />;
+      return (
+        <SUnit
+          label={field.label}
+          k={field.k}
+          units={field.units}
+          placeholder={field.placeholder}
+        />
+      );
     case "text":
       return <SText label={field.label} k={field.k} placeholder={field.placeholder} />;
     case "color":

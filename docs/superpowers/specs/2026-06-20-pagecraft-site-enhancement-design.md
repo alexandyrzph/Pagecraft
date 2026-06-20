@@ -11,7 +11,7 @@ Take the existing, already-shipped landing page from "clean but generic" to a di
 ## Research basis (web search, 2026)
 
 - **Library choice:** GSAP's ScrollTrigger is the standard for scroll choreography (pinning, scrub, parallax) and **GSAP is now fully free** incl. plugins. Pairing with **Lenis** smooth-scroll is the de-facto award-site stack. Three.js/WebGL adds the most "wow" at the cost of bundle weight and perf care.
-- **Non-generic design:** outcome-driven storytelling over feature lists; a "why this is different / how it works" mechanism section; authentic product visuals; specific proof over generic badges; sticky shrinking nav; *meaningful* micro-motion, not noise.
+- **Non-generic design:** outcome-driven storytelling over feature lists; a "why this is different / how it works" mechanism section; authentic product visuals; specific proof over generic badges; sticky shrinking nav; _meaningful_ micro-motion, not noise.
 
 ## Decisions (locked during brainstorming)
 
@@ -32,35 +32,40 @@ Take the existing, already-shipped landing page from "clean but generic" to a di
 ## Architecture (in `~/Desktop/projects/pagecraft-site`, `src/`-based, `@/` → `./src`)
 
 ### Motion foundation
+
 - `src/components/motion/SmoothScroll.tsx` — a `"use client"` provider that initializes **Lenis** and drives **GSAP's ticker**, registers `ScrollTrigger`, and calls `ScrollTrigger.update` on Lenis scroll. **Disabled entirely under `prefers-reduced-motion`** (renders children with native scroll). Wraps the page in `src/app/layout.tsx` (or a client wrapper inside it).
 - `src/lib/motion/useGsap.ts` (or `src/components/motion/`) — small helpers: a `useParallax(ref, opts)` hook (ScrollTrigger scrub on transform/`y`), and a `useReveal`/scrub helper. All helpers no-op under reduced motion and clean up their ScrollTriggers on unmount.
 - `src/lib/motion/env.ts` — a `useMotionEnv()` hook returning `{ reducedMotion, isMobile, allowWebgl }` from `matchMedia('(prefers-reduced-motion: reduce)')`, `matchMedia('(pointer: coarse)')` / viewport width, and a `navigator.hardwareConcurrency` heuristic. Single source of truth for gating.
 
 ### WebGL isolation (Three.js / R3F)
+
 - Every Three.js scene is a `"use client"` component **dynamically imported with `next/dynamic({ ssr: false })`** and mounted only after first paint and only when `allowWebgl` is true. Never in the SSR/static path → `next build` stays green and LCP is unaffected.
 - `src/components/webgl/HeroScene.tsx` — an `@react-three/fiber` `<Canvas>` with: a set of instanced/low-poly rounded "block" meshes drifting and parallaxing with scroll + pointer; a soft shader-gradient background plane (custom GLSL or `@react-three/drei` helpers). DPR capped (e.g. `dpr={[1, 1.5]}`), `frameloop` paused when offscreen/tab-hidden.
 - `src/components/webgl/HeroSceneFallback.tsx` — a static CSS gradient/blurred-orbs backdrop used when `allowWebgl` is false (mobile/low-power/reduced-motion) or before the scene loads.
 
 ### Scroll choreography
+
 - **Parallax pass** on existing sections (hero background layers, stats band, testimonials) via `useParallax`.
 - **Pinned product showcase** (`src/components/sections/ProductShowcase.tsx`): a ScrollTrigger `pin` holds the editor mock centered while a scrubbed timeline swaps 3–4 differentiator captions/highlights as the user scrolls through the section's scroll length. Reduced-motion → a plain stacked (non-pinned) list of the same content.
 - **Magnetic CTAs**: primary buttons get a subtle pointer-follow magnetic effect (framer-motion or a small pointer handler), disabled on touch/reduced-motion.
 
 ### New / reworked sections (`src/components/sections/`)
-| Section | What it is |
-|---|---|
+
+| Section                              | What it is                                                                                                                                                              |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ProductShowcase` (new, centerpiece) | Pinned, scroll-scrubbed walkthrough of how Pagecraft is different (visual builder vs code → per-breakpoint → CMS binding → one-click publish), pinning the editor mock. |
-| `Features` (rework → bento) | Asymmetric **bento grid** of varied tile sizes; one tile holds a mini live demo (small animated block/cursor). Replaces the uniform 3-col grid. |
-| `TemplateGallery` (new) | Two horizontal rows of stylized template thumbnails scrolling in opposite directions on scroll (parallax marquee). |
-| `UseCases` (new) | Persona/outcome cards or tabs: Landing pages · Portfolios · SaaS sites · Blogs. |
-| `Comparison` (new) | A clean check-grid: Pagecraft vs hand-coding vs other builders — decision-grade differentiation. |
-| `FAQ` (new) | Accordion built on the UU/react-aria Disclosure pattern. |
-| Hero (enhance) | WebGL backdrop (`HeroScene`) + 3D-tilt product card + parallax. |
-| Stats, Testimonials (enhance) | Parallax + scrub-reveal. LogoCloud, Pricing, FinalCTA, Footer kept (light parallax where tasteful). |
+| `Features` (rework → bento)          | Asymmetric **bento grid** of varied tile sizes; one tile holds a mini live demo (small animated block/cursor). Replaces the uniform 3-col grid.                         |
+| `TemplateGallery` (new)              | Two horizontal rows of stylized template thumbnails scrolling in opposite directions on scroll (parallax marquee).                                                      |
+| `UseCases` (new)                     | Persona/outcome cards or tabs: Landing pages · Portfolios · SaaS sites · Blogs.                                                                                         |
+| `Comparison` (new)                   | A clean check-grid: Pagecraft vs hand-coding vs other builders — decision-grade differentiation.                                                                        |
+| `FAQ` (new)                          | Accordion built on the UU/react-aria Disclosure pattern.                                                                                                                |
+| Hero (enhance)                       | WebGL backdrop (`HeroScene`) + 3D-tilt product card + parallax.                                                                                                         |
+| Stats, Testimonials (enhance)        | Parallax + scrub-reveal. LogoCloud, Pricing, FinalCTA, Footer kept (light parallax where tasteful).                                                                     |
 
 Content for all new sections lives in `src/lib/content.ts` (extend it with `USE_CASES`, `COMPARISON`, `FAQ`, `TEMPLATES`, and the showcase steps), keeping copy out of JSX.
 
 ### Page composition
+
 `src/app/page.tsx` recomposed to the new order, e.g.: Nav · Hero(WebGL) · LogoCloud · ProductShowcase(pinned) · Features(bento) · TemplateGallery · UseCases · Stats · Testimonials · Comparison · Pricing · FAQ · FinalCTA · Footer.
 
 ## Performance / accessibility strategy (gated, non-negotiable)

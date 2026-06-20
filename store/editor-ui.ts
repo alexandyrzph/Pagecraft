@@ -36,7 +36,8 @@ export const useEditorUI = create<EditorUI>((set) => ({
   closeInserter: () => set({ inserter: null }),
 
   ai: null,
-  openAi: (target) => set({ ai: target ?? { parentId: null, index: -1 }, ctx: null, inserter: null }),
+  openAi: (target) =>
+    set({ ai: target ?? { parentId: null, index: -1 }, ctx: null, inserter: null }),
   closeAi: () => set({ ai: null }),
 
   domTree: false,

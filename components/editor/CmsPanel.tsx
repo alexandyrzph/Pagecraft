@@ -70,7 +70,7 @@ export function CmsPanel() {
               whileTap={{ scale: 0.98 }}
               onClick={() => setManagingId(c.id)}
               className={cn(
-                "group flex w-full items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-left shadow-xs transition-colors hover:border-indigo-300 hover:bg-indigo-50/50"
+                "group flex w-full items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-2 text-left shadow-xs transition-colors hover:border-indigo-300 hover:bg-indigo-50/50",
               )}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-indigo-600">
@@ -79,8 +79,8 @@ export function CmsPanel() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-semibold text-zinc-700">{c.name}</span>
                 <span className="block text-[10px] text-zinc-400">
-                  {c.items.length} {c.items.length === 1 ? "item" : "items"} ·{" "}
-                  {c.fields.length} {c.fields.length === 1 ? "field" : "fields"}
+                  {c.items.length} {c.items.length === 1 ? "item" : "items"} · {c.fields.length}{" "}
+                  {c.fields.length === 1 ? "field" : "fields"}
                 </span>
               </span>
               <Settings2 size={13} className="shrink-0 text-zinc-300 group-hover:text-indigo-500" />

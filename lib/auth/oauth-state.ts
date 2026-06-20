@@ -12,7 +12,11 @@ function sign(body: string): string {
 /** Token = "<base64url(json)>.<hmac>"; json = { next, nonce, exp }. */
 export function signState(data: { next?: string }, now: number = Date.now()): string {
   const body = Buffer.from(
-    JSON.stringify({ next: data.next || "", nonce: randomBytes(8).toString("hex"), exp: now + TTL_MS }),
+    JSON.stringify({
+      next: data.next || "",
+      nonce: randomBytes(8).toString("hex"),
+      exp: now + TTL_MS,
+    }),
   ).toString("base64url");
   return `${body}.${sign(body)}`;
 }

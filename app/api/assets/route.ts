@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     });
     const filtered = kind === "image" ? assets.filter((x) => x.type.startsWith("image/")) : assets;
     return json(
-      filtered.map((x) => ({ id: x.id, url: x.url, name: x.name, type: x.type, size: x.size }))
+      filtered.map((x) => ({ id: x.id, url: x.url, name: x.name, type: x.type, size: x.size })),
     );
   });
 }

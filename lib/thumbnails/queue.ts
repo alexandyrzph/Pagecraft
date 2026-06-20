@@ -9,8 +9,10 @@ export function createLimiter(max: number) {
 
   const pump = () => {
     while (active < max && queue.length > 0) {
+      const next = queue.shift();
+      if (!next) break;
       active++;
-      queue.shift()!();
+      next();
     }
   };
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useEditor, useSelectedBlock } from "@/store/editor-store";
 import { useCanvasZoom } from "@/store/canvas-zoom";
-import { useIframe } from "../iframe-context";
+import { useIframe, type FrameInfo } from "../iframe-context";
 import { useDrag } from "../drag-context";
 
 const PANEL_WIDTH = 304;
@@ -13,6 +13,36 @@ const DOCK_THRESHOLD = 60; // px from the right edge that triggers docking
 const clampW = (w: number) => Math.max(264, Math.min(w, 560));
 
 type PanelPos = { left: number; top: number; maxHeight: number };
+
+/**
+ * Translate a selected block's rect into the anchored floating-panel position.
+ * Pure: takes the measured element + frame/zoom/width and returns coords, so it
+ * can be reused by both the synchronous layout pass and the async re-measure.
+ */
+function positionFor(el: Element, frame: FrameInfo | null, zoom: number, width: number): PanelPos {
+  const r = el.getBoundingClientRect();
+  // translate iframe-relative rect into top-document viewport coords. Blocks
+  // inside the iframe are in unscaled internal px, so scale by the canvas zoom
+  // to match the visually scaled iframe before offsetting by its position.
+  const inFrame = !!(frame && el.ownerDocument === frame.doc);
+  const off = inFrame && frame ? frame.el.getBoundingClientRect() : { left: 0, top: 0 };
+  const sc = inFrame ? zoom : 1;
+  const rect = {
+    top: r.top * sc + off.top,
+    left: r.left * sc + off.left,
+    right: r.right * sc + off.left,
+  };
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let left: number;
+  if (rect.right + GAP + width <= vw - 8) left = rect.right + GAP;
+  else if (rect.left - GAP - width >= LEFT_PANEL + 8) left = rect.left - GAP - width;
+  else left = vw - width - 8;
+
+  const top = Math.max(64, Math.min(rect.top, vh - 360));
+  return { left, top, maxHeight: vh - top - 16 };
+}
 
 /**
  * Drives the floating inspector panel: tracks the selected block, computes the
@@ -38,6 +68,8 @@ export function useFloatingPanel() {
   const zoom = useCanvasZoom((s) => s.zoom);
   const dragActive = !!useDrag().type;
 
+  const posInputs = useRef({ frame, zoom, width });
+
   // While dragging/resizing the panel, make the canvas iframe transparent to
   // pointer events. Otherwise, when the cursor crosses into the cross-document
   // iframe it swallows pointermove/pointerup and the drag silently stops.
@@ -48,10 +80,11 @@ export function useFloatingPanel() {
     else el.style.removeProperty("pointer-events");
   };
 
-  // re-anchor to the newly selected block (drop any manual float position)
-  useEffect(() => {
+  const [anchoredId, setAnchoredId] = useState(selectedId);
+  if (selectedId !== anchoredId) {
+    setAnchoredId(selectedId);
     setDragPos(null);
-  }, [selectedId]);
+  }
 
   // ESC closes the panel (deselect)
   useEffect(() => {
@@ -127,33 +160,19 @@ export function useFloatingPanel() {
   }
 
   const compute = useCallback(() => {
-    if (!selectedId) return setPos(null);
     const doc = frame?.doc ?? document;
-    const el = doc.querySelector(`[data-block-id="${selectedId}"]`);
-    if (!el) return setPos(null);
-    const r = el.getBoundingClientRect();
-    // translate iframe-relative rect into top-document viewport coords. Blocks
-    // inside the iframe are in unscaled internal px, so scale by the canvas zoom
-    // to match the visually scaled iframe before offsetting by its position.
-    const inFrame = !!(frame && el.ownerDocument === frame.doc);
-    const off = inFrame ? frame!.el.getBoundingClientRect() : { left: 0, top: 0 };
-    const sc = inFrame ? zoom : 1;
-    const rect = { top: r.top * sc + off.top, left: r.left * sc + off.left, right: r.right * sc + off.left };
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-
-    let left: number;
-    if (rect.right + GAP + width <= vw - 8) left = rect.right + GAP;
-    else if (rect.left - GAP - width >= LEFT_PANEL + 8) left = rect.left - GAP - width;
-    else left = vw - width - 8;
-
-    const top = Math.max(64, Math.min(rect.top, vh - 360));
-    setPos({ left, top, maxHeight: vh - top - 16 });
+    const el = doc.querySelector(`[data-block-id="${selectedId ?? ""}"]`);
+    setPos(el ? positionFor(el, frame, zoom, width) : null);
   }, [selectedId, width, frame, zoom]);
 
   useLayoutEffect(() => {
-    compute();
-  }, [compute, tree, viewport, tick]);
+    posInputs.current = { frame, zoom, width };
+    const { frame: f, zoom: z, width: w } = posInputs.current;
+    const doc = f?.doc ?? document;
+    const el = doc.querySelector(`[data-block-id="${selectedId ?? ""}"]`);
+    if (el) setPos(positionFor(el, f, z, w));
+    else setPos(null);
+  }, [selectedId, width, frame, zoom, tree, viewport, tick]);
 
   useEffect(() => {
     if (!selectedId) return;

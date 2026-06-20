@@ -64,25 +64,37 @@ export function buildAuthorizeUrl(provider: Provider, state: string): string {
   return `${cfg.authorizeUrl}?${params.toString()}`;
 }
 
-export function normalizeGoogleProfile(raw: any): OAuthProfile {
+export function normalizeGoogleProfile(raw: unknown): OAuthProfile {
+  const r = (raw ?? {}) as {
+    sub?: string | number | null;
+    email?: string | null;
+    email_verified?: boolean | string;
+    name?: string | null;
+  };
   return {
-    providerAccountId: String(raw.sub),
-    email: raw.email ?? null,
-    emailVerified: raw.email_verified === true || raw.email_verified === "true",
-    name: raw.name || raw.email || "",
+    providerAccountId: String(r.sub),
+    email: r.email ?? null,
+    emailVerified: r.email_verified === true || r.email_verified === "true",
+    name: r.name || r.email || "",
   };
 }
 
 export function normalizeGithubProfile(
-  user: any,
+  user: unknown,
   emails: Array<{ email: string; primary: boolean; verified: boolean }>,
 ): OAuthProfile {
+  const u = (user ?? {}) as {
+    id?: string | number | null;
+    email?: string | null;
+    name?: string | null;
+    login?: string | null;
+  };
   const primary = emails.find((e) => e.primary) || emails[0];
   return {
-    providerAccountId: String(user.id),
-    email: primary?.email ?? user.email ?? null,
+    providerAccountId: String(u.id),
+    email: primary?.email ?? u.email ?? null,
     emailVerified: !!primary?.verified,
-    name: user.name || user.login || "",
+    name: u.name || u.login || "",
   };
 }
 
@@ -107,7 +119,11 @@ export async function exchangeCode(provider: Provider, code: string): Promise<st
 }
 
 export async function fetchProfile(provider: Provider, accessToken: string): Promise<OAuthProfile> {
-  const headers = { authorization: `Bearer ${accessToken}`, accept: "application/json", "user-agent": "pagecraft" };
+  const headers = {
+    authorization: `Bearer ${accessToken}`,
+    accept: "application/json",
+    "user-agent": "pagecraft",
+  };
   if (provider === "google") {
     const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers });
     if (!res.ok) throw new Error(`google userinfo failed: ${res.status}`);

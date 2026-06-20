@@ -18,14 +18,16 @@ export default async function SitePage() {
       href: "/site/header",
       icon: PanelTop,
       label: "Header",
-      description: "The global navigation and branding bar rendered at the top of every published page.",
+      description:
+        "The global navigation and branding bar rendered at the top of every published page.",
       blockCount: headerCount,
     },
     {
       href: "/site/footer",
       icon: PanelBottom,
       label: "Footer",
-      description: "Links, legal text, and other content shown at the bottom of every published page.",
+      description:
+        "Links, legal text, and other content shown at the bottom of every published page.",
       blockCount: footerCount,
     },
   ] as const;

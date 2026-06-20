@@ -4,7 +4,7 @@ import { responsiveCss } from "@/lib/blocks/styles";
 import { designSystemCss, parseDesignSystem } from "@/lib/design/design-system";
 import { themeVars, parseTheme } from "@/lib/design/theme";
 import { buildCollectionMap } from "@/lib/cms/collection-service";
-import { BlockRenderer } from "@/components/BlockRenderer";
+import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 
 type PageRow = { content: string; theme: string; workspaceId: string | null };
 
@@ -31,7 +31,7 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
     responsiveCss([...header, ...tree, ...footer]);
 
   const comps = await prisma.component.findMany({ where: { workspaceId: page.workspaceId } });
-  const components: Record<string, { content: any[] }> = {};
+  const components: ComponentMap = {};
   for (const c of comps) {
     try {
       components[c.id] = { content: JSON.parse(c.content) };
@@ -51,11 +51,32 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <main style={themeVars(theme)}>
         {header.length > 0 && (
-          <BlockRenderer tree={header} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={header}
+            viewport="desktop"
+            animate={animate}
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
-        <BlockRenderer tree={tree} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+        <BlockRenderer
+          tree={tree}
+          viewport="desktop"
+          animate={animate}
+          inlineStyles={false}
+          components={components}
+          collections={collections}
+        />
         {footer.length > 0 && (
-          <BlockRenderer tree={footer} viewport="desktop" animate={animate} inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={footer}
+            viewport="desktop"
+            animate={animate}
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
       </main>
     </>

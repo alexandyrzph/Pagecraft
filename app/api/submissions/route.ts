@@ -31,7 +31,9 @@ export async function GET(req: Request) {
     const pageId = searchParams.get("pageId");
     if (!pageId) return badRequest("pageId required");
 
-    const page = await prisma.page.findFirst({ where: { id: pageId, workspaceId: ws.workspace.id } });
+    const page = await prisma.page.findFirst({
+      where: { id: pageId, workspaceId: ws.workspace.id },
+    });
     if (!page) return notFound("Not found");
 
     const subs = await prisma.submission.findMany({
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
         formId: s.formId,
         data: parseJsonObject(s.data),
         createdAt: s.createdAt.toISOString(),
-      }))
+      })),
     );
   });
 }

@@ -71,7 +71,15 @@ function RenderNode({
     return (
       <>
         {comp.content.map((c) => (
-          <RenderNode key={c.id} block={c} viewport={viewport} animate={animate} components={components} seen={next} inlineStyles={inlineStyles} />
+          <RenderNode
+            key={c.id}
+            block={c}
+            viewport={viewport}
+            animate={animate}
+            components={components}
+            seen={next}
+            inlineStyles={inlineStyles}
+          />
         ))}
       </>
     );
@@ -88,7 +96,15 @@ function RenderNode({
   const htmlId = blockHtmlId(block);
   const children = def.isContainer
     ? block.children.map((c) => (
-        <RenderNode key={c.id} block={c} viewport={viewport} animate={animate} components={components} seen={seen} inlineStyles={inlineStyles} />
+        <RenderNode
+          key={c.id}
+          block={c}
+          viewport={viewport}
+          animate={animate}
+          components={components}
+          seen={seen}
+          inlineStyles={inlineStyles}
+        />
       ))
     : undefined;
 

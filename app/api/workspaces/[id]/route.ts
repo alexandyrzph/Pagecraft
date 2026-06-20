@@ -11,7 +11,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (ws.workspace.id !== id) return forbidden();
     const body = await req.json().catch(() => ({}));
     const data: { name?: string } = {};
-    if (typeof body.name === "string" && body.name.trim()) data.name = body.name.trim().slice(0, 80);
+    if (typeof body.name === "string" && body.name.trim())
+      data.name = body.name.trim().slice(0, 80);
     if (!Object.keys(data).length) return badRequest("Nothing to update");
     const workspace = await prisma.workspace.update({ where: { id }, data });
     return json({ id: workspace.id, name: workspace.name, slug: workspace.slug });

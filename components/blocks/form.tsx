@@ -15,7 +15,14 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
     submitText = "Send message",
     successMessage = "Thanks! Your message has been sent.",
     formId = "contact",
-  } = block.props;
+  } = block.props as {
+    title?: string;
+    description?: string;
+    fields?: FormField[];
+    submitText?: string;
+    successMessage?: string;
+    formId?: string;
+  };
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
 
   const inputCls =
@@ -50,10 +57,20 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
     <section id={id} className={cn("w-full", className)} style={style}>
       <div className="mx-auto max-w-xl px-6 py-16">
         <div className="mb-8 text-center">
-          <Editable as="h2" value={title} editable={editable} onCommit={(v) => setProp("title", v)}
-            className="text-3xl font-bold text-slate-900" />
-          <Editable as="p" value={description} editable={editable} onCommit={(v) => setProp("description", v)}
-            className="mt-3 text-slate-500" />
+          <Editable
+            as="h2"
+            value={title}
+            editable={editable}
+            onCommit={(v) => setProp("title", v)}
+            className="text-3xl font-bold text-slate-900"
+          />
+          <Editable
+            as="p"
+            value={description}
+            editable={editable}
+            onCommit={(v) => setProp("description", v)}
+            className="mt-3 text-slate-500"
+          />
         </div>
 
         {status === "done" ? (
@@ -71,7 +88,12 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
                 {f.type === "textarea" ? (
                   <textarea name={f.label} required={f.required} rows={4} className={inputCls} />
                 ) : (
-                  <input name={f.label} type={f.type || "text"} required={f.required} className={inputCls} />
+                  <input
+                    name={f.label}
+                    type={f.type || "text"}
+                    required={f.required}
+                    className={inputCls}
+                  />
                 )}
               </div>
             ))}
@@ -79,12 +101,17 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
               type="submit"
               disabled={status === "sending"}
               className="w-full cursor-pointer px-5 py-3 font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-              style={{ backgroundColor: "var(--pc-brand, #6366f1)", borderRadius: "var(--pc-radius, 12px)" }}
+              style={{
+                backgroundColor: "var(--pc-brand, #6366f1)",
+                borderRadius: "var(--pc-radius, 12px)",
+              }}
             >
               {status === "sending" ? "Sending…" : submitText}
             </button>
             {status === "error" && (
-              <p className="text-center text-sm text-rose-500">Something went wrong — please try again.</p>
+              <p className="text-center text-sm text-rose-500">
+                Something went wrong — please try again.
+              </p>
             )}
           </form>
         )}
@@ -92,4 +119,3 @@ export function FormBlock({ block, editable, style, className, id, setProp }: Bl
     </section>
   );
 }
-

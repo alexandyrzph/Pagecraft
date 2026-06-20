@@ -37,7 +37,7 @@ export default async function AssetsPage() {
             </div>
             <p className="text-sm font-medium text-zinc-700">No assets yet.</p>
             <p className="text-xs text-zinc-400">
-              Upload images and files from any editor's asset picker.
+              Upload images and files from any editor&apos;s asset picker.
             </p>
           </div>
         ) : (

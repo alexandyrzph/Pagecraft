@@ -29,7 +29,7 @@ Centralize the cross-cutting concerns in **higher-order handler wrappers**
 
 - **Positive:** Auth, tenancy, and role checks are applied uniformly and are hard
   to forget — a handler opts in by choosing the right wrapper.
-- **Positive:** Zod gives runtime validation *and* inferred TypeScript types for
+- **Positive:** Zod gives runtime validation _and_ inferred TypeScript types for
   request payloads, complementing the loosely-typed block JSON (ADR 0002).
 - **Positive:** Uniform error responses simplify the client.
 - **Negative:** A handler that bypasses the wrappers (or picks the wrong one)

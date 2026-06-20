@@ -117,7 +117,7 @@ can never authenticate via the email/password path — confirm/keep that guard.
   functions that map each provider's JSON shape to the normalized profile (unit-tested).
 - **State (CSRF):** `signState(payload)` / `verifyState(token)` — HMAC over a random nonce +
   optional `next`, with a short TTL (e.g. 10 min), using `process.env.AUTH_SECRET ||
-  "dev-auth-secret-change-me"` (same dev-fallback convention as the thumbnail token helper).
+"dev-auth-secret-change-me"` (same dev-fallback convention as the thumbnail token helper).
   Pure, unit-tested.
 
 ## OAuth — routes
@@ -133,8 +133,8 @@ can never authenticate via the email/password path — confirm/keep that guard.
   3. Else → create a new `User` (null password, name/email from profile), create an
      `OAuthAccount`, auto-create their workspace (`createWorkspace`), so behavior matches
      email signup.
-  Then `createSession(user.id)` and 302 to `user.onboardedAt ? "/" : "/onboarding"`.
-  Any failure (denied, bad state, token/profile error) → 302 `/login?error=<reason>`.
+     Then `createSession(user.id)` and 302 to `user.onboardedAt ? "/" : "/onboarding"`.
+     Any failure (denied, bad state, token/profile error) → 302 `/login?error=<reason>`.
 - `GET /api/auth/providers` — returns `{ providers: ("google"|"github")[] }` for the UI.
 
 ## UI wiring

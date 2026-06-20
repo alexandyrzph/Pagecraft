@@ -15,7 +15,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   const state = signState({ next });
   const jar = await cookies();
   jar.set("pc_oauth_state", state, {
-    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 600,
   });
   return NextResponse.redirect(buildAuthorizeUrl(provider, state));
 }

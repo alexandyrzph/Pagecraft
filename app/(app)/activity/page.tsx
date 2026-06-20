@@ -78,7 +78,9 @@ export default function ActivityPage() {
   return (
     <div className="mx-auto max-w-[1320px] px-6 py-10 lg:px-12">
       <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Activity</h1>
-      <p className="mt-1 text-sm text-zinc-500">A log of everything your team has done in this workspace.</p>
+      <p className="mt-1 text-sm text-zinc-500">
+        A log of everything your team has done in this workspace.
+      </p>
 
       <div className="mt-8">
         {loading ? (
@@ -90,14 +92,20 @@ export default function ActivityPage() {
             <div className="rounded-2xl bg-zinc-100 p-4">
               <Activity size={24} className="text-zinc-400" />
             </div>
-            <p className="text-sm font-medium text-zinc-700">Activity will appear here as your team builds.</p>
-            <p className="text-xs text-zinc-400">Create or publish a page to see your first event.</p>
+            <p className="text-sm font-medium text-zinc-700">
+              Activity will appear here as your team builds.
+            </p>
+            <p className="text-xs text-zinc-400">
+              Create or publish a page to see your first event.
+            </p>
           </div>
         ) : (
           <div className="space-y-8">
             {groupByDay(events).map(({ day, items }) => (
               <div key={day}>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">{day}</p>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  {day}
+                </p>
                 <div className="rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100">
                   {items.map((e) => (
                     <div key={e.id} className="flex items-center gap-4 px-5 py-3.5">
@@ -108,10 +116,15 @@ export default function ActivityPage() {
                         <span className="text-sm font-medium text-zinc-800">{e.actor}</span>
                         <span className="text-sm text-zinc-500"> {verbForType(e.type)}</span>
                         {typeof e.meta === "object" && e.meta !== null && "title" in e.meta && (
-                          <span className="text-sm text-zinc-500"> — <span className="text-zinc-700">{String(e.meta.title)}</span></span>
+                          <span className="text-sm text-zinc-500">
+                            {" "}
+                            — <span className="text-zinc-700">{String(e.meta.title)}</span>
+                          </span>
                         )}
                       </div>
-                      <span className="shrink-0 text-xs text-zinc-400">{relativeTime(e.createdAt)}</span>
+                      <span className="shrink-0 text-xs text-zinc-400">
+                        {relativeTime(e.createdAt)}
+                      </span>
                     </div>
                   ))}
                 </div>

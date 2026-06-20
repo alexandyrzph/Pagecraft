@@ -15,7 +15,9 @@ export default async function CollectionTemplateEditor({
   await requireUser();
   const { workspace } = await requireWorkspace();
   const { id } = await params;
-  const collection = await prisma.collection.findFirst({ where: { id, workspaceId: workspace.id } });
+  const collection = await prisma.collection.findFirst({
+    where: { id, workspaceId: workspace.id },
+  });
   if (!collection) notFound();
 
   return (

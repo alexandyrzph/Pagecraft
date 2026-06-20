@@ -19,7 +19,13 @@ export function CollectionListBlock({ block, editable, style, className, id }: B
     columns = "3",
     limit = 0,
     bindings = {} as CardBindings,
-  } = block.props;
+  } = block.props as {
+    collectionId?: string;
+    layout?: string;
+    columns?: string;
+    limit?: number;
+    bindings?: CardBindings;
+  };
 
   const collection = collectionId ? map[collectionId] : undefined;
 
@@ -89,17 +95,9 @@ function Shell({
   );
 }
 
-function Card({
-  card,
-  list,
-  editable,
-}: {
-  card: ResolvedCard;
-  list: boolean;
-  editable: boolean;
-}) {
+function Card({ card, list, editable }: { card: ResolvedCard; list: boolean; editable: boolean }) {
   const clickable = !!card.link && !editable;
-  const Tag: any = clickable ? "a" : "div";
+  const Tag: React.ElementType = clickable ? "a" : "div";
   const tagProps = clickable ? { href: card.link } : {};
 
   return (
@@ -108,7 +106,7 @@ function Card({
       className={cn(
         "group flex overflow-hidden border border-slate-200 bg-white no-underline shadow-sm transition-shadow hover:shadow-md",
         list ? "flex-col sm:flex-row" : "flex-col",
-        clickable && "cursor-pointer"
+        clickable && "cursor-pointer",
       )}
       style={{ borderRadius: "var(--pc-radius, 16px)" }}
     >
@@ -116,7 +114,7 @@ function Card({
         <div
           className={cn(
             "overflow-hidden bg-slate-100",
-            list ? "sm:w-56 sm:shrink-0" : "aspect-[16/10] w-full"
+            list ? "sm:w-56 sm:shrink-0" : "aspect-[16/10] w-full",
           )}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -125,7 +123,7 @@ function Card({
             alt={card.title ?? ""}
             className={cn(
               "h-full w-full object-cover transition-transform duration-300 group-hover:scale-105",
-              list && "sm:h-full sm:min-h-[10rem]"
+              list && "sm:h-full sm:min-h-[10rem]",
             )}
           />
         </div>
@@ -139,13 +137,9 @@ function Card({
             {card.subtitle}
           </div>
         )}
-        {card.title && (
-          <h3 className="text-lg font-semibold text-slate-900">{card.title}</h3>
-        )}
+        {card.title && <h3 className="text-lg font-semibold text-slate-900">{card.title}</h3>}
         {card.text && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500">
-            {card.text}
-          </p>
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500">{card.text}</p>
         )}
       </div>
     </Tag>
@@ -163,4 +157,3 @@ function Placeholder({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
-

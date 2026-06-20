@@ -36,13 +36,10 @@ function serializeError(err: unknown): Fields {
 function write(level: Level, msg: string, fields: Fields): void {
   if (LEVEL_RANK[level] < MIN_RANK) return;
 
-  const record: Fields = {
-    ts: new Date().toISOString(),
-    level,
-    msg,
-    ...traceFields(),
-    ...fields,
-  };
+  const ts = new Date().toISOString();
+  // Everything beyond the fixed ts/level/msg prefix forms the structured tail.
+  const extra: Fields = { ...traceFields(), ...fields };
+  const record: Fields = { ts, level, msg, ...extra };
 
   if (isProd) {
     process.stdout.write(JSON.stringify(record) + "\n");
@@ -50,10 +47,8 @@ function write(level: Level, msg: string, fields: Fields): void {
   }
 
   // Dev: readable single line with the structured tail appended as JSON.
-  const { ts, level: _l, msg: _m, ...rest } = record;
-  const tail = Object.keys(rest).length ? " " + JSON.stringify(rest) : "";
-  const line = `${COLOR[level]}${String(ts).slice(11, 23)} ${level.toUpperCase().padEnd(5)}${RESET} ${msg}${tail}`;
-  // eslint-disable-next-line no-console
+  const tail = Object.keys(extra).length ? " " + JSON.stringify(extra) : "";
+  const line = `${COLOR[level]}${ts.slice(11, 23)} ${level.toUpperCase().padEnd(5)}${RESET} ${msg}${tail}`;
   console.log(line);
 }
 

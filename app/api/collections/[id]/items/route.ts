@@ -12,7 +12,9 @@ export async function GET(_req: Request, { params }: Ctx) {
   return withWorkspace(async (ws) => {
     const { id } = await params;
 
-    const collection = await prisma.collection.findFirst({ where: { id, workspaceId: ws.workspace.id } });
+    const collection = await prisma.collection.findFirst({
+      where: { id, workspaceId: ws.workspace.id },
+    });
     if (!collection) return notFound();
 
     const items = await prisma.collectionItem.findMany({
@@ -28,12 +30,13 @@ export async function POST(req: Request, { params }: Ctx) {
   return withRole("EDITOR", async (ws) => {
     const { id } = await params;
 
-    const collection = await prisma.collection.findFirst({ where: { id, workspaceId: ws.workspace.id } });
+    const collection = await prisma.collection.findFirst({
+      where: { id, workspaceId: ws.workspace.id },
+    });
     if (!collection) return notFound();
 
     const body = await req.json().catch(() => ({}));
-    const data =
-      body.data && typeof body.data === "object" ? JSON.stringify(body.data) : "{}";
+    const data = body.data && typeof body.data === "object" ? JSON.stringify(body.data) : "{}";
 
     const last = await prisma.collectionItem.findFirst({
       where: { collectionId: id },

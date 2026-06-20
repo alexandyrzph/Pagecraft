@@ -29,6 +29,7 @@ A central **component registry** maps each `type` →
 This single registry drives the palette, the canvas renderer, and the inspector.
 
 A single `<BlockRenderer>` recursively renders the tree:
+
 - **Editor canvas** wraps it with selection/hover chrome + drop zones.
 - **Public page** renders it clean.
 

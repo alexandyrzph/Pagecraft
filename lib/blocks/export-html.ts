@@ -21,7 +21,7 @@ export function buildExportDocument(
   title: string,
   bodyHtml: string,
   tree: Block[],
-  extraCss = ""
+  extraCss = "",
 ): string {
   const css = `${BASE_CSS}\n${extraCss}\n${responsiveCss(tree)}`;
   return `<!DOCTYPE html>

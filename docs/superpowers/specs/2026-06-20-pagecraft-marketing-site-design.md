@@ -27,12 +27,14 @@ A single, highly-interactive, unique-looking marketing landing page for Pagecraf
 ## Architecture
 
 ### Project setup
+
 - Scaffolded with `create-next-app` (App Router, TypeScript, Tailwind v4, ESLint) at `~/Desktop/projects/pagecraft-site`.
 - Untitled UI React components added via their CLI into `components/ui/` (you own the copied source). UU theme tokens wired into the Tailwind v4 `@theme` layer / `globals.css`.
 - `framer-motion` for animation; the project's icon set (Untitled UI icons or `lucide-react`) for iconography.
 - Display + body fonts via `next/font` (a strong display face for headlines — e.g. a geometric sans — plus a clean body face).
 
 ### File structure (one responsibility per file)
+
 - `app/layout.tsx` — root layout, fonts, global metadata (title/description/OG), analytics stub slot.
 - `app/page.tsx` — composes the section components in order; nothing else.
 - `app/globals.css` — Tailwind v4 import + UU `@theme` tokens + the hero grid background utility + reduced-motion guard.
@@ -44,11 +46,12 @@ A single, highly-interactive, unique-looking marketing landing page for Pagecraf
 - `lib/content.ts` — ALL copy + data (nav links, features, how-it-works steps, stats, testimonials, pricing tiers, logo list, footer links) as typed constants, so text edits never touch JSX.
 
 ### The page (top → bottom)
+
 1. **Nav** (sticky) — Pagecraft wordmark/logo, anchor links (`#features`, `#how`, `#pricing`), `Log in` (UU secondary) + `Sign up` (UU primary). Gains a subtle background blur + shadow + border once scrolled past the hero top.
 2. **Hero** — centered: an eyebrow **Badge pill** ("New · v2 — see what's new →"), a large bold headline, a muted subtitle, two CTAs (`▷ Demo` secondary + `Start building` primary). Faint **grid background** behind it (like the reference). The `EditorMock` sits directly below, slightly overlapping the hero's bottom edge, framed in browser-ish chrome with a soft shadow.
 3. **LogoCloud** — "Trusted by teams at" + a row of greyscale placeholder brand logos with a slow, subtle marquee.
 4. **Features** — section heading + a 3-column grid of `Tilt` cards (icon, title, blurb): drag-and-drop blocks, responsive per-breakpoint controls, built-in CMS, one-click publish, AI section generation, shared design system. (Content from `lib/content.ts`.)
-5. **HowItWorks** (`#how`) — 3 numbered steps revealed on scroll (alternating text/visual layout): *Drag in blocks → Tune styles per device → Publish in one click*.
+5. **HowItWorks** (`#how`) — 3 numbered steps revealed on scroll (alternating text/visual layout): _Drag in blocks → Tune styles per device → Publish in one click_.
 6. **Stats** — a band of 3–4 `CountUp` figures that animate when scrolled into view (e.g. pages built, block types, uptime).
 7. **Testimonials** — a small grid of quote cards (quote, avatar, name/role). Placeholder content.
 8. **Pricing** (`#pricing`) — a `month/year` toggle that animates the prices + shows a "save 20%" badge on yearly; 3 UU pricing cards (Free / Pro / Team) with feature lists and a CTA each; the Pro card is visually emphasized.
@@ -56,6 +59,7 @@ A single, highly-interactive, unique-looking marketing landing page for Pagecraf
 10. **Footer** — brand blurb, link columns (Product / Resources / Company), social icons, copyright.
 
 ### Signature interactions
+
 - **EditorMock animation:** a looping sequence — a floating cursor element moves to a block chip in the sidebar, "grabs" it, drags it onto the canvas, the chip fades and a real-looking block appears/settles into the canvas; the whole frame has a gentle idle float. Implemented with framer-motion (transform/opacity only, GPU-friendly), on a fixed timeline that loops. Pauses/simplifies under reduced-motion.
 - **Reveal:** sections fade/slide in via `whileInView` (once, ~0.2 amount).
 - **CountUp:** numbers animate from 0 to target when their band enters the viewport.
@@ -67,6 +71,7 @@ A single, highly-interactive, unique-looking marketing landing page for Pagecraf
 ## EditorMock (the signature unit) — detail
 
 A pure presentational component, no dependency on the real app. Structure:
+
 - Outer **browser chrome** (rounded frame, top bar with 3 dots + a faux URL "pagecraft.app/editor"), soft shadow, ~16:10.
 - Inside: a **left sidebar** (a short list of draggable "block" chips — Hero, Text, Image, Button, Columns), a slim **top bar** (device toggle, publish button), and a **canvas** showing 2–3 already-placed stylized blocks (a hero band, a text line, a button).
 - A **floating cursor** + a **ghost chip** animated to perform the drag-in loop; on "drop," a new block element animates into the canvas.
@@ -80,6 +85,7 @@ A pure presentational component, no dependency on the real app. Structure:
 ## Testing & gate
 
 Marketing sites are visual, so testing is light and targets logic-bearing units, not pixels:
+
 - **vitest + @testing-library/react** smoke/behavior tests:
   - `Nav` renders the brand + the anchor links + Log in/Sign up.
   - `Hero` renders the headline text + both CTAs.
@@ -87,11 +93,11 @@ Marketing sites are visual, so testing is light and targets logic-bearing units,
   - `CountUp` reaches its target value.
   - `EditorMock` mounts without crashing.
   - `lib/content.ts` shape (e.g. 3 pricing tiers) sanity.
-- **Gate:** `npx tsc --noEmit` + `npm run build` (a real Next production build — valid here because it's a *separate* repo with no live dev server to clobber). Lighthouse / visual polish is a manual pass.
+- **Gate:** `npx tsc --noEmit` + `npm run build` (a real Next production build — valid here because it's a _separate_ repo with no live dev server to clobber). Lighthouse / visual polish is a manual pass.
 
 ## Risks / open items (resolved at plan time)
 
-- **Untitled UI React free surface is a subset** (PRO gates the richest templates/sections). The primitives needed (Button, Badge, Input, etc.) are in the free core; the marketing *sections* are hand-built. The plan's first task verifies the exact free component set actually available from the CLI and adjusts which primitives we consume vs. build.
+- **Untitled UI React free surface is a subset** (PRO gates the richest templates/sections). The primitives needed (Button, Badge, Input, etc.) are in the free core; the marketing _sections_ are hand-built. The plan's first task verifies the exact free component set actually available from the CLI and adjusts which primitives we consume vs. build.
 - **External project creation:** execution runs `create-next-app` + dependency installs at `~/Desktop/projects/pagecraft-site` — a real, outward action performed at build time (outside this repo).
 - **Motion performance:** keep all animation to transform/opacity, lazy-trigger on in-view, and gate on reduced-motion to keep the page smooth.
 - **"Sign up"/"Log in" targets:** link to a placeholder/the main app URL; no auth is built.

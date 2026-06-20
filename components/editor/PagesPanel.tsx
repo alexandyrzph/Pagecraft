@@ -63,7 +63,9 @@ export function PagesPanel() {
             onClick={() => actions.switchPage(p.id)}
             className={cn(
               "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors",
-              p.id === currentId ? "bg-indigo-50 text-indigo-700" : "text-zinc-600 hover:bg-zinc-100"
+              p.id === currentId
+                ? "bg-indigo-50 text-indigo-700"
+                : "text-zinc-600 hover:bg-zinc-100",
             )}
           >
             <FileText size={14} className="shrink-0 opacity-70" />

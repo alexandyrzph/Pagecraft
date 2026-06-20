@@ -79,7 +79,12 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireApiUser(): Promise<{ user: SessionUser } | { response: Response }> {
   const user = await getCurrentUser();
   if (!user) {
-    return { response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "content-type": "application/json" } }) };
+    return {
+      response: new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      }),
+    };
   }
   return { user };
 }

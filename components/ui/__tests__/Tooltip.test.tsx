@@ -10,7 +10,7 @@ describe("Tooltip", () => {
       <TooltipTrigger delay={0}>
         <Button aria-label="Save">S</Button>
         <Tooltip>Save file</Tooltip>
-      </TooltipTrigger>
+      </TooltipTrigger>,
     );
     await userEvent.tab();
     expect(await screen.findByText("Save file")).toBeInTheDocument();

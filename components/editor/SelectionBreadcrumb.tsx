@@ -46,7 +46,11 @@ export function SelectionBreadcrumb() {
               <Layers size={14} className="text-indigo-300" />
               {selectedIds.length} selected
             </span>
-            <BarBtn icon={<Clipboard size={14} />} label="Paste styles" onClick={() => pasteStyles(selectedId ?? selectedIds[0])} />
+            <BarBtn
+              icon={<Clipboard size={14} />}
+              label="Paste styles"
+              onClick={() => pasteStyles(selectedId ?? selectedIds[0])}
+            />
             <BarBtn icon={<Copy size={14} />} label="Duplicate" onClick={duplicateSelected} />
             <BarBtn icon={<Trash2 size={14} />} label="Delete" danger onClick={removeSelected} />
             <span className="mx-0.5 h-5 w-px bg-white/15" />
@@ -68,8 +72,8 @@ export function SelectionBreadcrumb() {
               const Icon = def?.icon;
               const label =
                 b.type === "component"
-                  ? components.map[b.props?.componentId]?.name ?? "Component"
-                  : def?.label ?? b.type;
+                  ? (components.map[b.props?.componentId as string]?.name ?? "Component")
+                  : (def?.label ?? b.type);
               return (
                 <span key={b.id} className="flex shrink-0 items-center">
                   {i > 0 && <ChevronRight size={13} className="mx-0.5 text-zinc-300" />}
@@ -80,7 +84,7 @@ export function SelectionBreadcrumb() {
                       "flex items-center gap-1 rounded-full px-2 py-1 font-medium transition-colors",
                       isLast
                         ? "bg-indigo-50 text-indigo-700"
-                        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800",
                     )}
                   >
                     {Icon && <Icon size={12} />}
@@ -114,7 +118,7 @@ function BarBtn({
       title={label}
       className={cn(
         "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-white/15",
-        danger && "hover:bg-red-500/20 hover:text-red-300"
+        danger && "hover:bg-red-500/20 hover:text-red-300",
       )}
     >
       {icon}

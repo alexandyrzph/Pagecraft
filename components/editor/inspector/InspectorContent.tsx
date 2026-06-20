@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Component as ComponentIcon, Copy, GripVertical, PanelRight, Trash2, X } from "lucide-react";
+import {
+  Component as ComponentIcon,
+  Copy,
+  GripVertical,
+  PanelRight,
+  Trash2,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Block } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
@@ -57,7 +64,7 @@ export function InspectorContent({
           onPointerDown={onHandlePointerDown}
           className={cn(
             "flex flex-1 select-none items-center gap-2 rounded-lg py-0.5 pl-1 pr-2",
-            dragging ? "cursor-grabbing" : "cursor-grab"
+            dragging ? "cursor-grabbing" : "cursor-grab",
           )}
           title="Drag to move panel"
         >
@@ -67,28 +74,53 @@ export function InspectorContent({
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
             <Icon size={15} />
           </div>
-          <span className="flex-1 truncate text-sm font-semibold tracking-tight text-zinc-800">{def.label}</span>
+          <span className="flex-1 truncate text-sm font-semibold tracking-tight text-zinc-800">
+            {def.label}
+          </span>
         </div>
         {block.type !== "component" && (
-          <motion.button whileTap={{ scale: 0.85 }} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-violet-50 hover:text-violet-600" title="Save as component" onClick={() => actions.saveAsComponent(block)}>
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-violet-50 hover:text-violet-600"
+            title="Save as component"
+            onClick={() => actions.saveAsComponent(block)}
+          >
             <ComponentIcon size={14} />
           </motion.button>
         )}
-        <motion.button whileTap={{ scale: 0.85 }} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600" title="Duplicate" onClick={() => duplicate(block.id)}>
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+          title="Duplicate"
+          onClick={() => duplicate(block.id)}
+        >
           <Copy size={14} />
         </motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Delete" onClick={() => remove(block.id)}>
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500"
+          title="Delete"
+          onClick={() => remove(block.id)}
+        >
           <Trash2 size={14} />
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.85 }}
-          className={cn("rounded-lg p-1.5 transition-colors hover:bg-zinc-100", docked ? "text-indigo-600" : "text-zinc-400 hover:text-zinc-600")}
+          className={cn(
+            "rounded-lg p-1.5 transition-colors hover:bg-zinc-100",
+            docked ? "text-indigo-600" : "text-zinc-400 hover:text-zinc-600",
+          )}
           title={docked ? "Float panel" : "Dock to right"}
           onClick={onToggleDock}
         >
           <PanelRight size={14} />
         </motion.button>
-        <motion.button whileTap={{ scale: 0.85 }} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600" title="Close" onClick={() => select(null)}>
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+          title="Close"
+          onClick={() => select(null)}
+        >
           <X size={14} />
         </motion.button>
       </div>
@@ -101,7 +133,7 @@ export function InspectorContent({
             onClick={() => setTab(t)}
             className={cn(
               "flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-colors",
-              tab === t ? "bg-indigo-50 text-indigo-600" : "text-zinc-500 hover:text-zinc-700"
+              tab === t ? "bg-indigo-50 text-indigo-600" : "text-zinc-500 hover:text-zinc-700",
             )}
           >
             {t}
@@ -128,7 +160,12 @@ export function InspectorContent({
                 </p>
               ) : (
                 def.fields.map((f) => (
-                  <ContentField key={f.key} field={f} blockId={block.id} value={(block.props as any)[f.key]} />
+                  <ContentField
+                    key={f.key}
+                    field={f}
+                    blockId={block.id}
+                    value={block.props[f.key]}
+                  />
                 ))
               )}
               <AttributesControl block={block} />
@@ -136,7 +173,9 @@ export function InspectorContent({
           ) : (
             <>
               <div>
-                <span className="mb-1.5 block text-[11px] font-medium text-zinc-500">Editing viewport</span>
+                <span className="mb-1.5 block text-[11px] font-medium text-zinc-500">
+                  Editing viewport
+                </span>
                 <div className="flex gap-1 rounded-lg bg-zinc-100 p-1">
                   {VP.map((v) => (
                     <button
@@ -144,7 +183,9 @@ export function InspectorContent({
                       onClick={() => setActive(v.id)}
                       className={cn(
                         "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium capitalize transition-colors",
-                        viewport === v.id ? "bg-white text-indigo-600 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+                        viewport === v.id
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-zinc-500 hover:text-zinc-700",
                       )}
                     >
                       {v.icon}

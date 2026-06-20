@@ -1,5 +1,6 @@
 "use client";
 
+import { type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/blocks/registry-types";
 
@@ -19,10 +20,9 @@ export function ColumnsBlock({
   id,
   children,
 }: BlockRenderProps) {
-  const layout: string = block.props.layout ?? "1-1";
+  const layout: string = (block.props.layout as string) ?? "1-1";
   const cols = layout.split("-").filter(Boolean);
-  const template =
-    viewport === "mobile" ? "1fr" : cols.map((c) => `${c}fr`).join(" ");
+  const template = viewport === "mobile" ? "1fr" : cols.map((c) => `${c}fr`).join(" ");
   return (
     <div
       id={id}
@@ -36,18 +36,14 @@ export function ColumnsBlock({
 
 export function ColumnBlock({ style, className, id, children }: BlockRenderProps) {
   return (
-    <div
-      id={id}
-      className={cn("flex min-w-0 flex-col gap-4", className)}
-      style={style}
-    >
+    <div id={id} className={cn("flex min-w-0 flex-col gap-4", className)} style={style}>
       {children}
     </div>
   );
 }
 
 export function SpacerBlock({ block, style, className, id }: BlockRenderProps) {
-  const height = block.props.height ?? 48;
+  const height = (block.props.height as number | string) ?? 48;
   return (
     <div
       id={id}
@@ -63,7 +59,12 @@ export function DividerBlock({ block, style, className, id }: BlockRenderProps) 
     thickness = 1,
     width = "100%",
     lineStyle = "solid",
-  } = block.props;
+  } = block.props as {
+    color?: string;
+    thickness?: number | string;
+    width?: string;
+    lineStyle?: CSSProperties["borderTopStyle"];
+  };
   return (
     <div id={id} className={className} style={style}>
       <div
@@ -78,4 +79,3 @@ export function DividerBlock({ block, style, className, id }: BlockRenderProps) 
     </div>
   );
 }
-

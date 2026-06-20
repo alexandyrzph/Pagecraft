@@ -1,6 +1,16 @@
 "use client";
 
-import { ClipboardPaste, Copy, Eye, EyeOff, Monitor, Plus, Smartphone, Tablet, Type } from "lucide-react";
+import {
+  ClipboardPaste,
+  Copy,
+  Eye,
+  EyeOff,
+  Monitor,
+  Plus,
+  Smartphone,
+  Tablet,
+  Type,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Block, SettingField, Viewport } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
@@ -15,7 +25,10 @@ export function TextStyleControl({ block }: { block: Block }) {
   const addTextStyle = useDesignSystem((s) => s.addTextStyle);
   const setProp = useEditor((s) => s.setProp);
   const current = (block.props.textStyle as string) || "";
-  const options = [{ label: "None", value: "" }, ...textStyles.map((t) => ({ label: t.name, value: t.id }))];
+  const options = [
+    { label: "None", value: "" },
+    ...textStyles.map((t) => ({ label: t.name, value: t.id })),
+  ];
   const saveFromBlock = () => {
     const props = { ...(block.styles.desktop ?? {}) };
     const ts = addTextStyle(`Text style ${textStyles.length + 1}`, props);
@@ -28,7 +41,11 @@ export function TextStyleControl({ block }: { block: Block }) {
       </span>
       <div className="flex gap-1.5">
         <div className="min-w-0 flex-1">
-          <SelectInput value={current} onChange={(v) => setProp(block.id, "textStyle", v)} options={options} />
+          <SelectInput
+            value={current}
+            onChange={(v) => setProp(block.id, "textStyle", v)}
+            options={options}
+          />
         </div>
         <button
           type="button"
@@ -53,10 +70,20 @@ export function StyleActions({ block }: { block: Block }) {
     "flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 py-1.5 text-[12px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-800";
   return (
     <div className="flex gap-1.5">
-      <button type="button" className={btn} onClick={() => copyStyles(block.id)} title="Copy styles (⌘⌥C)">
+      <button
+        type="button"
+        className={btn}
+        onClick={() => copyStyles(block.id)}
+        title="Copy styles (⌘⌥C)"
+      >
         <Copy size={13} /> Copy styles
       </button>
-      <button type="button" className={btn} onClick={() => pasteStyles(block.id)} title="Paste styles (⌘⌥V)">
+      <button
+        type="button"
+        className={btn}
+        onClick={() => pasteStyles(block.id)}
+        title="Paste styles (⌘⌥V)"
+      >
         <ClipboardPaste size={13} /> Paste{many ? ` to ${selectedIds.length}` : ""}
       </button>
     </div>
@@ -88,7 +115,9 @@ export function VisibilityControl({ block }: { block: Block }) {
               title={`${off ? "Show" : "Hide"} on ${v.id}`}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium capitalize transition-colors",
-                off ? "border-amber-200 bg-amber-50 text-amber-600" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                off
+                  ? "border-amber-200 bg-amber-50 text-amber-600"
+                  : "border-zinc-200 text-zinc-500 hover:bg-zinc-50",
               )}
             >
               {v.icon}
@@ -97,7 +126,9 @@ export function VisibilityControl({ block }: { block: Block }) {
           );
         })}
       </div>
-      <p className="mt-1.5 text-[11px] leading-snug text-zinc-400">Hide this block on specific screen sizes.</p>
+      <p className="mt-1.5 text-[11px] leading-snug text-zinc-400">
+        Hide this block on specific screen sizes.
+      </p>
     </div>
   );
 }
@@ -174,15 +205,19 @@ export function ContentField({
 }: {
   field: SettingField;
   blockId: string;
-  value: any;
+  value: unknown;
 }) {
   const setProp = useEditor((s) => s.setProp);
-  const set = (v: any) => setProp(blockId, field.key, v);
+  const set = (v: unknown) => setProp(blockId, field.key, v);
 
   if (field.type === "items") {
     return (
       <Field label={field.label}>
-        <ItemsEditor value={value ?? []} itemFields={field.itemFields ?? []} onChange={set} />
+        <ItemsEditor
+          value={(value as Record<string, unknown>[] | undefined) ?? []}
+          itemFields={field.itemFields ?? []}
+          onChange={set}
+        />
       </Field>
     );
   }

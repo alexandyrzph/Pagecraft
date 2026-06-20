@@ -101,7 +101,13 @@ export async function setActiveWorkspace(id: string): Promise<boolean> {
   });
   if (!m) return false;
   const jar = await cookies();
-  jar.set(WS_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
+  jar.set(WS_COOKIE, id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
   return true;
 }
 
@@ -119,7 +125,7 @@ async function uniqueWorkspaceSlug(name: string): Promise<string> {
 
 /** Create a workspace and make `userId` its OWNER. */
 export async function createWorkspace(userId: string, name: string): Promise<ActiveWorkspace> {
-  const cleanName = ((name || "Workspace").trim().slice(0, 80)) || "Workspace";
+  const cleanName = (name || "Workspace").trim().slice(0, 80) || "Workspace";
   const slug = await uniqueWorkspaceSlug(cleanName);
   const ws = await prisma.$transaction(async (tx) => {
     const created = await tx.workspace.create({ data: { name: cleanName, slug } });

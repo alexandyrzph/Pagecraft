@@ -44,7 +44,12 @@ export function BreakpointSwitcher() {
     <div className="relative flex items-center gap-2">
       <div className="flex items-center gap-1 rounded-xl bg-zinc-100 p-1">
         {list.map((bp) => (
-          <BpButton key={bp.id} bp={bp} active={bp.id === active.id} onClick={() => setActive(bp.id)} />
+          <BpButton
+            key={bp.id}
+            bp={bp}
+            active={bp.id === active.id}
+            onClick={() => setActive(bp.id)}
+          />
         ))}
 
         <button
@@ -52,7 +57,9 @@ export function BreakpointSwitcher() {
           title="Add custom breakpoint"
           className={cn(
             "flex items-center justify-center rounded-lg p-1.5 transition-colors",
-            open ? "bg-white text-indigo-600 shadow-xs ring-1 ring-zinc-200" : "text-zinc-400 hover:text-zinc-600"
+            open
+              ? "bg-white text-indigo-600 shadow-xs ring-1 ring-zinc-200"
+              : "text-zinc-400 hover:text-zinc-600",
           )}
         >
           <Plus size={16} />
@@ -64,10 +71,17 @@ export function BreakpointSwitcher() {
         {active.width}px
       </span>
 
-      <Popover open={open} onClose={() => setOpen(false)} className="left-1/2 top-11 w-72 -translate-x-1/2 rounded-2xl p-3">
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        className="left-1/2 top-11 w-72 -translate-x-1/2 rounded-2xl p-3"
+      >
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-bold tracking-tight text-zinc-800">Custom breakpoints</span>
-          <button onClick={() => setOpen(false)} className="rounded-md p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
+          <button
+            onClick={() => setOpen(false)}
+            className="rounded-md p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+          >
             <X size={14} />
           </button>
         </div>
@@ -89,7 +103,9 @@ export function BreakpointSwitcher() {
         {/* custom width + label */}
         <div className="flex items-end gap-1.5">
           <label className="flex-1">
-            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Width (px)</span>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+              Width (px)
+            </span>
             <input
               type="number"
               value={width}
@@ -100,7 +116,9 @@ export function BreakpointSwitcher() {
             />
           </label>
           <label className="flex-1">
-            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-400">Label</span>
+            <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+              Label
+            </span>
             <input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -122,9 +140,14 @@ export function BreakpointSwitcher() {
         {custom.length > 0 && (
           <div className="mt-3 space-y-1 border-t border-zinc-100 pt-2">
             {custom.map((bp) => (
-              <div key={bp.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-zinc-50">
+              <div
+                key={bp.id}
+                className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-zinc-50"
+              >
                 <span className="text-zinc-400">{BASE_ICON[bp.base]}</span>
-                <span className="flex-1 truncate text-xs font-medium text-zinc-700">{bp.label}</span>
+                <span className="flex-1 truncate text-xs font-medium text-zinc-700">
+                  {bp.label}
+                </span>
                 <span className="text-[11px] tabular-nums text-zinc-400">{bp.width}px</span>
                 <button
                   onClick={() => removeBreakpoint(bp.id)}
@@ -142,14 +165,22 @@ export function BreakpointSwitcher() {
   );
 }
 
-function BpButton({ bp, active, onClick }: { bp: Breakpoint; active: boolean; onClick: () => void }) {
+function BpButton({
+  bp,
+  active,
+  onClick,
+}: {
+  bp: Breakpoint;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
       title={`${bp.label} · ${bp.width}px`}
       className={cn(
         "relative flex items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-semibold transition-colors",
-        active ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"
+        active ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600",
       )}
     >
       {active && (

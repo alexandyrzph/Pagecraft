@@ -2,7 +2,12 @@ import { cn } from "@/lib/utils";
 
 /** Bordered, rounded wrapper that clips rows to the container's corners. */
 export function TableContainer({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("overflow-hidden rounded-xl border border-zinc-200 bg-white", className)} {...props} />;
+  return (
+    <div
+      className={cn("overflow-hidden rounded-xl border border-zinc-200 bg-white", className)}
+      {...props}
+    />
+  );
 }
 
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {

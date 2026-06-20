@@ -29,14 +29,17 @@ export async function PUT(req: Request, { params }: Ctx) {
     });
     if (result.count === 0) return notFound();
     const c = await prisma.component.findFirst({ where: { id, workspaceId: ws.workspace.id } });
-    return json({ id: c!.id, name: c!.name, content: parseJsonArray(c!.content) });
+    if (!c) return notFound();
+    return json({ id: c.id, name: c.name, content: parseJsonArray(c.content) });
   });
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   return withRole("EDITOR", async (ws) => {
     const { id } = await params;
-    const result = await prisma.component.deleteMany({ where: { id, workspaceId: ws.workspace.id } });
+    const result = await prisma.component.deleteMany({
+      where: { id, workspaceId: ws.workspace.id },
+    });
     if (result.count === 0) return notFound();
     return json({ ok: true });
   });

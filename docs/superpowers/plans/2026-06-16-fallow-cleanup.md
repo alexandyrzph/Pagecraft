@@ -21,19 +21,19 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `package.json` / `package-lock.json` | drop 3 unused deps | 1 |
-| `lib/use-upload.ts` | `useUpload(onUploaded)` hook | 2 |
-| `components/editor/controls.tsx` | `ImageInput`/`FileInput` use `useUpload` | 2 |
-| `components/blocks/collection.defs.ts` | lazy `CustomContent` (breaks cycle) | 3 |
-| `lib/registry-types.ts` | widen `CustomContent` type for lazy (if needed) | 3 |
-| `components/editor/Inspector.tsx` | render `CustomContent` under `<Suspense>` | 3 |
-| `components/editor/Popover.tsx` | shared fixed-overlay animated dropdown | 4 |
-| `lib/use-dismiss.ts` | `useDismissOnOutsideClick(open, close)` hook | 4 |
-| `components/editor/{BreakpointSwitcher,TopBar,ZoomControl}.tsx` | use `<Popover>` | 4 |
-| `components/app-shell/{SidebarProfile,WorkspaceSwitcher}.tsx` | use `useDismissOnOutsideClick` | 4 |
-| `tests/popover.dom.test.tsx` | render test for `<Popover>` | 4 |
+| File                                                            | Responsibility                                  | Task |
+| --------------------------------------------------------------- | ----------------------------------------------- | ---- |
+| `package.json` / `package-lock.json`                            | drop 3 unused deps                              | 1    |
+| `lib/use-upload.ts`                                             | `useUpload(onUploaded)` hook                    | 2    |
+| `components/editor/controls.tsx`                                | `ImageInput`/`FileInput` use `useUpload`        | 2    |
+| `components/blocks/collection.defs.ts`                          | lazy `CustomContent` (breaks cycle)             | 3    |
+| `lib/registry-types.ts`                                         | widen `CustomContent` type for lazy (if needed) | 3    |
+| `components/editor/Inspector.tsx`                               | render `CustomContent` under `<Suspense>`       | 3    |
+| `components/editor/Popover.tsx`                                 | shared fixed-overlay animated dropdown          | 4    |
+| `lib/use-dismiss.ts`                                            | `useDismissOnOutsideClick(open, close)` hook    | 4    |
+| `components/editor/{BreakpointSwitcher,TopBar,ZoomControl}.tsx` | use `<Popover>`                                 | 4    |
+| `components/app-shell/{SidebarProfile,WorkspaceSwitcher}.tsx`   | use `useDismissOnOutsideClick`                  | 4    |
+| `tests/popover.dom.test.tsx`                                    | render test for `<Popover>`                     | 4    |
 
 ---
 
@@ -138,16 +138,21 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - [ ] **Step 1: `components/blocks/collection.defs.ts` — make `CollectionInspector` lazy**
 
 Remove `import { CollectionInspector } from "@/components/editor/CollectionInspector";`. Add `import { lazy } from "react";` and:
+
 ```ts
 const CollectionInspector = lazy(() =>
-  import("@/components/editor/CollectionInspector").then((m) => ({ default: m.CollectionInspector })),
+  import("@/components/editor/CollectionInspector").then((m) => ({
+    default: m.CollectionInspector,
+  })),
 );
 ```
+
 Keep the def's `CustomContent: CollectionInspector,` line unchanged.
 
 - [ ] **Step 2: If `tsc` rejects the lazy assignment, widen the `CustomContent` type**
 
 In `lib/registry-types.ts`, the field is currently `CustomContent?: ComponentType<{ block: Block }>;`. If `tsc` errors that `LazyExoticComponent<...>` isn't assignable, change it to:
+
 ```ts
 import type { ComponentType, CSSProperties, LazyExoticComponent, ReactNode } from "react";
 // ...
@@ -155,17 +160,21 @@ import type { ComponentType, CSSProperties, LazyExoticComponent, ReactNode } fro
     | ComponentType<{ block: Block }>
     | LazyExoticComponent<ComponentType<{ block: Block }>>;
 ```
+
 (Add `LazyExoticComponent` to the existing `react` type import.)
 
 - [ ] **Step 3: `components/editor/Inspector.tsx` — render `CustomContent` under Suspense**
 
 Add `Suspense` to the React import (`import { Suspense, useCallback, … } from "react";`). In `InspectorContent`, change the `CustomContent` render from:
+
 ```tsx
               {def.CustomContent ? (
                 <def.CustomContent block={block} />
               ) : def.fields.length === 0 ? (
 ```
+
 to:
+
 ```tsx
               {def.CustomContent ? (
                 <Suspense fallback={null}>
@@ -255,16 +264,28 @@ import { Popover } from "@/components/editor/Popover";
 
 describe("Popover (dom)", () => {
   it("renders children when open", () => {
-    render(<Popover open onClose={() => {}}><span>menu</span></Popover>);
+    render(
+      <Popover open onClose={() => {}}>
+        <span>menu</span>
+      </Popover>,
+    );
     expect(screen.getByText("menu")).toBeInTheDocument();
   });
   it("renders nothing when closed", () => {
-    render(<Popover open={false} onClose={() => {}}><span>menu</span></Popover>);
+    render(
+      <Popover open={false} onClose={() => {}}>
+        <span>menu</span>
+      </Popover>,
+    );
     expect(screen.queryByText("menu")).toBeNull();
   });
   it("calls onClose when the overlay is clicked", () => {
     const onClose = vi.fn();
-    const { container } = render(<Popover open onClose={onClose}><span>menu</span></Popover>);
+    const { container } = render(
+      <Popover open onClose={onClose}>
+        <span>menu</span>
+      </Popover>,
+    );
     const overlay = container.querySelector(".fixed.inset-0")!;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -302,9 +323,10 @@ export function useDismissOnOutsideClick(open: boolean, close: () => void) {
 - [ ] **Step 4: Rewire the 3 fixed-overlay dropdowns to `<Popover>`**
 
 In each, replace the `<AnimatePresence>{open && (<><div className="fixed inset-0 z-40" onClick={() => setOpen(false)} /><motion.div initial/animate/exit/transition className="absolute …">…</motion.div></>)}</AnimatePresence>` block with `<Popover open={open} onClose={() => setOpen(false)} className="…">…</Popover>`, where `className` carries ONLY that instance's position/width/padding/rounding (everything beyond the shared `absolute z-50 border border-zinc-200 bg-white shadow-2xl ring-1 ring-black/5` base). Keep each trigger button and menu content exactly as-is. Add `import { Popover } from "./Popover";` and remove now-unused `AnimatePresence`/`motion` imports (let `tsc` confirm). The per-instance classNames to pass:
-  - `components/editor/BreakpointSwitcher.tsx`: `className="left-1/2 top-11 w-72 -translate-x-1/2 rounded-2xl p-3"`
-  - `components/editor/TopBar.tsx` (PublishedMenu): `className="right-0 top-11 w-48 overflow-hidden rounded-xl p-1"`
-  - `components/editor/ZoomControl.tsx`: `className="left-1/2 top-11 w-40 -translate-x-1/2 rounded-xl p-1"`
+
+- `components/editor/BreakpointSwitcher.tsx`: `className="left-1/2 top-11 w-72 -translate-x-1/2 rounded-2xl p-3"`
+- `components/editor/TopBar.tsx` (PublishedMenu): `className="right-0 top-11 w-48 overflow-hidden rounded-xl p-1"`
+- `components/editor/ZoomControl.tsx`: `className="left-1/2 top-11 w-40 -translate-x-1/2 rounded-xl p-1"`
 
 - [ ] **Step 5: Rewire the 2 dismiss-menus to `useDismissOnOutsideClick`**
 
@@ -328,6 +350,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Self-Review Checklist
+
 - [ ] 3 unused deps gone; `@dnd-kit/core` + tiptap core remain.
 - [ ] `useUpload` used by both Image/File inputs; behavior identical.
 - [ ] Circular dependency gone (`npx fallow` confirms); Collection inspector still renders (under Suspense).
@@ -336,6 +359,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - [ ] `npx tsc --noEmit && npm test && npm run build` green (111 tests).
 
 ## Deferred (follow-up plans)
+
 - **Plan B:** split `EditorClient.tsx` (605 LOC) — extract `useKeyboardShortcuts`/`useDragDropManager`/`usePersistence`/`usePageNavigation`.
 - **Plan C:** split `Inspector.tsx` (806 LOC).
 - Other large functions (`useEditor` store 285, `DomTreePanel`, `Dashboard`, `CommandPalette`), remaining minor clone groups, dead exports, and the 2 unused script files (kept — intentional tooling).

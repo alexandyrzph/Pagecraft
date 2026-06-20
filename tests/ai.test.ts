@@ -32,7 +32,9 @@ describe("sanitizeGeneratedBlocks", () => {
   });
 
   it("drops unknown / unsafe block types", () => {
-    expect(sanitizeGeneratedBlocks([{ type: "evil" }, { type: "component" }, { type: "hero" }])).toHaveLength(1);
+    expect(
+      sanitizeGeneratedBlocks([{ type: "evil" }, { type: "component" }, { type: "hero" }]),
+    ).toHaveLength(1);
   });
 
   it("returns [] for non-array input", () => {
@@ -54,6 +56,6 @@ describe("sanitizeGeneratedBlocks", () => {
       { type: "features", props: { items: [{ icon: "Zap", title: "Fast", text: "x" }] } },
     ]);
     expect(Array.isArray(out[0].props.items)).toBe(true);
-    expect(out[0].props.items[0].title).toBe("Fast");
+    expect((out[0].props.items as { title: string }[])[0].title).toBe("Fast");
   });
 });

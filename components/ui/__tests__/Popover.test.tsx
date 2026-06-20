@@ -13,7 +13,7 @@ describe("Popover", () => {
         <Popover>
           <Dialog className="p-2 outline-none">Swatches</Dialog>
         </Popover>
-      </DialogTrigger>
+      </DialogTrigger>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Pick" }));
     expect(await screen.findByText("Swatches")).toBeInTheDocument();

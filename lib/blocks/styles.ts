@@ -45,10 +45,7 @@ function applyStyle(out: Record<string, string>, sp: StyleProps) {
 }
 
 /** Merged inline styles for a single viewport (desktop-first cascade). */
-export function resolveStyles(
-  styles: ResponsiveStyles,
-  viewport: Viewport
-): CSSProperties {
+export function resolveStyles(styles: ResponsiveStyles, viewport: Viewport): CSSProperties {
   const out: Record<string, string> = {};
   if (styles.desktop) applyStyle(out, styles.desktop);
   if (viewport === "tablet" || viewport === "mobile") {
@@ -92,10 +89,7 @@ function flatten(tree: Block[], acc: Block[] = []): Block[] {
  * base; tablet/mobile rules go inside max-width media queries so the published
  * page is genuinely responsive.
  */
-export function responsiveCss(
-  tree: Block[],
-  opts: { editable?: boolean } = {}
-): string {
+export function responsiveCss(tree: Block[], opts: { editable?: boolean } = {}): string {
   const blocks = flatten(tree);
   const base: string[] = [];
   const tablet: string[] = [];

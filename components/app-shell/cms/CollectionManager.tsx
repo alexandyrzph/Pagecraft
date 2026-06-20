@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, ExternalLink } from "lucide-react";
@@ -19,12 +19,7 @@ import { Table, TableContainer, THead, TH, TBody, TR, TD } from "@/components/ui
 import { Modal } from "@/components/ui/Modal";
 import { useConfirm, useAlert } from "@/components/ui/dialog-provider";
 import { CMS_FIELD_TYPES, uniqueFieldKey, blankItemData } from "@/lib/cms/cms";
-import type {
-  CollectionData,
-  CollectionField,
-  CollectionItem,
-  CmsFieldType,
-} from "@/lib/types";
+import type { CollectionData, CollectionField, CollectionItem, CmsFieldType } from "@/lib/types";
 
 function FieldValueInput({
   field,
@@ -32,35 +27,35 @@ function FieldValueInput({
   onChange,
 }: {
   field: CollectionField;
-  value: any;
-  onChange: (v: any) => void;
+  value: unknown;
+  onChange: (v: unknown) => void;
 }) {
   switch (field.type) {
     case "textarea":
-      return <TextArea value={value ?? ""} onChange={onChange} />;
+      return <TextArea value={(value ?? "") as string} onChange={onChange} />;
     case "number":
       // NumberInput.onChange always emits number (empty input → 0); coerce at call site
       return (
         <NumberInput
-          value={value ?? ""}
+          value={(value ?? "") as number | string}
           onChange={(v: number) => onChange(v)}
         />
       );
     case "boolean":
       return <Toggle value={!!value} onChange={onChange} />;
     case "image":
-      return <ImageInput value={value ?? ""} onChange={onChange} />;
+      return <ImageInput value={(value ?? "") as string} onChange={onChange} />;
     case "date":
       return (
         <input
           type="date"
           className={inputCls}
-          value={value ?? ""}
+          value={(value ?? "") as string}
           onChange={(e) => onChange(e.target.value)}
         />
       );
     default:
-      return <TextInput value={value ?? ""} onChange={onChange} />;
+      return <TextInput value={(value ?? "") as string} onChange={onChange} />;
   }
 }
 
@@ -74,7 +69,7 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
   const [busy, setBusy] = useState(false);
 
   async function patchCollection(
-    patch: Partial<Pick<CollectionData, "name" | "fields" | "detailEnabled">>
+    patch: Partial<Pick<CollectionData, "name" | "fields" | "detailEnabled">>,
   ) {
     const next = { ...col, ...patch };
     setCol(next);
@@ -131,7 +126,7 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
   async function addField(label: string) {
     const key = uniqueFieldKey(
       label,
-      col.fields.map((f) => f.key)
+      col.fields.map((f) => f.key),
     );
     await patchCollection({ fields: [...col.fields, { key, label, type: "text" }] });
   }
@@ -186,7 +181,15 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
       <div className="py-6">
         {tab === "items" && (
           <div>
-            <Button variant="neutral" className="mb-4" onPress={addItem} isLoading={busy} leadingIcon={<Plus size={15} />}>Add item</Button>
+            <Button
+              variant="neutral"
+              className="mb-4"
+              onPress={addItem}
+              isLoading={busy}
+              leadingIcon={<Plus size={15} />}
+            >
+              Add item
+            </Button>
             {col.items.length === 0 ? (
               <p className="rounded-xl border border-dashed border-zinc-200 py-10 text-center text-sm text-zinc-400">
                 No items yet.
@@ -217,13 +220,30 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
                             }
                             title={String(it.data?.[f.key] ?? "")}
                           >
-                            {String(it.data?.[f.key] ?? "") || <span className="text-zinc-300">—</span>}
+                            {String(it.data?.[f.key] ?? "") || (
+                              <span className="text-zinc-300">—</span>
+                            )}
                           </TD>
                         ))}
                         <TD className="w-px whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
-                            <Button variant="ghost" size="sm" onPress={() => setEditing(it)} className="text-brand-600 hover:bg-brand-50">Edit</Button>
-                            <Button variant="ghost" size="icon" aria-label="Delete item" onPress={() => deleteItem(it.id)} className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={14} /></Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onPress={() => setEditing(it)}
+                              className="text-brand-600 hover:bg-brand-50"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Delete item"
+                              onPress={() => deleteItem(it.id)}
+                              className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
                           </div>
                         </TD>
                       </TR>
@@ -264,7 +284,17 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
                   />
                 </div>
                 <code className="text-xs text-zinc-400">{f.key}</code>
-                <Button variant="ghost" size="icon" aria-label={`Remove ${f.label}`} onPress={() => patchCollection({ fields: col.fields.filter((x) => x.key !== f.key) })} className="ml-auto text-fg-subtle hover:bg-danger-50 hover:text-danger-500"><Trash2 size={15} /></Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${f.label}`}
+                  onPress={() =>
+                    patchCollection({ fields: col.fields.filter((x) => x.key !== f.key) })
+                  }
+                  className="ml-auto text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+                >
+                  <Trash2 size={15} />
+                </Button>
               </div>
             ))}
             <AddField onAdd={addField} />
@@ -274,12 +304,11 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
         {tab === "settings" && (
           <div className="max-w-sm space-y-5">
             <Field label="Collection name">
-              <TextInput
-                value={col.name}
-                onChange={(v: string) => setCol({ ...col, name: v })}
-              />
+              <TextInput value={col.name} onChange={(v: string) => setCol({ ...col, name: v })} />
             </Field>
-            <Button variant="neutral" onPress={() => patchCollection({ name: col.name })}>Save name</Button>
+            <Button variant="neutral" onPress={() => patchCollection({ name: col.name })}>
+              Save name
+            </Button>
             <label className="flex items-center justify-between rounded-xl border border-zinc-200 p-3">
               <span className="text-sm text-zinc-700">Detail pages</span>
               <Toggle
@@ -295,7 +324,14 @@ export function CollectionManager({ initial }: { initial: CollectionData }) {
             </Link>
             <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               <p className="text-sm font-semibold text-red-800">Delete collection</p>
-              <Button variant="danger" className="mt-2" onPress={deleteCollection} leadingIcon={<Trash2 size={15} />}>Delete</Button>
+              <Button
+                variant="danger"
+                className="mt-2"
+                onPress={deleteCollection}
+                leadingIcon={<Trash2 size={15} />}
+              >
+                Delete
+              </Button>
             </div>
           </div>
         )}
@@ -326,9 +362,9 @@ function EditItemModal({
   onSave: (item: CollectionItem) => void;
 }) {
   // Retain the last item so content stays visible through the exit animation.
-  const lastRef = useRef<CollectionItem | null>(null);
-  if (item) lastRef.current = item;
-  const view = item ?? lastRef.current;
+  const [last, setLast] = useState<CollectionItem | null>(item);
+  if (item && item !== last) setLast(item);
+  const view = item ?? last;
 
   return (
     <Modal open={!!item} onClose={onCancel} align="top" className="max-w-lg p-6">
@@ -347,8 +383,12 @@ function EditItemModal({
             ))}
           </div>
           <div className="mt-5 flex justify-end gap-2">
-            <Button variant="ghost" onPress={onCancel}>Cancel</Button>
-            <Button variant="neutral" onPress={() => onSave(view)}>Save</Button>
+            <Button variant="ghost" onPress={onCancel}>
+              Cancel
+            </Button>
+            <Button variant="neutral" onPress={() => onSave(view)}>
+              Save
+            </Button>
           </div>
         </>
       )}
@@ -372,7 +412,18 @@ function AddField({ onAdd }: { onAdd: (label: string) => void }) {
           }
         }}
       />
-      <Button variant="secondary" leadingIcon={<Plus size={15} />} onPress={() => { if (label.trim()) { onAdd(label.trim()); setLabel(""); } }}>Add field</Button>
+      <Button
+        variant="secondary"
+        leadingIcon={<Plus size={15} />}
+        onPress={() => {
+          if (label.trim()) {
+            onAdd(label.trim());
+            setLabel("");
+          }
+        }}
+      >
+        Add field
+      </Button>
     </div>
   );
 }

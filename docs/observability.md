@@ -13,12 +13,12 @@ W3C trace ids / OTLP-style spans) so each pillar can be pointed at a real backen
 
 ## TL;DR
 
-| Pillar  | Where it's produced                       | How to read it                                  |
-| ------- | ----------------------------------------- | ----------------------------------------------- |
-| Logs    | `logger` (structured JSON to stdout)      | `npm run dev` console, or ship stdout to Loki   |
-| Metrics | `metrics` registry (counters/histograms)  | `GET /api/internal/metrics` (Prometheus text)   |
+| Pillar  | Where it's produced                              | How to read it                                |
+| ------- | ------------------------------------------------ | --------------------------------------------- |
+| Logs    | `logger` (structured JSON to stdout)             | `npm run dev` console, or ship stdout to Loki |
+| Metrics | `metrics` registry (counters/histograms)         | `GET /api/internal/metrics` (Prometheus text) |
 | Traces  | `withSpan` / `instrumentApi` (AsyncLocalStorage) | `trace_id` on every log + `x-trace-id` header |
-| Health  | `GET /api/internal/health`                | LB/uptime probe (200 ok / 503 degraded)         |
+| Health  | `GET /api/internal/health`                       | LB/uptime probe (200 ok / 503 degraded)       |
 
 ---
 
@@ -48,7 +48,17 @@ try {
 Example production line:
 
 ```json
-{"ts":"2026-06-16T15:42:01.123Z","level":"info","msg":"request","trace_id":"4f1c…","span_id":"a93b…","method":"PUT","route":"/api/pages/:id","status":200,"duration_ms":38.4}
+{
+  "ts": "2026-06-16T15:42:01.123Z",
+  "level": "info",
+  "msg": "request",
+  "trace_id": "4f1c…",
+  "span_id": "a93b…",
+  "method": "PUT",
+  "route": "/api/pages/:id",
+  "status": 200,
+  "duration_ms": 38.4
+}
 ```
 
 ---
@@ -61,13 +71,13 @@ Prometheus-compatible registry (counters + histograms with labels), cached on
 
 ### Exposed series
 
-| Metric                                  | Type      | Labels                  | Meaning                              |
-| --------------------------------------- | --------- | ----------------------- | ------------------------------------ |
-| `pagebuilder_http_requests_total`       | counter   | `method,route,status`   | Requests handled                     |
-| `pagebuilder_http_request_duration_ms`  | histogram | `method,route`          | Handler latency                      |
-| `pagebuilder_authz_total`               | counter   | `result,role,status`    | Allow/deny decisions at the guard    |
-| `pagebuilder_db_query_duration_ms`      | histogram | `op`                    | Instrumented DB op latency           |
-| `pagebuilder_errors_total`              | counter   | `route,method`          | Unhandled throws in handlers         |
+| Metric                                 | Type      | Labels                | Meaning                           |
+| -------------------------------------- | --------- | --------------------- | --------------------------------- |
+| `pagebuilder_http_requests_total`      | counter   | `method,route,status` | Requests handled                  |
+| `pagebuilder_http_request_duration_ms` | histogram | `method,route`        | Handler latency                   |
+| `pagebuilder_authz_total`              | counter   | `result,role,status`  | Allow/deny decisions at the guard |
+| `pagebuilder_db_query_duration_ms`     | histogram | `op`                  | Instrumented DB op latency        |
+| `pagebuilder_errors_total`             | counter   | `route,method`        | Unhandled throws in handlers      |
 
 `authz_total` is recorded **globally** in `runGuarded` (so every guarded route
 contributes with zero extra code); the HTTP and DB series come from the
@@ -159,18 +169,23 @@ answers `SELECT 1`, `503` otherwise — suitable for a load-balancer readiness
 probe or an uptime monitor.
 
 ```json
-{"status":"ok","uptime_s":1287,"checks":{"database":{"ok":true,"latency_ms":1.2}},"timestamp":"…"}
+{
+  "status": "ok",
+  "uptime_s": 1287,
+  "checks": { "database": { "ok": true, "latency_ms": 1.2 } },
+  "timestamp": "…"
+}
 ```
 
 ---
 
 ## Configuration
 
-| Env var         | Default                | Purpose                                            |
-| --------------- | ---------------------- | -------------------------------------------------- |
-| `LOG_LEVEL`     | `info` (prod) / `debug`| Minimum log level                                  |
-| `METRICS_TOKEN` | _(unset)_              | Bearer token for `/api/internal/metrics`; if unset, metrics are dev-only |
-| `NODE_ENV`      | —                      | `production` switches logs to JSON, hides dev-open metrics |
+| Env var         | Default                 | Purpose                                                                  |
+| --------------- | ----------------------- | ------------------------------------------------------------------------ |
+| `LOG_LEVEL`     | `info` (prod) / `debug` | Minimum log level                                                        |
+| `METRICS_TOKEN` | _(unset)_               | Bearer token for `/api/internal/metrics`; if unset, metrics are dev-only |
+| `NODE_ENV`      | —                       | `production` switches logs to JSON, hides dev-open metrics               |
 
 ---
 

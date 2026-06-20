@@ -13,10 +13,22 @@ export function SitePanel() {
   return (
     <div className="space-y-2 p-3">
       <p className="px-1 pb-1 text-xs leading-relaxed text-zinc-400">
-        The header and footer are <span className="font-medium text-zinc-500">shared across every page</span> — edit once, applies everywhere.
+        The header and footer are{" "}
+        <span className="font-medium text-zinc-500">shared across every page</span> — edit once,
+        applies everywhere.
       </p>
-      <SiteCard icon={<PanelTop size={15} />} title="Header" desc="Shown atop every page" onClick={() => go("/site/header")} />
-      <SiteCard icon={<PanelBottom size={15} />} title="Footer" desc="Shown below every page" onClick={() => go("/site/footer")} />
+      <SiteCard
+        icon={<PanelTop size={15} />}
+        title="Header"
+        desc="Shown atop every page"
+        onClick={() => go("/site/header")}
+      />
+      <SiteCard
+        icon={<PanelBottom size={15} />}
+        title="Footer"
+        desc="Shown below every page"
+        onClick={() => go("/site/footer")}
+      />
     </div>
   );
 }

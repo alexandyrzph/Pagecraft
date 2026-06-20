@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import type { Viewport } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,10 @@ const useBreakpointStore = create<State>()(
         const id = genId();
         const w = clampWidth(width);
         set((s) => ({
-          custom: [...s.custom, { id, label: label?.trim() || `${w}px`, width: w, base, custom: true }],
+          custom: [
+            ...s.custom,
+            { id, label: label?.trim() || `${w}px`, width: w, base, custom: true },
+          ],
           activeId: id,
           dragWidth: null,
         }));
@@ -78,11 +81,13 @@ const useBreakpointStore = create<State>()(
     {
       name: "pc-breakpoints",
       storage: createJSONStorage(() =>
-        typeof window !== "undefined" ? window.localStorage : (undefined as any)
+        typeof window !== "undefined"
+          ? window.localStorage
+          : (undefined as unknown as StateStorage),
       ),
       partialize: (s) => ({ custom: s.custom, activeId: s.activeId }),
-    }
-  )
+    },
+  ),
 );
 
 /** Combined list of default + custom breakpoints, plus actions. */
@@ -99,7 +104,15 @@ export function useBreakpoints() {
   const base = list.find((b) => b.id === activeId) ?? DEFAULT_BREAKPOINTS[0];
   // While the resize handles are in use, override the active width/base so the
   // whole canvas (chrome, style bucket, zoom-fit, readout) follows the free drag.
-  const active =
-    dragWidth != null ? { ...base, width: dragWidth, base: baseFor(dragWidth) } : base;
-  return { list, custom, active, dragWidth, setActive, setDragWidth, addBreakpoint, removeBreakpoint };
+  const active = dragWidth != null ? { ...base, width: dragWidth, base: baseFor(dragWidth) } : base;
+  return {
+    list,
+    custom,
+    active,
+    dragWidth,
+    setActive,
+    setDragWidth,
+    addBreakpoint,
+    removeBreakpoint,
+  };
 }

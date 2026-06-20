@@ -6,7 +6,12 @@ import type { BlockRenderProps } from "@/lib/blocks/registry-types";
 import { Editable } from "./shared";
 
 export function FileBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
-  const { url = "", title = "Download file", description = "Click to download", align = "left" } = block.props;
+  const {
+    url = "",
+    title = "Download file",
+    description = "Click to download",
+    align = "left",
+  } = block.props as { url?: string; title?: string; description?: string; align?: string };
   const name = url ? url.split("/").pop() : "";
   const alignCls = align === "center" ? "mx-auto" : align === "right" ? "ml-auto" : "";
 
@@ -18,7 +23,7 @@ export function FileBlock({ block, editable, style, className, id, setProp }: Bl
         onClick={editable ? (e) => e.preventDefault() : undefined}
         className={cn(
           "flex max-w-md cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 no-underline shadow-sm transition-shadow hover:shadow-md",
-          alignCls
+          alignCls,
         )}
         style={{ borderRadius: "var(--pc-radius, 12px)" }}
       >
@@ -29,10 +34,20 @@ export function FileBlock({ block, editable, style, className, id, setProp }: Bl
           <FileText size={20} />
         </span>
         <span className="min-w-0 flex-1">
-          <Editable as="div" value={title} editable={editable} onCommit={(v) => setProp("title", v)}
-            className="truncate text-sm font-semibold text-slate-900" />
-          <Editable as="div" value={description} editable={editable} onCommit={(v) => setProp("description", v)}
-            className="truncate text-xs text-slate-400" />
+          <Editable
+            as="div"
+            value={title}
+            editable={editable}
+            onCommit={(v) => setProp("title", v)}
+            className="truncate text-sm font-semibold text-slate-900"
+          />
+          <Editable
+            as="div"
+            value={description}
+            editable={editable}
+            onCommit={(v) => setProp("description", v)}
+            className="truncate text-xs text-slate-400"
+          />
           {name && !editable && <span className="sr-only">{name}</span>}
         </span>
         <Download size={18} className="shrink-0 text-slate-400" />
@@ -43,4 +58,3 @@ export function FileBlock({ block, editable, style, className, id, setProp }: Bl
     </div>
   );
 }
-

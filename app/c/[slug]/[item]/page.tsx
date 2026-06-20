@@ -6,7 +6,7 @@ import { parseItemData, buildCollectionMap } from "@/lib/cms/collection-service"
 import { applyTokens } from "@/lib/cms/cms-tokens";
 import { responsiveCss } from "@/lib/blocks/styles";
 import { designSystemCss, parseDesignSystem } from "@/lib/design/design-system";
-import { BlockRenderer } from "@/components/BlockRenderer";
+import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,14 +46,12 @@ export default async function CollectionDetailPage({
 
   // header / footer + components + collections, scoped to the collection's workspace
   const workspaceId = found.collection.workspaceId;
-  const site = workspaceId
-    ? await prisma.site.findUnique({ where: { workspaceId } })
-    : null;
+  const site = workspaceId ? await prisma.site.findUnique({ where: { workspaceId } }) : null;
   const header = site ? parseContent(site.header) : [];
   const footer = site ? parseContent(site.footer) : [];
 
   const comps = await prisma.component.findMany({ where: { workspaceId } });
-  const components: Record<string, { content: any[] }> = {};
+  const components: ComponentMap = {};
   for (const c of comps) {
     try {
       components[c.id] = { content: JSON.parse(c.content) };
@@ -78,11 +76,32 @@ export default async function CollectionDetailPage({
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <main>
         {header.length > 0 && (
-          <BlockRenderer tree={header} viewport="desktop" animate inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={header}
+            viewport="desktop"
+            animate
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
-        <BlockRenderer tree={tree} viewport="desktop" animate inlineStyles={false} components={components} collections={collections} />
+        <BlockRenderer
+          tree={tree}
+          viewport="desktop"
+          animate
+          inlineStyles={false}
+          components={components}
+          collections={collections}
+        />
         {footer.length > 0 && (
-          <BlockRenderer tree={footer} viewport="desktop" animate inlineStyles={false} components={components} collections={collections} />
+          <BlockRenderer
+            tree={footer}
+            viewport="desktop"
+            animate
+            inlineStyles={false}
+            components={components}
+            collections={collections}
+          />
         )}
       </main>
     </>

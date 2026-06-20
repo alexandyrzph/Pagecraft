@@ -16,22 +16,22 @@ This is **Project ①**. Public workspaces, request-access, the create-workspace
 
 ## File structure
 
-| File | Responsibility | Action |
-|------|----------------|--------|
-| `prisma/schema.prisma` | nullable `passwordHash` + `OAuthAccount` model | Modify |
-| `lib/auth/auth.ts` | `verifyPassword` accepts `string \| null` | Modify |
-| `lib/auth/oauth-state.ts` | pure HMAC state sign/verify (CSRF) | Create |
-| `lib/auth/oauth.ts` | provider config, gating, authorize URL, token/profile, normalizers | Create |
-| `lib/auth/oauth-account.ts` | `linkOrCreateUser` (DB create-or-link) | Create |
-| `app/api/auth/providers/route.ts` | GET configured providers | Create |
-| `app/api/auth/oauth/[provider]/route.ts` | GET start (state cookie + redirect) | Create |
-| `app/api/auth/oauth/[provider]/callback/route.ts` | GET callback | Create |
-| `components/auth/OAuthButtons.tsx` | `OAuthButtonRow` (pure) + `OAuthButtons` (fetches) | Create |
-| `components/auth/AuthScreen.tsx` | centered-card + wallpaper rebuild + OAuth row + error | Modify |
-| `app/(auth)/login/page.tsx` | pass `?error` to AuthScreen | Modify |
-| `public/auth/login-bg.jpg` | downloaded wallpaper (controller-selected) | Create |
-| `.env` | `AUTH_SECRET` + provider cred placeholders (gitignored) | Modify |
-| `tests/oauth-state.test.ts`, `tests/oauth.test.ts`, `tests/oauth-buttons.dom.test.tsx` | unit/dom | Create |
+| File                                                                                   | Responsibility                                                     | Action |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| `prisma/schema.prisma`                                                                 | nullable `passwordHash` + `OAuthAccount` model                     | Modify |
+| `lib/auth/auth.ts`                                                                     | `verifyPassword` accepts `string \| null`                          | Modify |
+| `lib/auth/oauth-state.ts`                                                              | pure HMAC state sign/verify (CSRF)                                 | Create |
+| `lib/auth/oauth.ts`                                                                    | provider config, gating, authorize URL, token/profile, normalizers | Create |
+| `lib/auth/oauth-account.ts`                                                            | `linkOrCreateUser` (DB create-or-link)                             | Create |
+| `app/api/auth/providers/route.ts`                                                      | GET configured providers                                           | Create |
+| `app/api/auth/oauth/[provider]/route.ts`                                               | GET start (state cookie + redirect)                                | Create |
+| `app/api/auth/oauth/[provider]/callback/route.ts`                                      | GET callback                                                       | Create |
+| `components/auth/OAuthButtons.tsx`                                                     | `OAuthButtonRow` (pure) + `OAuthButtons` (fetches)                 | Create |
+| `components/auth/AuthScreen.tsx`                                                       | centered-card + wallpaper rebuild + OAuth row + error              | Modify |
+| `app/(auth)/login/page.tsx`                                                            | pass `?error` to AuthScreen                                        | Modify |
+| `public/auth/login-bg.jpg`                                                             | downloaded wallpaper (controller-selected)                         | Create |
+| `.env`                                                                                 | `AUTH_SECRET` + provider cred placeholders (gitignored)            | Modify |
+| `tests/oauth-state.test.ts`, `tests/oauth.test.ts`, `tests/oauth-buttons.dom.test.tsx` | unit/dom                                                           | Create |
 
 **Gate:** `npx tsc --noEmit` + `npm test`. Never run `next build`. The wallpaper download (Task 8) and `.env` edits (Task 9) are handled by the controller, not subagents.
 
@@ -46,7 +46,9 @@ This is **Project ①**. Public workspaces, request-access, the create-workspace
 ```prisma
   passwordHash String?
 ```
+
 and add inside `model User { ... }` alongside the other relations:
+
 ```prisma
   oauthAccounts OAuthAccount[]
 ```
@@ -153,7 +155,11 @@ function sign(body: string): string {
 /** Token = "<base64url(json)>.<hmac>"; json = { next, nonce, exp }. */
 export function signState(data: { next?: string }, now: number = Date.now()): string {
   const body = Buffer.from(
-    JSON.stringify({ next: data.next || "", nonce: randomBytes(8).toString("hex"), exp: now + TTL_MS }),
+    JSON.stringify({
+      next: data.next || "",
+      nonce: randomBytes(8).toString("hex"),
+      exp: now + TTL_MS,
+    }),
   ).toString("base64url");
   return `${body}.${sign(body)}`;
 }
@@ -196,31 +202,43 @@ git commit -m "feat(auth): HMAC OAuth state helper (CSRF)"
 ```ts
 // tests/oauth.test.ts
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { oauthProviders, buildAuthorizeUrl, normalizeGoogleProfile, normalizeGithubProfile } from "@/lib/auth/oauth";
+import {
+  oauthProviders,
+  buildAuthorizeUrl,
+  normalizeGoogleProfile,
+  normalizeGithubProfile,
+} from "@/lib/auth/oauth";
 
 afterEach(() => vi.unstubAllEnvs());
 
 describe("oauthProviders", () => {
   it("lists only fully-configured providers", () => {
-    vi.stubEnv("GOOGLE_CLIENT_ID", "gid"); vi.stubEnv("GOOGLE_CLIENT_SECRET", "gsec");
-    vi.stubEnv("GITHUB_CLIENT_ID", ""); vi.stubEnv("GITHUB_CLIENT_SECRET", "");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "gid");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "gsec");
+    vi.stubEnv("GITHUB_CLIENT_ID", "");
+    vi.stubEnv("GITHUB_CLIENT_SECRET", "");
     expect(oauthProviders()).toEqual(["google"]);
   });
   it("is empty when nothing configured", () => {
-    vi.stubEnv("GOOGLE_CLIENT_ID", ""); vi.stubEnv("GOOGLE_CLIENT_SECRET", "");
-    vi.stubEnv("GITHUB_CLIENT_ID", ""); vi.stubEnv("GITHUB_CLIENT_SECRET", "");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "");
+    vi.stubEnv("GITHUB_CLIENT_ID", "");
+    vi.stubEnv("GITHUB_CLIENT_SECRET", "");
     expect(oauthProviders()).toEqual([]);
   });
 });
 
 describe("buildAuthorizeUrl", () => {
   it("builds a Google consent URL with the right params", () => {
-    vi.stubEnv("GOOGLE_CLIENT_ID", "gid"); vi.stubEnv("GOOGLE_CLIENT_SECRET", "gsec");
+    vi.stubEnv("GOOGLE_CLIENT_ID", "gid");
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "gsec");
     vi.stubEnv("APP_URL", "http://localhost:3000");
     const u = new URL(buildAuthorizeUrl("google", "STATE123"));
     expect(u.origin + u.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
     expect(u.searchParams.get("client_id")).toBe("gid");
-    expect(u.searchParams.get("redirect_uri")).toBe("http://localhost:3000/api/auth/oauth/google/callback");
+    expect(u.searchParams.get("redirect_uri")).toBe(
+      "http://localhost:3000/api/auth/oauth/google/callback",
+    );
     expect(u.searchParams.get("response_type")).toBe("code");
     expect(u.searchParams.get("scope")).toBe("openid email profile");
     expect(u.searchParams.get("state")).toBe("STATE123");
@@ -229,8 +247,9 @@ describe("buildAuthorizeUrl", () => {
 
 describe("profile normalizers", () => {
   it("normalizes a Google userinfo payload", () => {
-    expect(normalizeGoogleProfile({ sub: "123", email: "a@b.com", email_verified: true, name: "Ann" }))
-      .toEqual({ providerAccountId: "123", email: "a@b.com", emailVerified: true, name: "Ann" });
+    expect(
+      normalizeGoogleProfile({ sub: "123", email: "a@b.com", email_verified: true, name: "Ann" }),
+    ).toEqual({ providerAccountId: "123", email: "a@b.com", emailVerified: true, name: "Ann" });
   });
   it("normalizes GitHub user + picks the primary verified email", () => {
     const user = { id: 42, login: "octo", name: "Octo Cat", email: null };
@@ -238,14 +257,22 @@ describe("profile normalizers", () => {
       { email: "old@x.com", primary: false, verified: true },
       { email: "octo@x.com", primary: true, verified: true },
     ];
-    expect(normalizeGithubProfile(user, emails))
-      .toEqual({ providerAccountId: "42", email: "octo@x.com", emailVerified: true, name: "Octo Cat" });
+    expect(normalizeGithubProfile(user, emails)).toEqual({
+      providerAccountId: "42",
+      email: "octo@x.com",
+      emailVerified: true,
+      name: "Octo Cat",
+    });
   });
   it("falls back to login when GitHub name is missing and marks unverified email", () => {
     const user = { id: 7, login: "ghost", name: null, email: null };
     const emails = [{ email: "g@x.com", primary: true, verified: false }];
-    expect(normalizeGithubProfile(user, emails))
-      .toEqual({ providerAccountId: "7", email: "g@x.com", emailVerified: false, name: "ghost" });
+    expect(normalizeGithubProfile(user, emails)).toEqual({
+      providerAccountId: "7",
+      email: "g@x.com",
+      emailVerified: false,
+      name: "ghost",
+    });
   });
 });
 ```
@@ -365,7 +392,11 @@ export async function exchangeCode(provider: Provider, code: string): Promise<st
 }
 
 export async function fetchProfile(provider: Provider, accessToken: string): Promise<OAuthProfile> {
-  const headers = { authorization: `Bearer ${accessToken}`, accept: "application/json", "user-agent": "pagecraft" };
+  const headers = {
+    authorization: `Bearer ${accessToken}`,
+    accept: "application/json",
+    "user-agent": "pagecraft",
+  };
   if (provider === "google") {
     const res = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers });
     if (!res.ok) throw new Error(`google userinfo failed: ${res.status}`);
@@ -416,7 +447,9 @@ import type { OAuthProfile, Provider } from "@/lib/auth/oauth";
  */
 export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile): Promise<string> {
   const linked = await prisma.oAuthAccount.findUnique({
-    where: { provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId } },
+    where: {
+      provider_providerAccountId: { provider, providerAccountId: profile.providerAccountId },
+    },
   });
   if (linked) return linked.userId;
 
@@ -425,7 +458,9 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
   if (email && profile.emailVerified) {
     const byEmail = await prisma.user.findUnique({ where: { email } });
     if (byEmail) {
-      await prisma.oAuthAccount.create({ data: { provider, providerAccountId: profile.providerAccountId, userId: byEmail.id } });
+      await prisma.oAuthAccount.create({
+        data: { provider, providerAccountId: profile.providerAccountId, userId: byEmail.id },
+      });
       return byEmail.id;
     }
   }
@@ -435,9 +470,14 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
     if (taken) throw new Error("email_in_use"); // unverified provider email — don't take over
   }
 
-  const finalEmail = email || `${provider}-${profile.providerAccountId}@users.noreply.pagecraft.local`;
-  const user = await prisma.user.create({ data: { email: finalEmail, name: profile.name || "", passwordHash: null } });
-  await prisma.oAuthAccount.create({ data: { provider, providerAccountId: profile.providerAccountId, userId: user.id } });
+  const finalEmail =
+    email || `${provider}-${profile.providerAccountId}@users.noreply.pagecraft.local`;
+  const user = await prisma.user.create({
+    data: { email: finalEmail, name: profile.name || "", passwordHash: null },
+  });
+  await prisma.oAuthAccount.create({
+    data: { provider, providerAccountId: profile.providerAccountId, userId: user.id },
+  });
   await createWorkspace(user.id, `${(profile.name || "My").trim() || "My"}'s Workspace`);
   return user.id;
 }
@@ -494,7 +534,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   const state = signState({ next });
   const jar = await cookies();
   jar.set("pc_oauth_state", state, {
-    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 600,
   });
   return NextResponse.redirect(buildAuthorizeUrl(provider, state));
 }
@@ -521,7 +565,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   const to = (path: string) => NextResponse.redirect(new URL(path, req.url));
 
   if (url.searchParams.get("error")) return to("/login?error=oauth_denied");
-  if (!isProvider(provider) || !oauthProviders().includes(provider)) return to("/login?error=provider_unavailable");
+  if (!isProvider(provider) || !oauthProviders().includes(provider))
+    return to("/login?error=provider_unavailable");
 
   const code = url.searchParams.get("code");
   const stateParam = url.searchParams.get("state");
@@ -529,7 +574,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
   const cookieState = jar.get("pc_oauth_state")?.value;
   jar.delete("pc_oauth_state");
 
-  if (!code || !stateParam || !cookieState || stateParam !== cookieState) return to("/login?error=oauth_state");
+  if (!code || !stateParam || !cookieState || stateParam !== cookieState)
+    return to("/login?error=oauth_state");
   const decoded = verifyState(stateParam);
   if (!decoded) return to("/login?error=oauth_state");
 
@@ -539,10 +585,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
     const userId = await linkOrCreateUser(provider, profile);
     await createSession(userId);
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    const safeNext = decoded.next && decoded.next.startsWith("/") && !decoded.next.startsWith("//") ? decoded.next : "/";
+    const safeNext =
+      decoded.next && decoded.next.startsWith("/") && !decoded.next.startsWith("//")
+        ? decoded.next
+        : "/";
     return to(user?.onboardedAt ? safeNext : "/onboarding");
   } catch (e) {
-    const reason = e instanceof Error && e.message === "email_in_use" ? "email_in_use" : "oauth_failed";
+    const reason =
+      e instanceof Error && e.message === "email_in_use" ? "email_in_use" : "oauth_failed";
     console.error("[oauth] callback failed", provider, e);
     return to(`/login?error=${reason}`);
   }
@@ -608,10 +658,22 @@ import type { Provider } from "@/lib/auth/oauth";
 function GoogleGlyph() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
-      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
-      <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z" />
-      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
+      />
     </svg>
   );
 }
@@ -624,7 +686,10 @@ function GithubGlyph() {
   );
 }
 
-const LABEL: Record<Provider, string> = { google: "Continue with Google", github: "Continue with GitHub" };
+const LABEL: Record<Provider, string> = {
+  google: "Continue with Google",
+  github: "Continue with GitHub",
+};
 const GLYPH: Record<Provider, () => React.ReactNode> = { google: GoogleGlyph, github: GithubGlyph };
 
 /** Presentational: render a button per provider (pure, unit-tested). */
@@ -689,7 +754,11 @@ import { AuthScreen } from "@/components/auth/AuthScreen";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
   const { next, error } = await searchParams;
   return <AuthScreen mode="login" next={next} errorCode={error} />;
 }
@@ -711,9 +780,21 @@ type Mode = "login" | "signup" | "forgot" | "reset";
 
 const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
   login: { title: "Welcome back", sub: "Sign in to your Pagecraft workspace.", cta: "Sign in" },
-  signup: { title: "Create your account", sub: "Start building beautiful pages in minutes.", cta: "Create account" },
-  forgot: { title: "Reset your password", sub: "We'll send you a link to set a new password.", cta: "Send reset link" },
-  reset: { title: "Set a new password", sub: "Choose a strong password for your account.", cta: "Update password" },
+  signup: {
+    title: "Create your account",
+    sub: "Start building beautiful pages in minutes.",
+    cta: "Create account",
+  },
+  forgot: {
+    title: "Reset your password",
+    sub: "We'll send you a link to set a new password.",
+    cta: "Send reset link",
+  },
+  reset: {
+    title: "Set a new password",
+    sub: "Choose a strong password for your account.",
+    cta: "Update password",
+  },
 };
 
 const ERROR_COPY: Record<string, string> = {
@@ -724,12 +805,24 @@ const ERROR_COPY: Record<string, string> = {
   email_in_use: "An account with that email already exists — sign in with your password.",
 };
 
-export function AuthScreen({ mode, token, next, errorCode }: { mode: Mode; token?: string; next?: string; errorCode?: string }) {
+export function AuthScreen({
+  mode,
+  token,
+  next,
+  errorCode,
+}: {
+  mode: Mode;
+  token?: string;
+  next?: string;
+  errorCode?: string;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(errorCode ? ERROR_COPY[errorCode] || "Something went wrong. Please try again." : null);
+  const [error, setError] = useState<string | null>(
+    errorCode ? ERROR_COPY[errorCode] || "Something went wrong. Please try again." : null,
+  );
   const [pending, setPending] = useState(false);
   const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -742,10 +835,13 @@ export function AuthScreen({ mode, token, next, errorCode }: { mode: Mode; token
     setPending(true);
     try {
       const payload =
-        mode === "signup" ? { name, email, password }
-        : mode === "login" ? { email, password }
-        : mode === "forgot" ? { email }
-        : { token, password };
+        mode === "signup"
+          ? { name, email, password }
+          : mode === "login"
+            ? { email, password }
+            : mode === "forgot"
+              ? { email }
+              : { token, password };
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -784,7 +880,9 @@ export function AuthScreen({ mode, token, next, errorCode }: { mode: Mode; token
         className="w-full max-w-md rounded-2xl bg-white/95 p-8 shadow-2xl ring-1 ring-black/5 backdrop-blur-xl sm:p-9"
       >
         <div className="mb-7 flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white"><Layout size={18} /></span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 text-white">
+            <Layout size={18} />
+          </span>
           <span className="text-lg font-semibold tracking-tight text-zinc-900">Pagecraft</span>
         </div>
 
@@ -793,73 +891,162 @@ export function AuthScreen({ mode, token, next, errorCode }: { mode: Mode; token
           <p className="mt-1.5 text-sm text-zinc-500">{c.sub}</p>
         </div>
 
-        {(mode === "login" || mode === "signup") && <div className="mb-5"><OAuthButtons next={next} /></div>}
+        {(mode === "login" || mode === "signup") && (
+          <div className="mb-5">
+            <OAuthButtons next={next} />
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {mode === "forgot" && resetUrl ? (
-            <motion.div key="sent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <motion.div
+              key="sent"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
               <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                 <Check size={18} className="mt-0.5 shrink-0" />
                 <p>If an account exists for that email, a reset link has been created.</p>
               </div>
               {resetUrl !== "sent" && (
                 <div>
-                  <p className="mb-1.5 text-xs font-medium text-zinc-500">No email service is configured — use this link to reset:</p>
+                  <p className="mb-1.5 text-xs font-medium text-zinc-500">
+                    No email service is configured — use this link to reset:
+                  </p>
                   <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2">
-                    <code className="min-w-0 flex-1 truncate text-xs text-zinc-600">{resetUrl}</code>
+                    <code className="min-w-0 flex-1 truncate text-xs text-zinc-600">
+                      {resetUrl}
+                    </code>
                     <button
-                      onClick={() => { navigator.clipboard?.writeText(resetUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                      onClick={() => {
+                        navigator.clipboard?.writeText(resetUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1500);
+                      }}
                       className="flex shrink-0 items-center gap-1 rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white"
                     >
-                      {copied ? <Check size={12} /> : <Copy size={12} />} {copied ? "Copied" : "Copy"}
+                      {copied ? <Check size={12} /> : <Copy size={12} />}{" "}
+                      {copied ? "Copied" : "Copy"}
                     </button>
                   </div>
-                  <Link href={resetUrl.replace(/^https?:\/\/[^/]+/, "")} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+                  <Link
+                    href={resetUrl.replace(/^https?:\/\/[^/]+/, "")}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                  >
                     Open reset page <ArrowRight size={14} />
                   </Link>
                 </div>
               )}
             </motion.div>
           ) : (
-            <motion.form key="form" onSubmit={submit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <motion.form
+              key="form"
+              onSubmit={submit}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
               {mode === "signup" && (
-                <FieldInput icon={<User size={15} />} label="Name" type="text" value={name} onChange={setName} placeholder="Jane Doe" autoFocus />
+                <FieldInput
+                  icon={<User size={15} />}
+                  label="Name"
+                  type="text"
+                  value={name}
+                  onChange={setName}
+                  placeholder="Jane Doe"
+                  autoFocus
+                />
               )}
               {(mode === "login" || mode === "signup" || mode === "forgot") && (
-                <FieldInput icon={<Mail size={15} />} label="Email" type="email" value={email} onChange={setEmail} placeholder="you@company.com" required autoFocus={mode !== "signup"} />
+                <FieldInput
+                  icon={<Mail size={15} />}
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="you@company.com"
+                  required
+                  autoFocus={mode !== "signup"}
+                />
               )}
               {(mode === "login" || mode === "signup" || mode === "reset") && (
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <label className="text-xs font-medium text-zinc-600">Password</label>
                     {mode === "login" && (
-                      <Link href="/forgot" className="text-xs font-medium text-indigo-600 hover:text-indigo-700">Forgot?</Link>
+                      <Link
+                        href="/forgot"
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                      >
+                        Forgot?
+                      </Link>
                     )}
                   </div>
                   <InputBox icon={<Lock size={15} />}>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8}
-                      placeholder={mode === "login" ? "Your password" : "At least 8 characters"} autoFocus={mode === "reset"}
-                      className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder={mode === "login" ? "Your password" : "At least 8 characters"}
+                      autoFocus={mode === "reset"}
+                      className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                    />
                   </InputBox>
                 </div>
               )}
 
               {error && (
-                <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600"
+                >
+                  {error}
+                </motion.p>
               )}
 
-              <button type="submit" disabled={pending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60">
-                {pending ? <Loader2 size={16} className="animate-spin" /> : <>{c.cta} <ArrowRight size={15} /></>}
+              <button
+                type="submit"
+                disabled={pending}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+              >
+                {pending ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    {c.cta} <ArrowRight size={15} />
+                  </>
+                )}
               </button>
             </motion.form>
           )}
         </AnimatePresence>
 
         <p className="mt-6 text-center text-sm text-zinc-500">
-          {mode === "login" && <>New to Pagecraft? <Link href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">Create an account</Link></>}
-          {mode === "signup" && <>Already have an account? <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">Sign in</Link></>}
-          {(mode === "forgot" || mode === "reset") && <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">Back to sign in</Link>}
+          {mode === "login" && (
+            <>
+              New to Pagecraft?{" "}
+              <Link href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                Create an account
+              </Link>
+            </>
+          )}
+          {mode === "signup" && (
+            <>
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                Sign in
+              </Link>
+            </>
+          )}
+          {(mode === "forgot" || mode === "reset") && (
+            <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
+              Back to sign in
+            </Link>
+          )}
         </p>
       </motion.div>
     </div>
@@ -875,15 +1062,38 @@ function InputBox({ icon, children }: { icon: React.ReactNode; children: React.R
   );
 }
 
-function FieldInput({ icon, label, type, value, onChange, placeholder, required, autoFocus }: {
-  icon: React.ReactNode; label: string; type: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean; autoFocus?: boolean;
+function FieldInput({
+  icon,
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  required,
+  autoFocus,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  autoFocus?: boolean;
 }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-zinc-600">{label}</label>
       <InputBox icon={icon}>
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required} autoFocus={autoFocus}
-          className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          autoFocus={autoFocus}
+          className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+        />
       </InputBox>
     </div>
   );
@@ -910,7 +1120,7 @@ git commit -m "feat(auth): centered-card auth over wallpaper + OAuth + error mes
 > The controller downloads and visually selects the image (subjective). Subagents skip this task.
 
 - [ ] **Step 1:** Download a dark, premium, abstract/architectural **free-license (Unsplash)** image (~2400px wide) to `public/auth/login-bg.jpg`. Pinned default:
-  `https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=2400&auto=format&fit=crop`
+      `https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=2400&auto=format&fit=crop`
   ```bash
   mkdir -p public/auth
   curl -sL "<chosen-url>" -o public/auth/login-bg.jpg
@@ -957,6 +1167,7 @@ git commit -m "feat(auth): centered-card auth over wallpaper + OAuth + error mes
 ## Self-Review
 
 **Spec coverage:**
+
 - Centered card + wallpaper + remove doodle/"N" → Task 7 (+ Task 8 asset). ✅
 - OAuth full flow (start/callback/token/profile/link/session) → Tasks 3, 4, 5. ✅
 - Env-gating + providers endpoint + gated buttons → Tasks 3 (`oauthProviders`), 5, 6. ✅

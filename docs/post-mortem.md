@@ -10,20 +10,20 @@ we changed. It doubles as a load-testing runbook.
 > **On the numbers.** Figures below come from the harness in
 > [`scripts/load/`](../scripts/load) run against a local build (Apple M-series,
 > 10 vCPU, SQLite). They are reproducible, not hand-waved — but absolute values
-> will differ on your hardware. The *shapes* (where it breaks, and why) are what
+> will differ on your hardware. The _shapes_ (where it breaks, and why) are what
 > matter. Re-run the scripts to regenerate them for your environment.
 
 ---
 
 ## Executive summary
 
-| # | Bottleneck | Symptom under load | Root cause | Fix | Result |
-|---|-----------|--------------------|-----------|-----|--------|
-| 1 | Dashboard list | p95 1.8s @ 50 VUs | N+1 queries (thumbnail per page) | single grouped query + indexed `workspaceId` | p95 1.8s → 120ms |
-| 2 | Autosave writes | `SQLITE_BUSY` errors @ 100 VUs | SQLite default rollback journal, single writer | WAL mode + `busy_timeout` | 4.1% error → 0% |
-| 3 | Autosave payload | p95 climbs with page size | full block-tree re-serialized + re-sent every keystroke-debounce | diff-aware debounce + gzip + server-side size guard | 38KB→3KB median write |
-| 4 | Big-page render | event-loop stalls, slow TTFB | `styles.ts` rebuilt entire stylesheet O(blocks) per render, sync | memoized style cache keyed by block id+styles hash | TTFB 640ms → 180ms |
-| 5 | AI generation | connection pool exhaustion, cascading timeouts | no upstream timeout; slow LLM held server work | `AbortController` timeout + concurrency cap + 429 | tail recovered, no cascading failures |
+| #   | Bottleneck       | Symptom under load                             | Root cause                                                       | Fix                                                 | Result                                |
+| --- | ---------------- | ---------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| 1   | Dashboard list   | p95 1.8s @ 50 VUs                              | N+1 queries (thumbnail per page)                                 | single grouped query + indexed `workspaceId`        | p95 1.8s → 120ms                      |
+| 2   | Autosave writes  | `SQLITE_BUSY` errors @ 100 VUs                 | SQLite default rollback journal, single writer                   | WAL mode + `busy_timeout`                           | 4.1% error → 0%                       |
+| 3   | Autosave payload | p95 climbs with page size                      | full block-tree re-serialized + re-sent every keystroke-debounce | diff-aware debounce + gzip + server-side size guard | 38KB→3KB median write                 |
+| 4   | Big-page render  | event-loop stalls, slow TTFB                   | `styles.ts` rebuilt entire stylesheet O(blocks) per render, sync | memoized style cache keyed by block id+styles hash  | TTFB 640ms → 180ms                    |
+| 5   | AI generation    | connection pool exhaustion, cascading timeouts | no upstream timeout; slow LLM held server work                   | `AbortController` timeout + concurrency cap + 429   | tail recovered, no cascading failures |
 
 All five were found by reading `pagebuilder_http_request_duration_ms` by route,
 then drilling into a slow request via its `x-trace-id`.
@@ -55,7 +55,7 @@ then drilling into a slow request via its `x-trace-id`.
 ≈ 1.8s at only 50 VUs while CPU stayed low — classic I/O wait.
 
 **Diagnosis.** `pagebuilder_db_query_duration_ms{op="page.findMany"}` was fast,
-but the *number* of DB spans per request scaled with the page count. Tracing one
+but the _number_ of DB spans per request scaled with the page count. Tracing one
 request by `x-trace-id` showed one query for the list plus one query **per page**
 to resolve its thumbnail — an N+1.
 
@@ -63,6 +63,7 @@ to resolve its thumbnail — an N+1.
 instead of being joined/included.
 
 **Fix.**
+
 - Fetch thumbnails in a single query (`include`/grouped `findMany` on
   `PageThumbnail`) and stitch in memory.
 - Confirmed `@@index([workspaceId])` on `Page` was actually used for the
@@ -70,7 +71,7 @@ instead of being joined/included.
 
 **Result.** 51 queries → 2 queries for a 50-page workspace; p95 **1.8s → 120ms**.
 
-**Lesson.** Per-request *query count* is a first-class signal. Counting DB spans
+**Lesson.** Per-request _query count_ is a first-class signal. Counting DB spans
 per trace surfaces N+1s that average latency hides.
 
 ---
@@ -89,11 +90,13 @@ timed out.
 from Incident 3.
 
 **Fix.**
+
 ```sql
 PRAGMA journal_mode = WAL;     -- readers don't block the writer
 PRAGMA busy_timeout = 5000;    -- wait instead of failing instantly
 PRAGMA synchronous = NORMAL;   -- safe with WAL, far fewer fsyncs
 ```
+
 Applied on connection init. (This is a SQLite stopgap; the real horizontal fix is
 Postgres — see [ADR 0006](./adr/0006-prisma-sqlite-json-columns.md).)
 
@@ -108,7 +111,7 @@ numbers. Know your storage engine's concurrency model.
 ## Incident 3 — Autosave write amplification
 
 **Symptom.** Autosave p95 grew with document size; a 40-block page sent ~38KB on
-*every* debounce tick, even when one word changed.
+_every_ debounce tick, even when one word changed.
 
 **Diagnosis.** The editor serialized and PUT the **entire** block tree each time.
 `http_request_duration_ms{route="/api/pages/:id"}` correlated with payload size;
@@ -118,6 +121,7 @@ most server time was JSON parse + a full-column write.
 simple, but O(document) per edit.
 
 **Fix.**
+
 - Debounce already existed; added a **dirty check** so identical content is never
   re-sent.
 - Enabled **gzip** on the request (and response) — block JSON compresses ~9×.
@@ -149,6 +153,7 @@ request thread.
 render, and the work was synchronous CPU on the event loop.
 
 **Fix.**
+
 - Memoize per-block CSS keyed by `blockId + hash(styles)`; only changed blocks
   recompile.
 - Reuse the cache across the editor preview and the public/export paths (same
@@ -158,7 +163,7 @@ render, and the work was synchronous CPU on the event loop.
 public-route throughput up ~3× at the knee.
 
 **Lesson.** Synchronous CPU on the request thread is a throughput killer in Node.
-Profile *under load*, not in isolation.
+Profile _under load_, not in isolation.
 
 ---
 
@@ -175,6 +180,7 @@ worker until the client gave up.
 externally-dependent endpoint.
 
 **Fix.**
+
 - `AbortController` timeout (e.g. 30s) on the provider `fetch`; return a clean
   `504` on timeout.
 - A small **in-process concurrency semaphore** for AI calls; over the cap returns

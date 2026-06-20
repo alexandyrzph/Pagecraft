@@ -29,15 +29,10 @@ export function Textarea({
       {...props}
       isInvalid={!!errorMessage || props.isInvalid}
       className={(rs) =>
-        cn(
-          "flex flex-col gap-1.5",
-          typeof className === "function" ? className(rs) : className,
-        )
+        cn("flex flex-col gap-1.5", typeof className === "function" ? className(rs) : className)
       }
     >
-      {label && (
-        <Label className="text-sm font-medium text-fg">{label}</Label>
-      )}
+      {label && <Label className="text-sm font-medium text-fg">{label}</Label>}
       <TextArea
         rows={rows}
         placeholder={placeholder}

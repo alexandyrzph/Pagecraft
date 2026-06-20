@@ -33,8 +33,8 @@ export function CollectionInspector({ block }: { block: Block }) {
         </div>
         <p className="text-sm font-semibold text-zinc-700">No collections yet</p>
         <p className="text-xs leading-relaxed text-zinc-400">
-          Open the <span className="font-medium text-zinc-500">CMS</span> panel in the
-          left rail to create a collection, then bind it here.
+          Open the <span className="font-medium text-zinc-500">CMS</span> panel in the left rail to
+          create a collection, then bind it here.
         </p>
       </div>
     );

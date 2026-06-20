@@ -16,15 +16,14 @@ function LayerRow({ block, depth }: { block: Block; depth: number }) {
   if (!def) return null;
   const Icon = def.icon;
   const selected = selectedId === block.id;
-  const label =
-    block.props.text || block.props.title || block.props.brand || def.label;
+  const label = block.props.text || block.props.title || block.props.brand || def.label;
 
   return (
     <>
       <div
         className={cn(
           "group flex cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-1.5 text-sm transition-colors",
-          selected ? "bg-indigo-50 text-indigo-700" : "text-zinc-600 hover:bg-zinc-100"
+          selected ? "bg-indigo-50 text-indigo-700" : "text-zinc-600 hover:bg-zinc-100",
         )}
         style={{ paddingLeft: 8 + depth * 14 }}
         onClick={() => select(block.id)}
@@ -60,9 +59,7 @@ export function Layers() {
   const tree = useEditor((s) => s.tree);
   if (tree.length === 0) {
     return (
-      <p className="p-4 text-sm text-zinc-400">
-        No blocks yet. Add some from the Components tab.
-      </p>
+      <p className="p-4 text-sm text-zinc-400">No blocks yet. Add some from the Components tab.</p>
     );
   }
   return (

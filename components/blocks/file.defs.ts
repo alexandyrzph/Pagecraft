@@ -10,7 +10,12 @@ export const fileBlocks: BlockDefinition[] = [
     icon: FileText,
     category: "Basic",
     description: "A downloadable file card",
-    defaultProps: { url: "", title: "Download file", description: "Click to download", align: "left" },
+    defaultProps: {
+      url: "",
+      title: "Download file",
+      description: "Click to download",
+      align: "left",
+    },
     defaultStyles: { desktop: {} },
     fields: [
       { key: "url", label: "File", type: "file" },

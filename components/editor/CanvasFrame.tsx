@@ -31,7 +31,9 @@ function copyStyles(doc: Document) {
   if (adopted) {
     for (const sheet of adopted) {
       try {
-        const text = Array.from(sheet.cssRules).map((r) => r.cssText).join("\n");
+        const text = Array.from(sheet.cssRules)
+          .map((r) => r.cssText)
+          .join("\n");
         if (text) {
           const el = doc.createElement("style");
           el.textContent = text;
@@ -134,7 +136,8 @@ export function CanvasFrame({
       const addBtn = t?.closest?.("[data-add-block]") as HTMLElement | null;
       if (addBtn) {
         e.preventDefault();
-        const type = addBtn.getAttribute("data-add-block")!;
+        const type = addBtn.getAttribute("data-add-block");
+        if (type == null) return;
         const parent = addBtn.getAttribute("data-add-parent");
         useEditor.getState().addBlock(type, parent && parent !== "root" ? parent : null, 0);
         return;
@@ -159,7 +162,9 @@ export function CanvasFrame({
       const r = frameEl?.getBoundingClientRect();
       // clientX/Y are in the iframe's unscaled coords; scale to the visual frame.
       const z = useCanvasZoom.getState().zoom;
-      useEditorUI.getState().openCtx(e.clientX * z + (r?.left ?? 0), e.clientY * z + (r?.top ?? 0), id);
+      useEditorUI
+        .getState()
+        .openCtx(e.clientX * z + (r?.left ?? 0), e.clientY * z + (r?.top ?? 0), id);
     };
     doc.addEventListener("pointerdown", onDown);
     doc.addEventListener("mouseover", onOver);
@@ -192,10 +197,13 @@ export function CanvasFrame({
     for (const [k, v] of Object.entries(vars)) body.style.setProperty(k, v);
   }, [body, theme]);
 
-  useEffect(() => () => {
-    roRef.current?.disconnect();
-    register(null);
-  }, [register]);
+  useEffect(
+    () => () => {
+      roRef.current?.disconnect();
+      register(null);
+    },
+    [register],
+  );
 
   return (
     <>

@@ -15,7 +15,7 @@ describe("Menu", () => {
           <MenuItem id="dup">Duplicate</MenuItem>
           <MenuItem id="del">Delete</MenuItem>
         </Menu>
-      </MenuTrigger>
+      </MenuTrigger>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Open" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Duplicate" }));

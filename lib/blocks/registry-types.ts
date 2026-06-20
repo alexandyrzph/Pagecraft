@@ -24,7 +24,7 @@ export type BlockRenderProps = {
   /** rendered child blocks (for containers) */
   children?: ReactNode;
   /** commit a prop change (used for inline text editing) */
-  setProp: (key: string, value: any) => void;
+  setProp: (key: string, value: unknown) => void;
 };
 
 export type BlockDefinition = {
@@ -35,7 +35,7 @@ export type BlockDefinition = {
   description?: string;
   /** accepts dropped children */
   isContainer?: boolean;
-  defaultProps: Record<string, any>;
+  defaultProps: Record<string, unknown>;
   defaultStyles: ResponsiveStyles;
   /** content fields shown in the inspector */
   fields: SettingField[];

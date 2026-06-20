@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
-  const email = String(body.email || "").trim().toLowerCase();
+  const email = String(body.email || "")
+    .trim()
+    .toLowerCase();
 
   const user = await prisma.user.findUnique({ where: { email } });
   // Don't reveal whether the email exists.

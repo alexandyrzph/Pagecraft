@@ -1,0 +1,17 @@
+# Build output / generated
+.next/
+out/
+build/
+next-env.d.ts
+
+# Dependencies & lockfiles
+node_modules/
+package-lock.json
+
+# Prisma local artifacts
+prisma/dev.db
+prisma/migrations/
+
+# Editor / misc
+.idea/
+coverage/

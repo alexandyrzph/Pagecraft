@@ -121,14 +121,21 @@ export function Canvas() {
   // Stable reference so CanvasFrame's CSS effect doesn't loop.
   const cssExtra = useMemo(
     () => (previewMode ? [...site.header, ...site.footer] : undefined),
-    [previewMode, site.header, site.footer]
+    [previewMode, site.header, site.footer],
   );
 
   // Content is portaled into the iframe by CanvasFrame.
   const content = previewMode ? (
     <>
       {site.header.length > 0 && (
-        <BlockRenderer tree={site.header} viewport="desktop" animate inlineStyles={false} components={components.map} collections={collections.map} />
+        <BlockRenderer
+          tree={site.header}
+          viewport="desktop"
+          animate
+          inlineStyles={false}
+          components={components.map}
+          collections={collections.map}
+        />
       )}
       <BlockRenderer
         tree={tree}
@@ -139,7 +146,14 @@ export function Canvas() {
         collections={collections.map}
       />
       {site.footer.length > 0 && (
-        <BlockRenderer tree={site.footer} viewport="desktop" animate inlineStyles={false} components={components.map} collections={collections.map} />
+        <BlockRenderer
+          tree={site.footer}
+          viewport="desktop"
+          animate
+          inlineStyles={false}
+          components={components.map}
+          collections={collections.map}
+        />
       )}
     </>
   ) : tree.length === 0 ? (
@@ -173,7 +187,7 @@ export function Canvas() {
       <div
         className={cn(
           "relative mx-auto h-full shrink-0",
-          !resizing && "transition-[width] duration-300 ease-out"
+          !resizing && "transition-[width] duration-300 ease-out",
         )}
         style={{ width: width * zoom, height: avail.h ? avail.h * zoom : undefined }}
         onClick={(e) => e.stopPropagation()}
@@ -181,7 +195,7 @@ export function Canvas() {
         <div
           className={cn(
             "h-full origin-top-left will-change-transform",
-            !resizing && "transition-[width,transform] duration-300 ease-out"
+            !resizing && "transition-[width,transform] duration-300 ease-out",
           )}
           style={{
             width,
@@ -207,8 +221,18 @@ export function Canvas() {
         {/* drag-to-resize "pipes" on each side of the device (edit mode only) */}
         {!previewMode && (
           <>
-            <DeviceResizer side="left" width={active.width} resizing={resizeSide === "left"} onPointerDown={startResize("left")} />
-            <DeviceResizer side="right" width={active.width} resizing={resizeSide === "right"} onPointerDown={startResize("right")} />
+            <DeviceResizer
+              side="left"
+              width={active.width}
+              resizing={resizeSide === "left"}
+              onPointerDown={startResize("left")}
+            />
+            <DeviceResizer
+              side="right"
+              width={active.width}
+              resizing={resizeSide === "right"}
+              onPointerDown={startResize("right")}
+            />
           </>
         )}
       </div>

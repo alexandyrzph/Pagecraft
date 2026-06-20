@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
-export interface ToggleButtonGroupProps extends RACToggleButtonGroupProps {}
+export type ToggleButtonGroupProps = RACToggleButtonGroupProps;
 
 export function ToggleButtonGroup({ className, ...props }: ToggleButtonGroupProps) {
   return (

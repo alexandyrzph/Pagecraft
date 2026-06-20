@@ -11,7 +11,7 @@ afterEach(() => {
 
 // jsdom doesn't implement these; react-aria overlays (Popover/Select/Menu) touch them.
 if (!window.matchMedia) {
-  // @ts-ignore minimal stub
+  // minimal stub
   window.matchMedia = (query: string) => ({
     matches: false,
     media: query,
@@ -26,7 +26,7 @@ if (!window.matchMedia) {
   });
 }
 if (!globalThis.ResizeObserver) {
-  // @ts-ignore minimal stub
+  // minimal stub
   globalThis.ResizeObserver = class {
     observe() {}
     unobserve() {}

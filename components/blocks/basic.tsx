@@ -1,24 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/blocks/registry-types";
 import { DynamicIcon, Editable } from "./shared";
 import { RichText } from "./RichText";
 
-export function HeadingBlock({
-  block,
-  editable,
-  style,
-  className,
-  id,
-  setProp,
-}: BlockRenderProps) {
-  const level: string = block.props.level ?? "h2";
+export function HeadingBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
+  const level: string = (block.props.level as string) ?? "h2";
   return (
     <Editable
-      as={level as any}
-      value={block.props.text ?? ""}
+      as={level as keyof React.JSX.IntrinsicElements}
+      value={(block.props.text as string) ?? ""}
       editable={editable}
       placeholder="Heading"
       onCommit={(v) => setProp("text", v)}
@@ -29,17 +22,10 @@ export function HeadingBlock({
   );
 }
 
-export function TextBlock({
-  block,
-  editable,
-  style,
-  className,
-  id,
-  setProp,
-}: BlockRenderProps) {
+export function TextBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
   return (
     <RichText
-      value={block.props.text ?? ""}
+      value={(block.props.text as string) ?? ""}
       editable={editable}
       onCommit={(v) => setProp("text", v)}
       id={id}
@@ -49,24 +35,25 @@ export function TextBlock({
   );
 }
 
-export function ButtonBlock({
-  block,
-  editable,
-  style,
-  className,
-  id,
-  setProp,
-}: BlockRenderProps) {
-  const { text = "Click me", href = "#", align = "left" } = block.props;
+export function ButtonBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
+  const {
+    text = "Click me",
+    href = "#",
+    align = "left",
+  } = block.props as {
+    text?: string;
+    href?: string;
+    align?: string;
+  };
   return (
-    <div style={{ textAlign: align as any }}>
+    <div style={{ textAlign: align as CSSProperties["textAlign"] }}>
       <a
         href={editable ? undefined : href}
         onClick={editable ? (e) => e.preventDefault() : undefined}
         id={id}
         className={cn(
           "pb-button inline-block cursor-pointer no-underline transition-transform hover:-translate-y-0.5",
-          className
+          className,
         )}
         style={style}
       >
@@ -87,12 +74,17 @@ export function ImageBlock({ block, editable, style, className, id }: BlockRende
     src = "https://picsum.photos/seed/pagebuilder/900/560",
     alt = "",
     objectFit = "cover",
-  } = block.props;
+  } = block.props as { src?: string; alt?: string; objectFit?: string };
   const [loaded, setLoaded] = useState(false);
+  const [lastSrc, setLastSrc] = useState(src);
   const ref = useRef<HTMLImageElement>(null);
 
-  useEffect(() => {
+  if (src !== lastSrc) {
+    setLastSrc(src);
     setLoaded(false);
+  }
+
+  useEffect(() => {
     if (ref.current?.complete) setLoaded(true);
   }, [src]);
 
@@ -105,7 +97,7 @@ export function ImageBlock({ block, editable, style, className, id }: BlockRende
         src={src}
         alt={alt}
         className={cn("block h-auto max-w-full", className)}
-        style={{ objectFit: objectFit as any, ...style }}
+        style={{ objectFit: objectFit as CSSProperties["objectFit"], ...style }}
       />
     );
   }
@@ -125,22 +117,26 @@ export function ImageBlock({ block, editable, style, className, id }: BlockRende
         className={cn(
           "block h-auto max-w-full transition-opacity duration-500",
           className,
-          loaded ? "opacity-100" : "opacity-0"
+          loaded ? "opacity-100" : "opacity-0",
         )}
-        style={{ objectFit: objectFit as any, ...style }}
+        style={{ objectFit: objectFit as CSSProperties["objectFit"], ...style }}
       />
     </span>
   );
 }
 
 export function IconBlock({ block, style, className, id }: BlockRenderProps) {
-  const { name = "Star", size = 48, color = "var(--pc-brand, #6366f1)", align = "center" } =
-    block.props;
+  const {
+    name = "Star",
+    size = 48,
+    color = "var(--pc-brand, #6366f1)",
+    align = "center",
+  } = block.props as { name?: string; size?: number | string; color?: string; align?: string };
   return (
     <div
       id={id}
       className={className}
-      style={{ textAlign: align as any, ...style }}
+      style={{ textAlign: align as CSSProperties["textAlign"], ...style }}
     >
       <DynamicIcon
         name={name}
@@ -153,9 +149,7 @@ export function IconBlock({ block, style, className, id }: BlockRenderProps) {
 
 function toEmbedUrl(url: string): string {
   if (!url) return "";
-  const yt = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/
-  );
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
   const vimeo = url.match(/vimeo\.com\/(\d+)/);
   if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
@@ -163,7 +157,7 @@ function toEmbedUrl(url: string): string {
 }
 
 export function VideoBlock({ block, style, className, id }: BlockRenderProps) {
-  const url: string = block.props.url ?? "";
+  const url: string = (block.props.url as string) ?? "";
   const embed = toEmbedUrl(url);
   const isFile = /\.(mp4|webm|ogg)$/i.test(embed);
   return (
@@ -190,17 +184,10 @@ export function VideoBlock({ block, style, className, id }: BlockRenderProps) {
   );
 }
 
-export function ListBlock({
-  block,
-  editable,
-  style,
-  className,
-  id,
-  setProp,
-}: BlockRenderProps) {
-  const items: string[] = block.props.items ?? [];
-  const iconName: string = block.props.icon ?? "Check";
-  const iconColor: string = block.props.iconColor ?? "var(--pc-brand, #6366f1)";
+export function ListBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
+  const items: string[] = (block.props.items as string[]) ?? [];
+  const iconName: string = (block.props.icon as string) ?? "Check";
+  const iconColor: string = (block.props.iconColor as string) ?? "var(--pc-brand, #6366f1)";
   return (
     <ul id={id} className={cn("flex flex-col gap-3", className)} style={style}>
       {items.map((item, i) => (
@@ -222,21 +209,10 @@ export function ListBlock({
   );
 }
 
-export function QuoteBlock({
-  block,
-  editable,
-  style,
-  className,
-  id,
-  setProp,
-}: BlockRenderProps) {
-  const { text = "", author = "" } = block.props;
+export function QuoteBlock({ block, editable, style, className, id, setProp }: BlockRenderProps) {
+  const { text = "", author = "" } = block.props as { text?: string; author?: string };
   return (
-    <blockquote
-      id={id}
-      className={cn("pb-quote border-l-4 pl-5", className)}
-      style={style}
-    >
+    <blockquote id={id} className={cn("pb-quote border-l-4 pl-5", className)} style={style}>
       <Editable
         as="p"
         multiline
@@ -257,4 +233,3 @@ export function QuoteBlock({
     </blockquote>
   );
 }
-

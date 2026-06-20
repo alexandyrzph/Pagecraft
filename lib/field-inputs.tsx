@@ -19,14 +19,17 @@ import {
 import type { SelectOption, SettingField } from "@/lib/types";
 
 export type FieldInputProps = {
-  value: any;
-  onChange: (v: any) => void;
+  value: unknown;
+  onChange: (v: unknown) => void;
   options?: SelectOption[];
   placeholder?: string;
 };
 
+/** Coerce an unknown field value to a string for display (preserves the old `value ?? ""` semantics). */
+const str = (v: unknown, fallback = ""): string => (v == null ? fallback : String(v));
+
 const textInput = ({ value, onChange, placeholder }: FieldInputProps) => (
-  <TextInput value={value ?? ""} onChange={onChange} placeholder={placeholder} />
+  <TextInput value={str(value)} onChange={onChange} placeholder={placeholder} />
 );
 
 /**
@@ -39,11 +42,11 @@ export const LEAF_INPUTS: Record<string, (p: FieldInputProps) => ReactNode> = {
   text: textInput,
   url: textInput,
   textarea: ({ value, onChange, placeholder }) => (
-    <TextArea value={value ?? ""} onChange={onChange} placeholder={placeholder} />
+    <TextArea value={str(value)} onChange={onChange} placeholder={placeholder} />
   ),
   code: ({ value, onChange, placeholder }) => (
     <textarea
-      value={value ?? ""}
+      value={str(value)}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={6}
@@ -52,22 +55,24 @@ export const LEAF_INPUTS: Record<string, (p: FieldInputProps) => ReactNode> = {
     />
   ),
   number: ({ value, onChange, placeholder }) => (
-    <NumberInput value={value ?? ""} onChange={onChange} placeholder={placeholder} />
+    <NumberInput value={str(value)} onChange={onChange} placeholder={placeholder} />
   ),
   select: ({ value, onChange, options }) => (
-    <SelectInput value={String(value ?? "")} onChange={onChange} options={options ?? []} />
+    <SelectInput value={str(value)} onChange={onChange} options={options ?? []} />
   ),
-  color: ({ value, onChange }) => <ColorInput value={value ?? ""} onChange={onChange} />,
+  color: ({ value, onChange }) => <ColorInput value={str(value)} onChange={onChange} />,
   boolean: ({ value, onChange }) => <Toggle value={!!value} onChange={onChange} />,
-  icon: ({ value, onChange }) => <IconPicker value={value ?? "Star"} onChange={onChange} />,
-  image: ({ value, onChange }) => <ImageInput value={value ?? ""} onChange={onChange} />,
-  file: ({ value, onChange }) => <FileInput value={value ?? ""} onChange={onChange} />,
-  stringlist: ({ value, onChange }) => <StringList value={value ?? []} onChange={onChange} />,
+  icon: ({ value, onChange }) => <IconPicker value={str(value, "Star")} onChange={onChange} />,
+  image: ({ value, onChange }) => <ImageInput value={str(value)} onChange={onChange} />,
+  file: ({ value, onChange }) => <FileInput value={str(value)} onChange={onChange} />,
+  stringlist: ({ value, onChange }) => (
+    <StringList value={Array.isArray(value) ? value : []} onChange={onChange} />
+  ),
   date: ({ value, onChange }) => (
     <input
       type="date"
       className={inputCls}
-      value={value ?? ""}
+      value={str(value)}
       onChange={(e) => onChange(e.target.value)}
     />
   ),
@@ -79,21 +84,21 @@ export function ItemsEditor({
   itemFields,
   onChange,
 }: {
-  value: Record<string, any>[];
+  value: Record<string, unknown>[];
   itemFields: NonNullable<SettingField["itemFields"]>;
-  onChange: (v: Record<string, any>[]) => void;
+  onChange: (v: Record<string, unknown>[]) => void;
 }) {
   const items = value ?? [];
 
   const blank = () => {
-    const o: Record<string, any> = {};
+    const o: Record<string, unknown> = {};
     for (const f of itemFields) {
       o[f.key] = f.type === "boolean" ? false : f.type === "icon" ? "Star" : "";
     }
     return o;
   };
 
-  const update = (i: number, key: string, v: any) => {
+  const update = (i: number, key: string, v: unknown) => {
     const next = items.map((it, j) => (j === i ? { ...it, [key]: v } : it));
     onChange(next);
   };

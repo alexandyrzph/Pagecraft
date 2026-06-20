@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: Ctx) {
       take: 100,
     });
     return json(
-      versions.map((v) => ({ id: v.id, label: v.label, createdAt: v.createdAt.toISOString() }))
+      versions.map((v) => ({ id: v.id, label: v.label, createdAt: v.createdAt.toISOString() })),
     );
   });
 }
@@ -52,8 +52,10 @@ export async function POST(req: Request, { params }: Ctx) {
       await prisma.pageVersion.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
     }
 
-    return created(
-      { id: version.id, label: version.label, createdAt: version.createdAt.toISOString() }
-    );
+    return created({
+      id: version.id,
+      label: version.label,
+      createdAt: version.createdAt.toISOString(),
+    });
   });
 }

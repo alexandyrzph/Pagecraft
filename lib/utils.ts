@@ -7,10 +7,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const nano = customAlphabet(
-  "0123456789abcdefghijklmnopqrstuvwxyz",
-  10
-);
+const nano = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 10);
 
 /** Short unique id for blocks (stable, URL-safe). */
 export function uid(prefix = "b") {

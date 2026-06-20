@@ -19,7 +19,7 @@ token), referenced by an HTTP cookie (`pc_session`). Passwords are hashed with
 **scrypt** (`lib/auth/`). Enforce auth in **two layers**:
 
 1. **Optimistic gate** in `proxy.ts` (the Next 16 replacement for middleware):
-   a fast, cookie-*presence* check that redirects unauthenticated users away
+   a fast, cookie-_presence_ check that redirects unauthenticated users away
    from builder routes and signed-in users away from auth pages. It deliberately
    does **not** validate the session.
 2. **Authoritative checks** in server pages (`requireUser`, `requireWorkspace`)

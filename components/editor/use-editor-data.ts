@@ -12,7 +12,10 @@ import type { ComponentItem } from "./components-context";
 export function useEditorData(mode: "page" | "component" | "site" | "collection") {
   const [componentList, setComponentList] = useState<ComponentItem[]>([]);
   const [collectionList, setCollectionList] = useState<CollectionData[]>([]);
-  const [site, setSite] = useState<{ header: Block[]; footer: Block[] }>({ header: [], footer: [] });
+  const [site, setSite] = useState<{ header: Block[]; footer: Block[] }>({
+    header: [],
+    footer: [],
+  });
 
   const refreshComponents = useCallback(async () => {
     try {
@@ -38,7 +41,10 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
     try {
       const r = await fetch("/api/site");
       const d = await r.json();
-      setSite({ header: Array.isArray(d.header) ? d.header : [], footer: Array.isArray(d.footer) ? d.footer : [] });
+      setSite({
+        header: Array.isArray(d.header) ? d.header : [],
+        footer: Array.isArray(d.footer) ? d.footer : [],
+      });
     } catch {
       /* ignore */
     }
@@ -47,35 +53,44 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
   const loadDesignSystem = useDesignSystem((s) => s.load);
 
   useEffect(() => {
-    void refreshComponents();
-    void refreshCollections();
-    void loadDesignSystem();
-    // header/footer only frame the page editor (not the component/site editors)
-    if (mode === "page") void refreshSite();
+    void Promise.resolve().then(() => {
+      void refreshComponents();
+      void refreshCollections();
+      void loadDesignSystem();
+      // header/footer only frame the page editor (not the component/site editors)
+      if (mode === "page") void refreshSite();
+    });
   }, [refreshComponents, refreshCollections, refreshSite, loadDesignSystem, mode]);
 
   const componentsMap = useMemo<Record<string, ComponentItem>>(
     () => Object.fromEntries(componentList.map((c) => [c.id, c])),
-    [componentList]
+    [componentList],
   );
   const componentsCtx = useMemo(
     () => ({ list: componentList, map: componentsMap, refresh: refreshComponents }),
-    [componentList, componentsMap, refreshComponents]
+    [componentList, componentsMap, refreshComponents],
   );
 
   const collectionsMap = useMemo(
     () => Object.fromEntries(collectionList.map((c) => [c.id, c])),
-    [collectionList]
+    [collectionList],
   );
   const collectionsCtx = useMemo(
     () => ({ list: collectionList, map: collectionsMap, refresh: refreshCollections }),
-    [collectionList, collectionsMap, refreshCollections]
+    [collectionList, collectionsMap, refreshCollections],
   );
 
   const siteCtx = useMemo(
     () => ({ header: site.header, footer: site.footer, refresh: refreshSite }),
-    [site, refreshSite]
+    [site, refreshSite],
   );
 
-  return { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap, refreshComponents };
+  return {
+    componentsCtx,
+    collectionsCtx,
+    siteCtx,
+    componentsMap,
+    collectionsMap,
+    refreshComponents,
+  };
 }

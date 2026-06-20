@@ -25,7 +25,13 @@ export async function POST(req: Request) {
     }
 
     const dot = file.name.lastIndexOf(".");
-    const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+    const ext =
+      dot >= 0
+        ? file.name
+            .slice(dot + 1)
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")
+        : "";
     const base = slugify(dot >= 0 ? file.name.slice(0, dot) : file.name) || "file";
     const filename = `${base}-${Date.now().toString(36)}${(seq++).toString(36)}${ext ? "." + ext : ""}`;
 
@@ -35,9 +41,21 @@ export async function POST(req: Request) {
 
     const url = `/uploads/${filename}`;
     const asset = await prisma.asset.create({
-      data: { name: file.name.slice(0, 200), url, type: file.type || "", size: file.size, workspaceId: ws.workspace.id },
+      data: {
+        name: file.name.slice(0, 200),
+        url,
+        type: file.type || "",
+        size: file.size,
+        workspaceId: ws.workspace.id,
+      },
     });
 
-    return created({ id: asset.id, url: asset.url, name: asset.name, type: asset.type, size: asset.size });
+    return created({
+      id: asset.id,
+      url: asset.url,
+      name: asset.name,
+      type: asset.type,
+      size: asset.size,
+    });
   });
 }

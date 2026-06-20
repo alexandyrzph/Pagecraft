@@ -42,7 +42,7 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
         /* ignore */
       }
     },
-    [init]
+    [init],
   );
 
   const confirmLeave = useCallback((action: () => void) => {
@@ -55,7 +55,7 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
       if (id === useEditor.getState().pageId) return;
       confirmLeave(() => void loadPageInPlace(id));
     },
-    [confirmLeave, loadPageInPlace]
+    [confirmLeave, loadPageInPlace],
   );
 
   const saveAsComponent = useCallback((block: Block) => setSaveCompBlock(block), []);
@@ -79,7 +79,7 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
         setSaveCompBlock(null);
       }
     },
-    [saveCompBlock, refreshComponents]
+    [saveCompBlock, refreshComponents],
   );
 
   const actionsCtx = useMemo(

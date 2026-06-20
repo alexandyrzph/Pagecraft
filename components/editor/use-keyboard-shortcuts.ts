@@ -18,7 +18,9 @@ export function useKeyboardShortcuts(opts: {
 }) {
   const { save, togglePalette, frame } = opts;
   const toggleRef = useRef(togglePalette);
-  toggleRef.current = togglePalette;
+  useEffect(() => {
+    toggleRef.current = togglePalette;
+  });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -85,7 +87,10 @@ export function useKeyboardShortcuts(opts: {
         st.pasteStyles(st.selectedId ?? st.selectedIds[0]);
         return;
       }
-      if ((e.key === "Delete" || e.key === "Backspace") && (st.selectedId || st.selectedIds.length)) {
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        (st.selectedId || st.selectedIds.length)
+      ) {
         e.preventDefault();
         st.removeSelected();
       }

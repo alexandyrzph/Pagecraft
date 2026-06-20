@@ -3,9 +3,7 @@ import { cn } from "@/lib/utils";
 import type { Block } from "@/lib/types";
 
 // Shared bits for the mini wireframes (drag ghost + section inserter previews).
-const bar = (w: string, extra = "h-1.5 bg-zinc-200") => (
-  <div className={cn("rounded", w, extra)} />
-);
+const bar = (w: string, extra = "h-1.5 bg-zinc-200") => <div className={cn("rounded", w, extra)} />;
 
 /** A representative mini wireframe for every block type. */
 export function Wireframe({ block }: { block: Block }) {
@@ -168,7 +166,10 @@ export function Wireframe({ block }: { block: Block }) {
       return (
         <div className="flex h-12 gap-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex flex-1 flex-col gap-1 overflow-hidden rounded-md border border-zinc-200 bg-white">
+            <div
+              key={i}
+              className="flex flex-1 flex-col gap-1 overflow-hidden rounded-md border border-zinc-200 bg-white"
+            >
               <span className="h-4 w-full bg-indigo-100" />
               <div className="flex flex-col gap-1 px-1">
                 {bar("w-full", "h-1 bg-zinc-200")}

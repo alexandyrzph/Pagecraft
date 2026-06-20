@@ -7,8 +7,7 @@ import { uid } from "@/lib/utils";
 // `parentId === null` always refers to the page root.
 // ---------------------------------------------------------------------------
 
-const clamp = (n: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, n));
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 export function findBlockById(tree: Block[], id: string): Block | null {
   for (const node of tree) {
@@ -33,7 +32,7 @@ export function pathToBlock(tree: Block[], id: string): Block[] | null {
 export function locate(
   tree: Block[],
   id: string,
-  parentId: string | null = null
+  parentId: string | null = null,
 ): { parentId: string | null; index: number } | null {
   for (let i = 0; i < tree.length; i++) {
     const node = tree[i];
@@ -58,7 +57,7 @@ export function insertBlock(
   tree: Block[],
   block: Block,
   parentId: string | null,
-  index: number
+  index: number,
 ): Block[] {
   if (parentId === null) {
     const next = [...tree];
@@ -78,10 +77,7 @@ export function insertBlock(
   });
 }
 
-export function removeBlock(
-  tree: Block[],
-  id: string
-): { tree: Block[]; removed: Block | null } {
+export function removeBlock(tree: Block[], id: string): { tree: Block[]; removed: Block | null } {
   let removed: Block | null = null;
   const rec = (nodes: Block[]): Block[] => {
     const out: Block[] = [];
@@ -107,7 +103,7 @@ export function moveBlock(
   tree: Block[],
   id: string,
   parentId: string | null,
-  index: number
+  index: number,
 ): Block[] {
   // Disallow dropping a block into itself or any descendant.
   const block = findBlockById(tree, id);
@@ -128,11 +124,7 @@ export function moveBlock(
   return insertBlock(without, removed, parentId, target);
 }
 
-function mapBlock(
-  tree: Block[],
-  id: string,
-  fn: (b: Block) => Block
-): Block[] {
+function mapBlock(tree: Block[], id: string, fn: (b: Block) => Block): Block[] {
   return tree.map((node) => {
     if (node.id === id) return fn(node);
     if (node.children.length) {
@@ -143,29 +135,27 @@ function mapBlock(
 }
 
 /** Set a (possibly dotted) prop path immutably, e.g. "items.0.title". */
-function setByPath(obj: any, path: string, value: any): any {
+function setByPath(obj: unknown, path: string, value: unknown): unknown {
   const keys = path.split(".");
-  const root = Array.isArray(obj) ? [...obj] : { ...obj };
-  let cur = root;
+  const clone = (v: unknown): Record<string, unknown> | unknown[] =>
+    Array.isArray(v) ? [...v] : { ...(v as Record<string, unknown>) };
+  const root = clone(obj);
+  let cur: Record<string, unknown> | unknown[] = root;
   for (let i = 0; i < keys.length - 1; i++) {
     const k = keys[i];
-    const child = cur[k];
-    cur[k] = Array.isArray(child) ? [...child] : { ...(child ?? {}) };
-    cur = cur[k];
+    const child = (cur as Record<string, unknown>)[k];
+    const next = clone(child ?? {});
+    (cur as Record<string, unknown>)[k] = next;
+    cur = next;
   }
-  cur[keys[keys.length - 1]] = value;
+  (cur as Record<string, unknown>)[keys[keys.length - 1]] = value;
   return root;
 }
 
-export function updateBlockProp(
-  tree: Block[],
-  id: string,
-  key: string,
-  value: any
-): Block[] {
+export function updateBlockProp(tree: Block[], id: string, key: string, value: unknown): Block[] {
   return mapBlock(tree, id, (b) => ({
     ...b,
-    props: setByPath(b.props, key, value),
+    props: setByPath(b.props, key, value) as Record<string, unknown>,
   }));
 }
 
@@ -174,14 +164,15 @@ export function updateBlockStyle(
   id: string,
   viewport: Viewport,
   key: keyof StyleProps,
-  value: string
+  value: string,
 ): Block[] {
   return mapBlock(tree, id, (b) => {
-    const vp: StyleProps = { ...(b.styles[viewport] ?? {}) };
+    const current: StyleProps = b.styles[viewport] ?? {};
+    let vp: StyleProps;
     if (value === "" || value == null) {
-      delete vp[key];
+      vp = Object.fromEntries(Object.entries(current).filter(([k]) => k !== key)) as StyleProps;
     } else {
-      (vp as any)[key] = value;
+      vp = { ...current, [key]: value };
     }
     const styles: ResponsiveStyles = { ...b.styles, [viewport]: vp };
     return { ...b, styles };
@@ -189,11 +180,7 @@ export function updateBlockStyle(
 }
 
 /** Replace a block's entire responsive style set (used by "paste styles"). */
-export function setBlockStyles(
-  tree: Block[],
-  id: string,
-  styles: ResponsiveStyles
-): Block[] {
+export function setBlockStyles(tree: Block[], id: string, styles: ResponsiveStyles): Block[] {
   return mapBlock(tree, id, (b) => ({
     ...b,
     styles: JSON.parse(JSON.stringify(styles ?? {})),

@@ -1,9 +1,5 @@
 "use client";
-import {
-  CheckboxField,
-  CheckboxButton,
-  type CheckboxFieldProps,
-} from "react-aria-components";
+import { CheckboxField, CheckboxButton, type CheckboxFieldProps } from "react-aria-components";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";

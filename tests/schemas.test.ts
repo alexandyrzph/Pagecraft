@@ -6,7 +6,9 @@ describe("createPageSchema", () => {
     expect(createPageSchema.safeParse({}).success).toBe(true);
   });
   it("accepts a valid title + content array", () => {
-    expect(createPageSchema.safeParse({ title: "Home", content: [{ type: "hero" }] }).success).toBe(true);
+    expect(createPageSchema.safeParse({ title: "Home", content: [{ type: "hero" }] }).success).toBe(
+      true,
+    );
   });
   it("rejects a non-string title", () => {
     expect(createPageSchema.safeParse({ title: 123 }).success).toBe(false);

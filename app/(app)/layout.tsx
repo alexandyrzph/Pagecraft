@@ -19,7 +19,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     include: { workspace: true },
     orderBy: { createdAt: "asc" },
   });
-  const workspaces = memberships.map((m) => ({ id: m.workspace.id, name: m.workspace.name, slug: m.workspace.slug, role: m.role }));
+  const workspaces = memberships.map((m) => ({
+    id: m.workspace.id,
+    name: m.workspace.name,
+    slug: m.workspace.slug,
+    role: m.role,
+  }));
 
   const jar = await cookies();
   const collapsed = jar.get(SIDEBAR_COOKIE)?.value === "collapsed";

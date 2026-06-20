@@ -16,21 +16,21 @@ paper `#f7f8fa` · surface `#fff` · hairline `#e8eaed` · inset `#f1f3f5` · in
 
 ## File structure
 
-| File | Responsibility | Action |
-|------|----------------|--------|
-| `app/globals.css` | add `--font-mono` (Geist Mono) | Modify |
-| `app/(app)/layout.tsx` | paper background | Modify |
-| `lib/dashboard/filter.ts` | pure `filterPages` + `DashboardFilter` | Create |
-| `components/dashboard/SegmentedFilter.tsx` | All/Live/Drafts control | Create |
-| `components/dashboard/PageThumbnail.tsx` | fill 16:10 + neutral fallback (drop `gradient`) | Modify |
-| `components/dashboard/PageCard.tsx` | card: thumb frame, pill, hover actions, meta | Create |
-| `components/dashboard/Dashboard.tsx` | orchestrator: header, toolbar, grid, tile | Modify |
-| `components/app-shell/Sidebar.tsx` | blueprint reskin | Modify |
-| `components/app-shell/WorkspaceSwitcher.tsx` | solid indigo avatar + mono plan | Modify |
-| `components/app-shell/SidebarProfile.tsx` | ink avatar | Modify |
-| `tests/dashboard-filter.test.ts` | unit | Create |
-| `tests/page-thumbnail.dom.test.tsx` | update for neutral fallback | Modify |
-| `tests/page-card.dom.test.tsx` | Live/Draft pill + view-live link | Create |
+| File                                         | Responsibility                                  | Action |
+| -------------------------------------------- | ----------------------------------------------- | ------ |
+| `app/globals.css`                            | add `--font-mono` (Geist Mono)                  | Modify |
+| `app/(app)/layout.tsx`                       | paper background                                | Modify |
+| `lib/dashboard/filter.ts`                    | pure `filterPages` + `DashboardFilter`          | Create |
+| `components/dashboard/SegmentedFilter.tsx`   | All/Live/Drafts control                         | Create |
+| `components/dashboard/PageThumbnail.tsx`     | fill 16:10 + neutral fallback (drop `gradient`) | Modify |
+| `components/dashboard/PageCard.tsx`          | card: thumb frame, pill, hover actions, meta    | Create |
+| `components/dashboard/Dashboard.tsx`         | orchestrator: header, toolbar, grid, tile       | Modify |
+| `components/app-shell/Sidebar.tsx`           | blueprint reskin                                | Modify |
+| `components/app-shell/WorkspaceSwitcher.tsx` | solid indigo avatar + mono plan                 | Modify |
+| `components/app-shell/SidebarProfile.tsx`    | ink avatar                                      | Modify |
+| `tests/dashboard-filter.test.ts`             | unit                                            | Create |
+| `tests/page-thumbnail.dom.test.tsx`          | update for neutral fallback                     | Modify |
+| `tests/page-card.dom.test.tsx`               | Live/Draft pill + view-live link                | Create |
 
 **Gate:** `npx tsc --noEmit` + `npm test`. Never run `next build`.
 
@@ -41,6 +41,7 @@ paper `#f7f8fa` · surface `#fff` · hairline `#e8eaed` · inset `#f1f3f5` · in
 ### Task 1: Foundation — mono font + paper background
 
 **Files:**
+
 - Modify: `app/globals.css` (the `@theme inline` block, lines 3-6)
 - Modify: `app/(app)/layout.tsx:28`
 
@@ -50,8 +51,9 @@ In `app/globals.css`, replace the `@theme inline { ... }` block (currently only 
 
 ```css
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 ```
@@ -83,6 +85,7 @@ git commit -m "feat(ui): paper background + Geist Mono token for blueprint redes
 ### Task 2: Pure page filter (TDD)
 
 **Files:**
+
 - Create: `lib/dashboard/filter.ts`
 - Test: `tests/dashboard-filter.test.ts`
 
@@ -111,7 +114,10 @@ describe("filterPages", () => {
     expect(filterPages(pages, "untitled", "all").map((p) => p.slug)).toEqual(["untitled-page"]);
   });
   it("filters live and drafts", () => {
-    expect(filterPages(pages, "", "live").map((p) => p.slug)).toEqual(["portfolio", "acme-landing"]);
+    expect(filterPages(pages, "", "live").map((p) => p.slug)).toEqual([
+      "portfolio",
+      "acme-landing",
+    ]);
     expect(filterPages(pages, "", "drafts").map((p) => p.slug)).toEqual(["untitled-page"]);
   });
   it("combines query and filter", () => {
@@ -143,8 +149,7 @@ export function filterPages<T extends FilterablePage>(
 ): T[] {
   const q = query.trim().toLowerCase();
   return pages.filter((p) => {
-    const matchQ =
-      !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
+    const matchQ = !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
     const matchF =
       filter === "all" ||
       (filter === "live" && p.published) ||
@@ -171,6 +176,7 @@ git commit -m "feat(dashboard): pure filterPages (search + live/drafts)"
 ### Task 3: SegmentedFilter control
 
 **Files:**
+
 - Create: `components/dashboard/SegmentedFilter.tsx`
 
 > Presentational; verified by `tsc` and reused in Task 8 (consistent with the codebase, which doesn't unit-test pure presentational components).
@@ -236,6 +242,7 @@ git commit -m "feat(dashboard): SegmentedFilter All/Live/Drafts control"
 ### Task 4: Reframe PageThumbnail (fill 16:10, neutral fallback)
 
 **Files:**
+
 - Modify: `components/dashboard/PageThumbnail.tsx` (full replace)
 - Modify: `tests/page-thumbnail.dom.test.tsx` (full replace)
 - Modify: `components/dashboard/Dashboard.tsx` (patch the current card usage so the project keeps compiling — superseded in Task 8)
@@ -251,19 +258,36 @@ import { PageThumbnail } from "@/components/dashboard/PageThumbnail";
 
 describe("PageThumbnail", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("no network in test"))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("no network in test"))),
+    );
   });
 
   it("shows the cached image (cache-busted) when one exists and it is fresh", () => {
     render(
-      <PageThumbnail pageId="p1" title="Portfolio" initialUrl="/uploads/thumbnails/p1.png" version={42} stale={false} />,
+      <PageThumbnail
+        pageId="p1"
+        title="Portfolio"
+        initialUrl="/uploads/thumbnails/p1.png"
+        version={42}
+        stale={false}
+      />,
     );
     expect(screen.getByRole("img").getAttribute("src")).toBe("/uploads/thumbnails/p1.png?v=42");
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("shows a neutral placeholder (no image) when there is none", () => {
-    render(<PageThumbnail pageId="p2" title="acme landing" initialUrl={null} version={null} stale={false} />);
+    render(
+      <PageThumbnail
+        pageId="p2"
+        title="acme landing"
+        initialUrl={null}
+        version={null}
+        stale={false}
+      />,
+    );
     expect(screen.queryByRole("img")).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -349,8 +373,9 @@ export function PageThumbnail({
 - [ ] **Step 4: Patch the current caller in `Dashboard.tsx` so it still compiles**
 
 In `components/dashboard/Dashboard.tsx`, find the card thumbnail block (currently a `<Link href={`/editor/${p.id}`} className="block">` wrapping `<div className="relative">` with `<PageThumbnail ... gradient={GRADIENTS[i % GRADIENTS.length]} ... />`). Make two minimal edits:
-  1. Change `<div className="relative">` to `<div className="relative aspect-[16/10]">`.
-  2. Remove the `gradient={GRADIENTS[i % GRADIENTS.length]}` prop from the `<PageThumbnail .../>` call.
+
+1. Change `<div className="relative">` to `<div className="relative aspect-[16/10]">`.
+2. Remove the `gradient={GRADIENTS[i % GRADIENTS.length]}` prop from the `<PageThumbnail .../>` call.
 
 Leave everything else in `Dashboard.tsx` as-is for now (the `GRADIENTS` constant becomes unused but that does not fail `tsc`; it is removed in Task 8).
 
@@ -371,6 +396,7 @@ git commit -m "feat(dashboard): reframe PageThumbnail to fill 16:10 with neutral
 ### Task 5: PageCard component (TDD)
 
 **Files:**
+
 - Create: `components/dashboard/PageCard.tsx`
 - Test: `tests/page-card.dom.test.tsx`
 
@@ -396,12 +422,21 @@ const base: DashboardPage = {
 
 describe("PageCard", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("no net"))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("no net"))),
+    );
   });
 
   it("shows a Live pill and a view-live link for a published page", () => {
     const { container } = render(
-      <PageCard page={base} index={0} deleting={false} onOpenSubmissions={() => {}} onDelete={() => {}} />,
+      <PageCard
+        page={base}
+        index={0}
+        deleting={false}
+        onOpenSubmissions={() => {}}
+        onDelete={() => {}}
+      />,
     );
     expect(screen.getByText("Live")).toBeInTheDocument();
     expect(container.querySelector('a[href="/p/portfolio"]')).not.toBeNull();
@@ -410,7 +445,13 @@ describe("PageCard", () => {
   it("shows a Draft pill and no view-live link for an unpublished page", () => {
     const draft: DashboardPage = { ...base, id: "p2", slug: "draft-x", published: false };
     const { container } = render(
-      <PageCard page={draft} index={0} deleting={false} onOpenSubmissions={() => {}} onDelete={() => {}} />,
+      <PageCard
+        page={draft}
+        index={0}
+        deleting={false}
+        onOpenSubmissions={() => {}}
+        onDelete={() => {}}
+      />,
     );
     expect(screen.getByText("Draft")).toBeInTheDocument();
     expect(container.querySelector('a[href="/p/draft-x"]')).toBeNull();
@@ -516,7 +557,10 @@ export function PageCard({
       className="group overflow-hidden rounded-[14px] border border-[#e8eaed] bg-white shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d6dae0] hover:shadow-lg"
     >
       {/* thumbnail */}
-      <Link href={`/editor/${page.id}`} className="relative block aspect-[16/10] border-b border-[#eef0f2]">
+      <Link
+        href={`/editor/${page.id}`}
+        className="relative block aspect-[16/10] border-b border-[#eef0f2]"
+      >
         <PageThumbnail
           pageId={page.id}
           title={page.title}
@@ -530,7 +574,12 @@ export function PageCard({
             page.published ? "bg-emerald-600/10 text-emerald-700" : "bg-zinc-400/10 text-zinc-500",
           )}
         >
-          <span className={cn("h-1.5 w-1.5 rounded-full", page.published ? "bg-emerald-500" : "bg-zinc-400")} />
+          <span
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              page.published ? "bg-emerald-500" : "bg-zinc-400",
+            )}
+          />
           {page.published ? "Live" : "Draft"}
         </span>
         <span className="pointer-events-none absolute inset-0 z-10 grid place-items-center bg-zinc-900/[0.04] opacity-0 transition-opacity group-hover:opacity-100">
@@ -600,6 +649,7 @@ git commit -m "feat(dashboard): PageCard with status pill + hover-reveal actions
 ### Task 6: Sidebar blueprint reskin
 
 **Files:**
+
 - Modify: `components/app-shell/Sidebar.tsx` (full replace — logic identical, styling only)
 
 - [ ] **Step 1: Replace the file**
@@ -624,9 +674,16 @@ import { CommandPalette } from "./CommandPalette";
 type WS = { id: string; name: string; slug: string; role: string };
 
 export function Sidebar({
-  collapsed: initialCollapsed, workspaces, activeWorkspaceId, role, user,
+  collapsed: initialCollapsed,
+  workspaces,
+  activeWorkspaceId,
+  role,
+  user,
 }: {
-  collapsed: boolean; workspaces: WS[]; activeWorkspaceId: string; role: string;
+  collapsed: boolean;
+  workspaces: WS[];
+  activeWorkspaceId: string;
+  role: string;
   user: { name: string; email: string };
 }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -635,21 +692,36 @@ export function Sidebar({
   const pathname = usePathname();
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen((o) => !o); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const toggle = () => { setCollapsed((c) => { setSidebarCookie(!c); return !c; }); };
+  const toggle = () => {
+    setCollapsed((c) => {
+      setSidebarCookie(!c);
+      return !c;
+    });
+  };
   const w = collapsed ? "w-[68px]" : "w-64";
-  const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   const rail = (
-    <div className={cn("flex h-full flex-col border-r border-[#e8eaed] bg-white text-[#4b5563] transition-[width] duration-200", w)}>
+    <div
+      className={cn(
+        "flex h-full flex-col border-r border-[#e8eaed] bg-white text-[#4b5563] transition-[width] duration-200",
+        w,
+      )}
+    >
       <div className="flex items-center gap-2 px-3 py-3.5">
         <WorkspaceSwitcher collapsed={collapsed} workspaces={workspaces} activeId={active?.id} />
       </div>
@@ -657,17 +729,28 @@ export function Sidebar({
         <button
           onClick={() => setPaletteOpen(true)}
           title={collapsed ? "Search (⌘K)" : undefined}
-          className={cn("flex w-full items-center gap-2.5 rounded-[9px] bg-[#f1f3f5] px-2.5 py-2 text-sm text-[#9aa1ac] transition-colors hover:bg-[#e9ecef]", collapsed && "justify-center bg-transparent hover:bg-[#f1f3f5]")}
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-[9px] bg-[#f1f3f5] px-2.5 py-2 text-sm text-[#9aa1ac] transition-colors hover:bg-[#e9ecef]",
+            collapsed && "justify-center bg-transparent hover:bg-[#f1f3f5]",
+          )}
         >
           <Search size={16} />
           {!collapsed && <span className="flex-1 text-left">Search</span>}
-          {!collapsed && <kbd className="rounded-[5px] border border-[#d6dae0] bg-[#fbfbfc] px-1.5 py-0.5 font-mono text-[10.5px] text-[#9aa1ac]">⌘K</kbd>}
+          {!collapsed && (
+            <kbd className="rounded-[5px] border border-[#d6dae0] bg-[#fbfbfc] px-1.5 py-0.5 font-mono text-[10.5px] text-[#9aa1ac]">
+              ⌘K
+            </kbd>
+          )}
         </button>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         {NAV_GROUPS.map((g) => (
           <div key={g.title} className="mb-4">
-            {!collapsed && <p className="px-2.5 pb-1.5 pt-2 text-[10.5px] font-bold uppercase tracking-[0.13em] text-[#aeb4bd]">{g.title}</p>}
+            {!collapsed && (
+              <p className="px-2.5 pb-1.5 pt-2 text-[10.5px] font-bold uppercase tracking-[0.13em] text-[#aeb4bd]">
+                {g.title}
+              </p>
+            )}
             <div className="space-y-0.5">
               {g.items.map((it) => {
                 const Icon = it.icon;
@@ -686,8 +769,14 @@ export function Sidebar({
                       collapsed && act && "border-transparent bg-indigo-50 text-indigo-600",
                     )}
                   >
-                    {act && !collapsed && <span className="absolute -left-px bottom-2 top-2 w-[3px] rounded-full bg-indigo-600" />}
-                    <Icon size={17} strokeWidth={act ? 2.1 : 1.8} className={cn(act && "text-indigo-600")} />
+                    {act && !collapsed && (
+                      <span className="absolute -left-px bottom-2 top-2 w-[3px] rounded-full bg-indigo-600" />
+                    )}
+                    <Icon
+                      size={17}
+                      strokeWidth={act ? 2.1 : 1.8}
+                      className={cn(act && "text-indigo-600")}
+                    />
                     {!collapsed && it.label}
                   </Link>
                 );
@@ -702,11 +791,13 @@ export function Sidebar({
           title={collapsed ? "Settings" : undefined}
           className={cn(
             "flex items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-[13.5px] font-medium text-[#4b5563] transition-colors hover:bg-black/[0.03] hover:text-[#111827]",
-            isActive("/settings") && "border border-[#e8eaed] bg-white font-semibold text-[#111827] shadow-xs",
+            isActive("/settings") &&
+              "border border-[#e8eaed] bg-white font-semibold text-[#111827] shadow-xs",
             collapsed && "justify-center",
           )}
         >
-          <Settings size={17} />{!collapsed && "Settings"}
+          <Settings size={17} />
+          {!collapsed && "Settings"}
         </Link>
         <SidebarProfile collapsed={collapsed} user={user} />
       </div>
@@ -729,15 +820,36 @@ export function Sidebar({
         </div>
       </aside>
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-[#e8eaed] bg-white px-4 py-2.5 md:hidden">
-        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 hover:bg-[#f1f3f5]"><Menu size={20} /></button>
+        <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 hover:bg-[#f1f3f5]">
+          <Menu size={20} />
+        </button>
         <span className="text-sm font-semibold text-[#111827]">{active?.name}</span>
       </div>
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div className="fixed inset-0 z-40 md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div
+            className="fixed inset-0 z-40 md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-            <motion.div className="absolute left-0 top-0 h-full" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: "spring", stiffness: 400, damping: 36 }}>
-              <div className="relative h-full">{rail}<button onClick={() => setMobileOpen(false)} className="absolute right-3 top-3 text-[#9aa1ac]"><X size={18} /></button></div>
+            <motion.div
+              className="absolute left-0 top-0 h-full"
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: "spring", stiffness: 400, damping: 36 }}
+            >
+              <div className="relative h-full">
+                {rail}
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="absolute right-3 top-3 text-[#9aa1ac]"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -765,6 +877,7 @@ git commit -m "feat(shell): blueprint sidebar reskin (white-card active item, mo
 ### Task 7: WorkspaceSwitcher + SidebarProfile reskin
 
 **Files:**
+
 - Modify: `components/app-shell/WorkspaceSwitcher.tsx` (full replace)
 - Modify: `components/app-shell/SidebarProfile.tsx` (full replace)
 
@@ -783,7 +896,15 @@ import { cn } from "@/lib/utils";
 
 type WS = { id: string; name: string; slug: string; role: string };
 
-export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collapsed: boolean; workspaces: WS[]; activeId?: string }) {
+export function WorkspaceSwitcher({
+  collapsed,
+  workspaces,
+  activeId,
+}: {
+  collapsed: boolean;
+  workspaces: WS[];
+  activeId?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -798,33 +919,62 @@ export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collaps
   async function switchTo(id: string) {
     if (id === active?.id) return setOpen(false);
     setBusy(true);
-    await fetch("/api/workspaces/switch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) });
+    await fetch("/api/workspaces/switch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
     router.refresh();
-    setBusy(false); setOpen(false);
+    setBusy(false);
+    setOpen(false);
   }
 
   async function create() {
     const n = name.trim();
     if (!n) return;
-    setBusy(true); setErr("");
-    const res = await fetch("/api/workspaces", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: n }) });
+    setBusy(true);
+    setErr("");
+    const res = await fetch("/api/workspaces", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: n }),
+    });
     const ws = await res.json().catch(() => ({}));
     if (res.ok && ws?.id) {
-      await fetch("/api/workspaces/switch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: ws.id }) });
+      await fetch("/api/workspaces/switch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: ws.id }),
+      });
       router.refresh();
-      setBusy(false); setCreating(false); setName(""); setOpen(false);
+      setBusy(false);
+      setCreating(false);
+      setName("");
+      setOpen(false);
     } else {
-      setBusy(false); setErr(ws?.error || "Could not create workspace");
+      setBusy(false);
+      setErr(ws?.error || "Could not create workspace");
     }
   }
 
   return (
     <div className="relative w-full" onClick={(e) => e.stopPropagation()}>
-      <button onClick={() => setOpen((o) => !o)} title={collapsed ? active?.name : undefined} className={cn("flex w-full items-center gap-2.5 rounded-[10px] border border-[#e8eaed] px-2 py-1.5 hover:bg-[#f7f8fa]", collapsed && "justify-center border-transparent px-1.5 hover:bg-[#f1f3f5]")}>
-        <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-[0.02em] text-white">{initials}</span>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title={collapsed ? active?.name : undefined}
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-[10px] border border-[#e8eaed] px-2 py-1.5 hover:bg-[#f7f8fa]",
+          collapsed && "justify-center border-transparent px-1.5 hover:bg-[#f1f3f5]",
+        )}
+      >
+        <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold tracking-[0.02em] text-white">
+          {initials}
+        </span>
         {!collapsed && (
           <span className="min-w-0 flex-1 text-left">
-            <span className="block truncate text-[13.5px] font-semibold leading-tight text-[#111827]">{active?.name}</span>
+            <span className="block truncate text-[13.5px] font-semibold leading-tight text-[#111827]">
+              {active?.name}
+            </span>
             <span className="block font-mono text-[11px] text-[#9aa1ac]">Free plan</span>
           </span>
         )}
@@ -832,10 +982,18 @@ export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collaps
       </button>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 w-60 rounded-xl border border-[#e8eaed] bg-white p-1 shadow-2xl">
-          <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#aeb4bd]">Workspaces</p>
+          <p className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#aeb4bd]">
+            Workspaces
+          </p>
           {workspaces.map((w) => (
-            <button key={w.id} onClick={() => switchTo(w.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-[#4b5563] hover:bg-[#f1f3f5]">
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-indigo-600 text-[10px] font-bold text-white">{w.name.slice(0, 2).toUpperCase()}</span>
+            <button
+              key={w.id}
+              onClick={() => switchTo(w.id)}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-[#4b5563] hover:bg-[#f1f3f5]"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded bg-indigo-600 text-[10px] font-bold text-white">
+                {w.name.slice(0, 2).toUpperCase()}
+              </span>
               <span className="min-w-0 flex-1 truncate text-left">{w.name}</span>
               <span className="text-[10px] uppercase text-[#aeb4bd]">{w.role}</span>
               {w.id === active?.id && <Check size={14} className="text-indigo-600" />}
@@ -844,15 +1002,38 @@ export function WorkspaceSwitcher({ collapsed, workspaces, activeId }: { collaps
           <div className="my-1 border-t border-[#f1f3f5]" />
           {creating ? (
             <div className="p-1.5">
-              <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()} placeholder="Workspace name" className="w-full rounded-lg border border-[#d6dae0] px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400" />
+              <input
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && create()}
+                placeholder="Workspace name"
+                className="w-full rounded-lg border border-[#d6dae0] px-2.5 py-1.5 text-sm outline-none focus:border-indigo-400"
+              />
               <div className="mt-1.5 flex gap-1.5">
-                <button onClick={create} disabled={busy} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-zinc-900 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{busy ? <Loader2 size={13} className="animate-spin" /> : "Create"}</button>
-                <button onClick={() => setCreating(false)} className="rounded-lg px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f1f3f5]">Cancel</button>
+                <button
+                  onClick={create}
+                  disabled={busy}
+                  className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-zinc-900 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {busy ? <Loader2 size={13} className="animate-spin" /> : "Create"}
+                </button>
+                <button
+                  onClick={() => setCreating(false)}
+                  className="rounded-lg px-2 py-1.5 text-xs text-[#6b7280] hover:bg-[#f1f3f5]"
+                >
+                  Cancel
+                </button>
               </div>
               {err && <p className="mt-1.5 text-xs text-red-600">{err}</p>}
             </div>
           ) : (
-            <button onClick={() => setCreating(true)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"><Plus size={15} /> New workspace</button>
+            <button
+              onClick={() => setCreating(true)}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+            >
+              <Plus size={15} /> New workspace
+            </button>
           )}
         </div>
       )}
@@ -875,7 +1056,13 @@ import { useRouter } from "next/navigation";
 import { LogOut, UserCog, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function SidebarProfile({ collapsed, user }: { collapsed: boolean; user: { name: string; email: string } }) {
+export function SidebarProfile({
+  collapsed,
+  user,
+}: {
+  collapsed: boolean;
+  user: { name: string; email: string };
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [out, setOut] = useState(false);
@@ -886,23 +1073,55 @@ export function SidebarProfile({ collapsed, user }: { collapsed: boolean; user: 
   async function logout() {
     setOut(true);
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.replace("/login"); router.refresh();
+    router.replace("/login");
+    router.refresh();
   }
 
   return (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <button onClick={() => setOpen((o) => !o)} title={collapsed ? (user.name || user.email) : undefined} className={cn("flex w-full items-center gap-2.5 rounded-[9px] px-2 py-1.5 hover:bg-black/[0.03]", collapsed && "justify-center")}>
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[11px] font-bold text-white">{initials}</span>
-        {!collapsed && <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-[#4b5563]">{user.name || user.email}</span>}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title={collapsed ? user.name || user.email : undefined}
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-[9px] px-2 py-1.5 hover:bg-black/[0.03]",
+          collapsed && "justify-center",
+        )}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[11px] font-bold text-white">
+          {initials}
+        </span>
+        {!collapsed && (
+          <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-[#4b5563]">
+            {user.name || user.email}
+          </span>
+        )}
       </button>
       {open && (
         <div className="absolute bottom-full left-0 z-50 mb-1 w-56 rounded-xl border border-[#e8eaed] bg-white p-1 shadow-2xl">
           <div className="border-b border-[#f1f3f5] px-3 py-2.5">
-            <p className="truncate text-sm font-semibold text-[#111827]">{user.name || "Your account"}</p>
+            <p className="truncate text-sm font-semibold text-[#111827]">
+              {user.name || "Your account"}
+            </p>
             <p className="truncate text-xs text-[#9aa1ac]">{user.email}</p>
           </div>
-          <Link href="/account" className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[#4b5563] hover:bg-[#f1f3f5]"><UserCog size={15} className="text-[#9aa1ac]" /> Account settings</Link>
-          <button onClick={logout} disabled={out} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] font-medium text-[#4b5563] hover:bg-red-50 hover:text-red-600 disabled:opacity-60">{out ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} className="text-[#9aa1ac]" />} Sign out</button>
+          <Link
+            href="/account"
+            className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-[#4b5563] hover:bg-[#f1f3f5]"
+          >
+            <UserCog size={15} className="text-[#9aa1ac]" /> Account settings
+          </Link>
+          <button
+            onClick={logout}
+            disabled={out}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] font-medium text-[#4b5563] hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
+          >
+            {out ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <LogOut size={15} className="text-[#9aa1ac]" />
+            )}{" "}
+            Sign out
+          </button>
         </div>
       )}
     </div>
@@ -927,6 +1146,7 @@ git commit -m "feat(shell): reskin workspace switcher + profile (solid indigo / 
 ### Task 8: Rebuild the Dashboard main area
 
 **Files:**
+
 - Modify: `components/dashboard/Dashboard.tsx`
 
 This replaces the import block and the entire `Dashboard` function body. The helper components defined LOWER in the file (`AI_EXAMPLES`, `AiPageModal`, `EmptyState`, `TemplateModal`) are **kept unchanged**.
@@ -1064,9 +1284,12 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
               <span>/</span>
               <span className="text-[#4b5563]">Pages</span>
             </div>
-            <h1 className="text-[32px] font-bold leading-none tracking-tight text-[#111827]">Your pages</h1>
+            <h1 className="text-[32px] font-bold leading-none tracking-tight text-[#111827]">
+              Your pages
+            </h1>
             <p className="mt-2.5 text-[13.5px] text-[#6b7280]">
-              {pages.length} {pages.length === 1 ? "page" : "pages"} · {liveCount} live · create, edit and publish in one click
+              {pages.length} {pages.length === 1 ? "page" : "pages"} · {liveCount} live · create,
+              edit and publish in one click
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -1115,7 +1338,10 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
               <div className="py-20 text-center">
                 <p className="text-[15px] font-semibold text-[#111827]">No pages match “{query}”</p>
                 <button
-                  onClick={() => { setQuery(""); setFilter("all"); }}
+                  onClick={() => {
+                    setQuery("");
+                    setFilter("all");
+                  }}
                   className="mt-2 text-[13.5px] font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
                 >
                   Clear filters
@@ -1152,13 +1378,21 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
 
       <AnimatePresence>
         {modal && (
-          <TemplateModal creating={creating} onClose={() => !creating && setModal(false)} onPick={create} />
+          <TemplateModal
+            creating={creating}
+            onClose={() => !creating && setModal(false)}
+            onPick={create}
+          />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {aiModal && (
-          <AiPageModal onClose={() => setAiModal(false)} onGenerate={generatePage} onDone={(id) => router.push(`/editor/${id}`)} />
+          <AiPageModal
+            onClose={() => setAiModal(false)}
+            onGenerate={generatePage}
+            onDone={(id) => router.push(`/editor/${id}`)}
+          />
         )}
       </AnimatePresence>
 
@@ -1205,6 +1439,7 @@ git commit -m "feat(dashboard): blueprint header, segmented filter, card grid + 
 ## Self-Review
 
 **Spec coverage:**
+
 - Mono font + paper bg → Task 1. ✅
 - `filterPages` → Task 2; `SegmentedFilter` → Task 3. ✅
 - Real-screenshot 16:10 thumbnail + neutral fallback → Task 4 (PageThumbnail) + Task 5 (PageCard frame). ✅

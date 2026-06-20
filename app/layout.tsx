@@ -21,7 +21,8 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "Pagecraft Studio — Visual Page Builder",
-  description: "The enterprise visual page builder. Design, publish and export beautiful pages with drag and drop.",
+  description:
+    "The enterprise visual page builder. Design, publish and export beautiful pages with drag and drop.",
 };
 
 export default function RootLayout({

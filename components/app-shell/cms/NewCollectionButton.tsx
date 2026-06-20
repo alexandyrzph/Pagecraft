@@ -24,6 +24,8 @@ export function NewCollectionButton() {
     }
   }
   return (
-    <Button variant="neutral" onPress={create} isLoading={busy} leadingIcon={<Plus size={15} />}>New collection</Button>
+    <Button variant="neutral" onPress={create} isLoading={busy} leadingIcon={<Plus size={15} />}>
+      New collection
+    </Button>
   );
 }

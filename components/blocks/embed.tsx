@@ -17,11 +17,7 @@ export function EmbedBlock({ block, editable, style, className, id }: BlockRende
   if (!html.trim()) {
     if (editable) {
       return (
-        <div
-          id={id}
-          className={cn("w-full", className)}
-          style={style}
-        >
+        <div id={id} className={cn("w-full", className)} style={style}>
           <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center text-zinc-400">
             <Code2 size={20} />
             <p className="text-sm font-medium text-zinc-500">Embed / HTML</p>
@@ -70,4 +66,3 @@ export function CodeBlock({ block, style, className, id }: BlockRenderProps) {
     </div>
   );
 }
-

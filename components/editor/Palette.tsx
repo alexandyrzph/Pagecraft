@@ -32,7 +32,7 @@ function PaletteItem({ type }: { type: string }) {
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
         "group flex h-[72px] cursor-grab touch-none flex-col items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-1 text-center shadow-xs transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 active:cursor-grabbing",
-        isDragging && "opacity-40"
+        isDragging && "opacity-40",
       )}
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600">
@@ -91,7 +91,10 @@ export function Palette() {
                 className="flex w-full items-center justify-between rounded-md px-1 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400 transition-colors hover:text-zinc-600"
               >
                 {cat.name}
-                <ChevronDown size={13} className={cn("transition-transform", !open && "-rotate-90")} />
+                <ChevronDown
+                  size={13}
+                  className={cn("transition-transform", !open && "-rotate-90")}
+                />
               </button>
               <AnimatePresence initial={false}>
                 {open && (

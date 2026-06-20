@@ -17,10 +17,12 @@
 ## File Structure
 
 **Create:**
+
 - `components/dashboard/TemplatePreview.tsx` — renders one template's blocks as a scaled, clipped, non-interactive thumbnail (or an empty-canvas placeholder when the tree is empty).
 - `tests/template-preview.dom.test.tsx` — dom test: real content renders for a template; placeholder renders for an empty tree.
 
 **Modify:**
+
 - `components/dashboard/Dashboard.tsx` — `TemplateModal`: add the preview to each card, restructure the card (`button` → `div` + overlay `button`), widen the modal, build template trees once via `useMemo`.
 
 ---
@@ -28,6 +30,7 @@
 ## Task 1: TemplatePreview component
 
 **Files:**
+
 - Create: `components/dashboard/TemplatePreview.tsx`
 - Test: `tests/template-preview.dom.test.tsx`
 
@@ -108,7 +111,9 @@ export function TemplatePreview({ blocks }: { blocks: Block[] }) {
       ref={boxRef}
       className="pointer-events-none aspect-[16/10] w-full overflow-hidden rounded-lg border border-zinc-200 bg-white"
     >
-      <div style={{ width: STAGE_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+      <div
+        style={{ width: STAGE_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
         <BlockRenderer
           tree={blocks}
           viewport="desktop"
@@ -143,6 +148,7 @@ git commit -m "feat(dashboard): TemplatePreview — scaled live thumbnail of a t
 ## Task 2: Wire previews into the template chooser modal
 
 **Files:**
+
 - Modify: `components/dashboard/Dashboard.tsx` (the `TemplateModal` function, currently at ~`335-366`, and its React import).
 
 - [ ] **Step 1: Add imports**
@@ -188,10 +194,14 @@ function TemplateModal({
     <Modal open={open} onClose={onClose} dismissible={!creating} className="max-w-3xl p-6">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-900">Choose a starting point</h2>
+          <h2 className="text-lg font-bold tracking-tight text-zinc-900">
+            Choose a starting point
+          </h2>
           <p className="text-sm text-zinc-500">Pick a template or start from scratch.</p>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}><X size={18} /></Button>
+        <Button variant="ghost" size="icon" aria-label="Close" onPress={onClose}>
+          <X size={18} />
+        </Button>
       </div>
       <div className="grid grid-cols-2 gap-3">
         {built.map(({ template: t, blocks }) => (
@@ -206,7 +216,9 @@ function TemplateModal({
           >
             <TemplatePreview blocks={blocks} />
             <div className="flex flex-col gap-1 p-4">
-              <span className="font-semibold tracking-tight text-zinc-900 group-hover:text-indigo-700">{t.name}</span>
+              <span className="font-semibold tracking-tight text-zinc-900 group-hover:text-indigo-700">
+                {t.name}
+              </span>
               <span className="text-xs leading-snug text-zinc-500">{t.description}</span>
             </div>
             <button
@@ -250,6 +262,7 @@ Expected: all pass (the Task 1 tests + the existing suite), no regressions.
 - [ ] **Step 5: Manual visual check (the modal isn't unit-tested — it needs editor/router context)**
 
 With the dev server running, open the dashboard, click **New page**, and confirm:
+
 - Each non-blank card shows a real, scaled page preview (Landing/SaaS/Portfolio look distinct — gradients/colors visible).
 - The **Blank** card shows the dashed "Empty canvas" placeholder.
 - Clicking a card still creates the page (the overlay button works); the per-card spinner still appears while creating; Esc/close still work.
@@ -267,6 +280,7 @@ git commit -m "feat(dashboard): show live template previews in the chooser modal
 ## Self-Review
 
 **Spec coverage:**
+
 - Live mini-render via `BlockRenderer` (`animate=false`, `inlineStyles=true`, empty components/collections) → Task 1, Step 3 ✓
 - Fixed 1280px stage + `transform: scale()` + clipped fixed-aspect box, `pointer-events-none` → Task 1, Step 3 ✓
 - Blank → empty-canvas placeholder (dashed + Plus + label) → Task 1, Step 3 ✓

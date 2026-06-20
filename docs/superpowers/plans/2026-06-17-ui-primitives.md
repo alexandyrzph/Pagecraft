@@ -17,6 +17,7 @@
 ## File Structure
 
 **Create:**
+
 - `vitest.config.ts` — vitest config (jsdom env, react plugin, `@` alias, setup file)
 - `vitest.setup.ts` — jest-dom matchers, `cleanup()`, `matchMedia`/`ResizeObserver` polyfills
 - `components/ui/Button.tsx` — `Button` (variants/sizes/loading/icons)
@@ -33,6 +34,7 @@
 - `components/ui/__tests__/*.test.tsx` — one test file per primitive
 
 **Modify:**
+
 - `app/globals.css` — add a `@theme` token block + global overlay enter/exit keyframes
 - `components/ui/Modal.tsx` — wrap content in `FocusScope` (props unchanged)
 - `components/ui/dialog-provider.tsx` — render `Button` primitives instead of raw `<button>`
@@ -45,6 +47,7 @@
 ### Task 1: Test harness + dependencies
 
 **Files:**
+
 - Modify: `package.json` (via npm install)
 - Create: `vitest.config.ts`
 - Create: `vitest.setup.ts`
@@ -100,14 +103,25 @@ afterEach(() => cleanup());
 if (!window.matchMedia) {
   // @ts-expect-error minimal stub
   window.matchMedia = (query: string) => ({
-    matches: false, media: query, onchange: null,
-    addListener() {}, removeListener() {},
-    addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; },
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent() {
+      return false;
+    },
   });
 }
 if (!globalThis.ResizeObserver) {
   // @ts-expect-error minimal stub
-  globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
 }
 ```
 
@@ -143,6 +157,7 @@ git commit -m "test: vitest+testing-library harness, install react-aria"
 ### Task 2: Token layer + overlay animation
 
 **Files:**
+
 - Modify: `app/globals.css`
 
 - [ ] **Step 1: Add the semantic `@theme` token block**
@@ -185,10 +200,32 @@ Append after the existing shadow `@theme` block (around line 19) in `app/globals
 react-aria sets `data-entering` / `data-exiting` on overlays during transitions. Add to `app/globals.css` (end of file) so every overlay animates consistently with no per-component code:
 
 ```css
-@keyframes pc-overlay-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
-@keyframes pc-overlay-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.96); } }
-[data-entering] { animation: pc-overlay-in 0.12s ease-out; }
-[data-exiting]  { animation: pc-overlay-out 0.10s ease-in; }
+@keyframes pc-overlay-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pc-overlay-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+[data-entering] {
+  animation: pc-overlay-in 0.12s ease-out;
+}
+[data-exiting] {
+  animation: pc-overlay-out 0.1s ease-in;
+}
 ```
 
 - [ ] **Step 3: Verify the tokens compile into CSS vars**
@@ -212,6 +249,7 @@ git commit -m "feat(ui): semantic @theme tokens + overlay animation"
 ### Task 3: Button
 
 **Files:**
+
 - Create: `components/ui/Button.tsx`
 - Test: `components/ui/__tests__/Button.test.tsx`
 
@@ -278,8 +316,15 @@ export interface ButtonProps extends RACButtonProps {
 }
 
 export function Button({
-  variant = "primary", size = "md", isLoading = false,
-  leadingIcon, trailingIcon, className, children, isDisabled, ...props
+  variant = "primary",
+  size = "md",
+  isLoading = false,
+  leadingIcon,
+  trailingIcon,
+  className,
+  children,
+  isDisabled,
+  ...props
 }: ButtonProps) {
   return (
     <RACButton
@@ -290,7 +335,8 @@ export function Button({
           "inline-flex items-center justify-center rounded-control font-semibold outline-none transition-colors",
           "focus-visible:ring-4 focus-visible:ring-brand-100",
           "disabled:pointer-events-none disabled:opacity-50",
-          variantStyles[variant], sizeStyles[size],
+          variantStyles[variant],
+          sizeStyles[size],
           typeof className === "function" ? className(rs) : className,
         )
       }
@@ -321,6 +367,7 @@ git commit -m "feat(ui): Button primitive"
 ### Task 4: TextField
 
 **Files:**
+
 - Create: `components/ui/TextField.tsx`
 - Test: `components/ui/__tests__/TextField.test.tsx`
 
@@ -354,8 +401,12 @@ Expected: FAIL — `Cannot find module '../TextField'`.
 ```tsx
 "use client";
 import {
-  TextField as RACTextField, type TextFieldProps as RACTextFieldProps,
-  Label, Input, Text, FieldError,
+  TextField as RACTextField,
+  type TextFieldProps as RACTextFieldProps,
+  Label,
+  Input,
+  Text,
+  FieldError,
 } from "react-aria-components";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -367,7 +418,14 @@ export interface TextFieldProps extends RACTextFieldProps {
   placeholder?: string;
 }
 
-export function TextField({ label, description, errorMessage, placeholder, className, ...props }: TextFieldProps) {
+export function TextField({
+  label,
+  description,
+  errorMessage,
+  placeholder,
+  className,
+  ...props
+}: TextFieldProps) {
   return (
     <RACTextField
       {...props}
@@ -384,7 +442,11 @@ export function TextField({ label, description, errorMessage, placeholder, class
           "data-[invalid]:border-danger-500 disabled:opacity-50",
         )}
       />
-      {description && <Text slot="description" className="text-xs text-fg-muted">{description}</Text>}
+      {description && (
+        <Text slot="description" className="text-xs text-fg-muted">
+          {description}
+        </Text>
+      )}
       <FieldError className="text-xs text-danger-600">{errorMessage}</FieldError>
     </RACTextField>
   );
@@ -407,6 +469,7 @@ git commit -m "feat(ui): TextField primitive"
 ### Task 5: Textarea
 
 **Files:**
+
 - Create: `components/ui/Textarea.tsx`
 - Test: `components/ui/__tests__/Textarea.test.tsx`
 
@@ -438,8 +501,11 @@ Expected: FAIL — module not found.
 ```tsx
 "use client";
 import {
-  TextField as RACTextField, type TextFieldProps as RACTextFieldProps,
-  Label, TextArea, FieldError,
+  TextField as RACTextField,
+  type TextFieldProps as RACTextFieldProps,
+  Label,
+  TextArea,
+  FieldError,
 } from "react-aria-components";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -451,7 +517,14 @@ export interface TextareaProps extends RACTextFieldProps {
   errorMessage?: string;
 }
 
-export function Textarea({ label, placeholder, rows = 4, errorMessage, className, ...props }: TextareaProps) {
+export function Textarea({
+  label,
+  placeholder,
+  rows = 4,
+  errorMessage,
+  className,
+  ...props
+}: TextareaProps) {
   return (
     <RACTextField
       {...props}
@@ -491,6 +564,7 @@ git commit -m "feat(ui): Textarea primitive"
 ### Task 6: Select
 
 **Files:**
+
 - Create: `components/ui/Select.tsx`
 - Test: `components/ui/__tests__/Select.test.tsx`
 
@@ -502,7 +576,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { Select } from "../Select";
 
-const items = [{ id: "admin", label: "Admin" }, { id: "editor", label: "Editor" }];
+const items = [
+  { id: "admin", label: "Admin" },
+  { id: "editor", label: "Editor" },
+];
 
 describe("Select", () => {
   it("opens and reports the chosen key", async () => {
@@ -525,14 +602,24 @@ Expected: FAIL — module not found.
 ```tsx
 "use client";
 import {
-  Select as RACSelect, type SelectProps as RACSelectProps,
-  Label, Button, SelectValue, Popover, ListBox, ListBoxItem, type Key,
+  Select as RACSelect,
+  type SelectProps as RACSelectProps,
+  Label,
+  Button,
+  SelectValue,
+  Popover,
+  ListBox,
+  ListBoxItem,
+  type Key,
 } from "react-aria-components";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
-export interface SelectOption { id: Key; label: string }
+export interface SelectOption {
+  id: Key;
+  label: string;
+}
 
 export interface SelectProps extends Omit<RACSelectProps<SelectOption>, "children"> {
   label?: ReactNode;
@@ -540,7 +627,13 @@ export interface SelectProps extends Omit<RACSelectProps<SelectOption>, "childre
   placeholder?: string;
 }
 
-export function Select({ label, items, placeholder = "Select…", className, ...props }: SelectProps) {
+export function Select({
+  label,
+  items,
+  placeholder = "Select…",
+  className,
+  ...props
+}: SelectProps) {
   return (
     <RACSelect
       {...props}
@@ -597,6 +690,7 @@ git commit -m "feat(ui): Select primitive"
 ### Task 7: Menu
 
 **Files:**
+
 - Create: `components/ui/Menu.tsx`
 - Test: `components/ui/__tests__/Menu.test.tsx`
 
@@ -620,7 +714,7 @@ describe("Menu", () => {
           <MenuItemRow id="dup">Duplicate</MenuItemRow>
           <MenuItemRow id="del">Delete</MenuItemRow>
         </Menu>
-      </MenuTrigger>
+      </MenuTrigger>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Open" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Duplicate" }));
@@ -639,7 +733,10 @@ Expected: FAIL — module not found.
 ```tsx
 "use client";
 import {
-  Menu as RACMenu, MenuItem, Popover, type MenuProps as RACMenuProps,
+  Menu as RACMenu,
+  MenuItem,
+  Popover,
+  type MenuProps as RACMenuProps,
 } from "react-aria-components";
 import { cn } from "@/lib/utils";
 
@@ -684,6 +781,7 @@ git commit -m "feat(ui): Menu primitive"
 ### Task 8: Popover (low-level)
 
 **Files:**
+
 - Create: `components/ui/Popover.tsx`
 - Test: `components/ui/__tests__/Popover.test.tsx`
 
@@ -705,7 +803,7 @@ describe("Popover", () => {
         <Popover>
           <Dialog className="p-2 outline-none">Swatches</Dialog>
         </Popover>
-      </DialogTrigger>
+      </DialogTrigger>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Pick" }));
     expect(await screen.findByText("Swatches")).toBeInTheDocument();
@@ -757,6 +855,7 @@ git commit -m "feat(ui): low-level Popover primitive"
 ### Task 9: Checkbox
 
 **Files:**
+
 - Create: `components/ui/Checkbox.tsx`
 - Test: `components/ui/__tests__/Checkbox.test.tsx`
 
@@ -787,7 +886,10 @@ Expected: FAIL — module not found.
 
 ```tsx
 "use client";
-import { Checkbox as RACCheckbox, type CheckboxProps as RACCheckboxProps } from "react-aria-components";
+import {
+  Checkbox as RACCheckbox,
+  type CheckboxProps as RACCheckboxProps,
+} from "react-aria-components";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -800,7 +902,10 @@ export function Checkbox({ className, children, ...props }: CheckboxProps) {
   return (
     <RACCheckbox
       {...props}
-      className={cn("group flex items-center gap-2 text-sm text-fg", typeof className === "string" ? className : undefined)}
+      className={cn(
+        "group flex items-center gap-2 text-sm text-fg",
+        typeof className === "string" ? className : undefined,
+      )}
     >
       {({ isSelected, isIndeterminate }) => (
         <>
@@ -811,7 +916,11 @@ export function Checkbox({ className, children, ...props }: CheckboxProps) {
               "group-data-[focus-visible]:ring-4 group-data-[focus-visible]:ring-brand-100",
             )}
           >
-            {isIndeterminate ? <Minus className="size-3 text-white" /> : isSelected ? <Check className="size-3 text-white" /> : null}
+            {isIndeterminate ? (
+              <Minus className="size-3 text-white" />
+            ) : isSelected ? (
+              <Check className="size-3 text-white" />
+            ) : null}
           </span>
           {children}
         </>
@@ -837,6 +946,7 @@ git commit -m "feat(ui): Checkbox primitive"
 ### Task 10: Switch
 
 **Files:**
+
 - Create: `components/ui/Switch.tsx`
 - Test: `components/ui/__tests__/Switch.test.tsx`
 
@@ -879,7 +989,10 @@ export function Switch({ className, children, ...props }: SwitchProps) {
   return (
     <RACSwitch
       {...props}
-      className={cn("group flex items-center gap-2 text-sm text-fg", typeof className === "string" ? className : undefined)}
+      className={cn(
+        "group flex items-center gap-2 text-sm text-fg",
+        typeof className === "string" ? className : undefined,
+      )}
     >
       <span
         className={cn(
@@ -911,6 +1024,7 @@ git commit -m "feat(ui): Switch primitive"
 ### Task 11: RadioGroup
 
 **Files:**
+
 - Create: `components/ui/RadioGroup.tsx`
 - Test: `components/ui/__tests__/RadioGroup.test.tsx`
 
@@ -929,7 +1043,7 @@ describe("RadioGroup", () => {
       <RadioGroup label="Plan" onChange={onChange}>
         <Radio value="free">Free</Radio>
         <Radio value="pro">Pro</Radio>
-      </RadioGroup>
+      </RadioGroup>,
     );
     await userEvent.click(screen.getByRole("radio", { name: "Pro" }));
     expect(onChange).toHaveBeenCalledWith("pro");
@@ -947,8 +1061,11 @@ Expected: FAIL — module not found.
 ```tsx
 "use client";
 import {
-  RadioGroup as RACRadioGroup, type RadioGroupProps as RACRadioGroupProps,
-  Radio as RACRadio, type RadioProps as RACRadioProps, Label,
+  RadioGroup as RACRadioGroup,
+  type RadioGroupProps as RACRadioGroupProps,
+  Radio as RACRadio,
+  type RadioProps as RACRadioProps,
+  Label,
 } from "react-aria-components";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -973,7 +1090,10 @@ export function Radio({ className, children, ...props }: RACRadioProps) {
   return (
     <RACRadio
       {...props}
-      className={cn("group flex items-center gap-2 text-sm text-fg", typeof className === "string" ? className : undefined)}
+      className={cn(
+        "group flex items-center gap-2 text-sm text-fg",
+        typeof className === "string" ? className : undefined,
+      )}
     >
       <span
         className={cn(
@@ -1005,6 +1125,7 @@ git commit -m "feat(ui): RadioGroup primitive"
 ### Task 12: Tooltip
 
 **Files:**
+
 - Create: `components/ui/Tooltip.tsx`
 - Test: `components/ui/__tests__/Tooltip.test.tsx`
 
@@ -1023,7 +1144,7 @@ describe("Tooltip", () => {
       <TooltipTrigger delay={0}>
         <Button aria-label="Save">S</Button>
         <Tooltip>Save file</Tooltip>
-      </TooltipTrigger>
+      </TooltipTrigger>,
     );
     await userEvent.tab();
     expect(await screen.findByText("Save file")).toBeInTheDocument();
@@ -1077,6 +1198,7 @@ git commit -m "feat(ui): Tooltip primitive"
 ### Task 13: Barrel export
 
 **Files:**
+
 - Create: `components/ui/index.ts`
 - Test: `components/ui/__tests__/barrel.test.tsx`
 
@@ -1089,10 +1211,26 @@ import * as ui from "..";
 describe("ui barrel", () => {
   it("re-exports the primitive surface", () => {
     for (const name of [
-      "Button", "TextField", "Textarea", "Select", "Menu", "MenuItemRow",
-      "MenuTrigger", "Popover", "Checkbox", "Switch", "RadioGroup", "Radio",
-      "Tooltip", "TooltipTrigger", "Modal", "Table", "Skeleton",
-      "DialogProvider", "useConfirm", "useAlert",
+      "Button",
+      "TextField",
+      "Textarea",
+      "Select",
+      "Menu",
+      "MenuItemRow",
+      "MenuTrigger",
+      "Popover",
+      "Checkbox",
+      "Switch",
+      "RadioGroup",
+      "Radio",
+      "Tooltip",
+      "TooltipTrigger",
+      "Modal",
+      "Table",
+      "Skeleton",
+      "DialogProvider",
+      "useConfirm",
+      "useAlert",
     ]) {
       expect(ui[name as keyof typeof ui], `missing export: ${name}`).toBeDefined();
     }
@@ -1147,6 +1285,7 @@ git commit -m "feat(ui): barrel export for ui primitives"
 ### Task 14: Add focus trap + restore to Modal
 
 **Files:**
+
 - Modify: `components/ui/Modal.tsx`
 - Test: `components/ui/__tests__/Modal.test.tsx`
 
@@ -1164,7 +1303,7 @@ describe("Modal", () => {
       <Modal onClose={() => {}}>
         <button>a</button>
         <button>b</button>
-      </Modal>
+      </Modal>,
     );
     const a = screen.getByRole("button", { name: "a" });
     const b = screen.getByRole("button", { name: "b" });
@@ -1193,21 +1332,21 @@ import { FocusScope } from "react-aria";
 Then wrap the existing `{children}` inside the inner `motion.div` (the one with `role="dialog"`) with `FocusScope`. The inner `motion.div` block becomes:
 
 ```tsx
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ type: "spring", stiffness: 440, damping: 32 }}
-            className={cn("w-full rounded-2xl bg-white shadow-2xl ring-1 ring-black/10", className)}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={labelledBy}
-          >
-            <FocusScope contain restoreFocus>
-              {children}
-            </FocusScope>
-          </motion.div>
+<motion.div
+  initial={{ opacity: 0, scale: 0.96, y: 8 }}
+  animate={{ opacity: 1, scale: 1, y: 0 }}
+  exit={{ opacity: 0, scale: 0.96, y: 8 }}
+  transition={{ type: "spring", stiffness: 440, damping: 32 }}
+  className={cn("w-full rounded-2xl bg-white shadow-2xl ring-1 ring-black/10", className)}
+  onClick={(e) => e.stopPropagation()}
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby={labelledBy}
+>
+  <FocusScope contain restoreFocus>
+    {children}
+  </FocusScope>
+</motion.div>
 ```
 
 Note: do **not** pass `autoFocus` to `FocusScope` — callers (e.g. `dialog-provider`) rely on their own `autoFocus` attribute for initial focus, and `contain` + `restoreFocus` are the wins here (trap Tab + return focus to the trigger on close). All existing props and the framer-motion animation are unchanged.
@@ -1228,6 +1367,7 @@ git commit -m "feat(ui): focus trap + restore in Modal (react-aria FocusScope)"
 ### Task 15: Rebuild dialog-provider buttons on the Button primitive
 
 **Files:**
+
 - Modify: `components/ui/dialog-provider.tsx`
 - Test: `components/ui/__tests__/dialog-provider.test.tsx`
 
@@ -1242,7 +1382,15 @@ import { DialogProvider, useConfirm } from "../dialog-provider";
 function Harness() {
   const confirm = useConfirm();
   return (
-    <button onClick={async () => { (window as any).__r = await confirm({ title: "Sure?", confirmLabel: "Yes", cancelLabel: "No" }); }}>
+    <button
+      onClick={async () => {
+        (window as any).__r = await confirm({
+          title: "Sure?",
+          confirmLabel: "Yes",
+          cancelLabel: "No",
+        });
+      }}
+    >
       ask
     </button>
   );
@@ -1250,7 +1398,11 @@ function Harness() {
 
 describe("dialog-provider", () => {
   it("resolves true when the confirm button is pressed", async () => {
-    render(<DialogProvider><Harness /></DialogProvider>);
+    render(
+      <DialogProvider>
+        <Harness />
+      </DialogProvider>,
+    );
     await userEvent.click(screen.getByRole("button", { name: "ask" }));
     await userEvent.click(await screen.findByRole("button", { name: "Yes" }));
     await new Promise((r) => setTimeout(r, 0));
@@ -1275,23 +1427,23 @@ import { Button } from "./Button";
 Replace the two raw `<button>` elements (the Cancel and the primary confirm/OK buttons, currently around lines 113–134) with:
 
 ```tsx
-            <div className="mt-5 flex justify-end gap-2">
-              {isConfirm && (
-                <Button variant="ghost" size="sm" onPress={() => respond(false)}>
-                  {(state as ConfirmOptions).cancelLabel || "Cancel"}
-                </Button>
-              )}
-              <Button
-                autoFocus
-                variant={destructive ? "danger" : "primary"}
-                size="sm"
-                onPress={() => respond(true)}
-              >
-                {isConfirm
-                  ? (state as ConfirmOptions).confirmLabel || "Confirm"
-                  : (state as AlertOptions).okLabel || "OK"}
-              </Button>
-            </div>
+<div className="mt-5 flex justify-end gap-2">
+  {isConfirm && (
+    <Button variant="ghost" size="sm" onPress={() => respond(false)}>
+      {(state as ConfirmOptions).cancelLabel || "Cancel"}
+    </Button>
+  )}
+  <Button
+    autoFocus
+    variant={destructive ? "danger" : "primary"}
+    size="sm"
+    onPress={() => respond(true)}
+  >
+    {isConfirm
+      ? (state as ConfirmOptions).confirmLabel || "Confirm"
+      : (state as AlertOptions).okLabel || "OK"}
+  </Button>
+</div>
 ```
 
 Note: react-aria's `Button` uses `onPress`, not `onClick`. The `autoFocus` attribute is forwarded to the underlying button and still drives initial focus (Modal's `FocusScope` does not override it).
@@ -1322,6 +1474,7 @@ Phases 3–5 from the spec become their own plans, authored once this foundation
 ## Self-Review
 
 **Spec coverage:**
+
 - Token layer (`@theme`, semantic names, danger-only feedback) → Task 2 ✓
 - Primitive inventory (Button, TextField, Textarea, Select, Menu, Popover, Checkbox, Switch, RadioGroup, Tooltip) → Tasks 3–12 ✓
 - Barrel export → Task 13 ✓

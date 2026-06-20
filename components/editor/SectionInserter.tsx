@@ -17,9 +17,14 @@ export function SectionInserter() {
   const addBlock = useEditor((s) => s.addBlock);
   const [q, setQ] = useState("");
 
+  const [prevInserter, setPrevInserter] = useState(inserter);
+  if (inserter !== prevInserter) {
+    setPrevInserter(inserter);
+    if (inserter) setQ("");
+  }
+
   useEffect(() => {
     if (!inserter) return;
-    setQ("");
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -32,14 +37,19 @@ export function SectionInserter() {
   const matches = (type: string) => {
     const def = getDefinition(type);
     if (!def) return false;
-    return def.label.toLowerCase().includes(query) || (def.description ?? "").toLowerCase().includes(query);
+    return (
+      def.label.toLowerCase().includes(query) ||
+      (def.description ?? "").toLowerCase().includes(query)
+    );
   };
 
   const pick = (type: string) => {
     const tree = useEditor.getState().tree;
     let index = target.index;
     if (index < 0) {
-      index = target.parentId ? findBlockById(tree, target.parentId)?.children.length ?? 0 : tree.length;
+      index = target.parentId
+        ? (findBlockById(tree, target.parentId)?.children.length ?? 0)
+        : tree.length;
     }
     addBlock(type, target.parentId, index);
     close();
@@ -65,7 +75,10 @@ export function SectionInserter() {
           {/* header / search */}
           <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+              />
               <input
                 autoFocus
                 value={q}
@@ -84,7 +97,10 @@ export function SectionInserter() {
             >
               <Sparkles size={14} className="text-indigo-600" /> AI
             </button>
-            <button onClick={close} className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600">
+            <button
+              onClick={close}
+              className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+            >
               <X size={18} />
             </button>
           </div>
@@ -101,21 +117,25 @@ export function SectionInserter() {
                   </h3>
                   <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                     {types.map((type) => {
-                      const def = getDefinition(type)!;
+                      const def = getDefinition(type);
+                      if (!def) return null;
                       return (
                         <button
                           key={type}
                           onClick={() => pick(type)}
                           title={def.description ?? def.label}
                           className={cn(
-                            "group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+                            "group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-2.5 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md",
                           )}
                         >
                           <div className="rounded-lg border border-zinc-100 bg-zinc-50/70 p-2.5 transition-colors group-hover:bg-indigo-50/40">
                             <Wireframe block={createBlock(type)} />
                           </div>
                           <span className="flex items-center gap-1.5 px-0.5 text-xs font-medium text-zinc-600 group-hover:text-indigo-700">
-                            <def.icon size={13} className="shrink-0 text-zinc-400 group-hover:text-indigo-500" />
+                            <def.icon
+                              size={13}
+                              className="shrink-0 text-zinc-400 group-hover:text-indigo-500"
+                            />
                             {def.label}
                           </span>
                         </button>

@@ -32,14 +32,7 @@ export type DesignSystem = { colors: ColorToken[]; textStyles: TextStyle[] };
 // --- CMS ---------------------------------------------------------------------
 
 /** The kinds of fields a CMS collection can define. */
-export type CmsFieldType =
-  | "text"
-  | "textarea"
-  | "image"
-  | "url"
-  | "number"
-  | "date"
-  | "boolean";
+export type CmsFieldType = "text" | "textarea" | "image" | "url" | "number" | "date" | "boolean";
 
 /** A single field in a collection's schema. */
 export type CollectionField = {
@@ -51,7 +44,7 @@ export type CollectionField = {
 /** One entry in a collection. `data` maps field key -> value. */
 export type CollectionItem = {
   id: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   order: number;
 };
 
@@ -129,7 +122,7 @@ export type ResponsiveStyles = {
 export type Block = {
   id: string;
   type: string;
-  props: Record<string, any>;
+  props: Record<string, unknown>;
   styles: ResponsiveStyles;
   children: Block[];
 };
@@ -184,13 +177,7 @@ export type SettingField = {
 
 // --- Style control groups shown in the inspector ----------------------------
 
-export type StyleGroup =
-  | "typography"
-  | "spacing"
-  | "background"
-  | "border"
-  | "effects"
-  | "layout";
+export type StyleGroup = "typography" | "spacing" | "background" | "border" | "effects" | "layout";
 
 /** Runtime list of every StyleGroup (keep in sync with the StyleGroup union). */
 export const STYLE_GROUPS: StyleGroup[] = [

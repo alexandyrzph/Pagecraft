@@ -16,7 +16,13 @@ export const navbarBlocks: BlockDefinition[] = [
       ctaHref: "#",
     },
     defaultStyles: {
-      desktop: { backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderWidth: "0 0 1px 0", borderStyle: "solid", color: "#0f172a" },
+      desktop: {
+        backgroundColor: "#ffffff",
+        borderColor: "#e2e8f0",
+        borderWidth: "0 0 1px 0",
+        borderStyle: "solid",
+        color: "#0f172a",
+      },
     },
     fields: [
       { key: "brand", label: "Brand", type: "text" },

@@ -30,8 +30,36 @@ export const REGISTRY: Record<string, BlockDefinition> = Object.fromEntries(
 // order, and the child-only "column" block is omitted on purpose).
 export const CATEGORIES: { name: BlockCategory; types: string[] }[] = [
   { name: "Layout", types: ["section", "columns", "spacer", "divider"] },
-  { name: "Basic", types: ["heading", "text", "button", "image", "icon", "video", "list", "quote", "file", "embed", "code"] },
-  { name: "Sections", types: ["navbar", "hero", "features", "pricing", "testimonial", "stats", "cta", "form", "footer"] },
+  {
+    name: "Basic",
+    types: [
+      "heading",
+      "text",
+      "button",
+      "image",
+      "icon",
+      "video",
+      "list",
+      "quote",
+      "file",
+      "embed",
+      "code",
+    ],
+  },
+  {
+    name: "Sections",
+    types: [
+      "navbar",
+      "hero",
+      "features",
+      "pricing",
+      "testimonial",
+      "stats",
+      "cta",
+      "form",
+      "footer",
+    ],
+  },
   { name: "Dynamic", types: ["collection"] },
 ];
 

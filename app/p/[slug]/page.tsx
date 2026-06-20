@@ -26,11 +26,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const page = await prisma.page.findUnique({ where: { slug } });
   if (!page || !page.published) notFound();

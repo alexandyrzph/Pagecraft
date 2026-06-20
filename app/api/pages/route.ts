@@ -27,16 +27,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   return instrumentApi("/api/pages", req, () =>
     withRole("EDITOR", async (ws) => {
-    const parsed = await parseBody(req, createPageSchema);
-    if ("response" in parsed) return parsed.response;
-    const title = (parsed.data.title || "Untitled Page").slice(0, 120);
-    const slug = await uniqueSlug(title);
-    const content = JSON.stringify(parsed.data.content ?? []);
-    const page = await prisma.page.create({
-      data: { title, slug, content, workspaceId: ws.workspace.id },
-    });
-    await logActivity(ws.workspace.id, ws.user.id, "page.created", page.id, { title });
-    return created(page);
+      const parsed = await parseBody(req, createPageSchema);
+      if ("response" in parsed) return parsed.response;
+      const title = (parsed.data.title || "Untitled Page").slice(0, 120);
+      const slug = await uniqueSlug(title);
+      const content = JSON.stringify(parsed.data.content ?? []);
+      const page = await prisma.page.create({
+        data: { title, slug, content, workspaceId: ws.workspace.id },
+      });
+      await logActivity(ws.workspace.id, ws.user.id, "page.created", page.id, { title });
+      return created(page);
     }),
   );
 }

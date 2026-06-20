@@ -4,13 +4,7 @@
 // as "page builder" and works on any background.
 // ---------------------------------------------------------------------------
 
-export function LogoMark({
-  size = 32,
-  className,
-}: {
-  size?: number;
-  className?: string;
-}) {
+export function LogoMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}
@@ -26,11 +20,25 @@ export function LogoMark({
       <rect x="17.5" y="9.5" width="9.5" height="5" rx="1.6" fill="#fff" fillOpacity="0.95" />
       <rect x="17.5" y="17.5" width="9.5" height="9" rx="2" fill="#fff" fillOpacity="0.55" />
       <defs>
-        <linearGradient id="pc-logo-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="pc-logo-grad"
+          x1="0"
+          y1="0"
+          x2="36"
+          y2="36"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#6366F1" />
           <stop offset="1" stopColor="#4338CA" />
         </linearGradient>
-        <linearGradient id="pc-logo-sheen" x1="0" y1="0" x2="0" y2="36" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="pc-logo-sheen"
+          x1="0"
+          y1="0"
+          x2="0"
+          y2="36"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>

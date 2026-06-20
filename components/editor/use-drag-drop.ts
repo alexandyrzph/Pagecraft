@@ -17,6 +17,11 @@ import type { FrameInfo } from "./iframe-context";
 
 const EMPTY: DragInfo = { type: null, id: null, invalid: new Set(), ghost: null };
 
+/** Payload attached to a draggable (palette/component = "new", canvas block = "move"). */
+type ActiveDragData =
+  | { kind: "new"; blockType: string; componentId?: string }
+  | { kind: "move"; blockId: string; blockType: string };
+
 /**
  * Canvas drag-and-drop: dnd-kit sensors, a `measure` that maps iframe-internal
  * rects into top-document (zoom-scaled) coords, custom iframe auto-scroll, and the
@@ -34,29 +39,42 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
   // iframe are offset by the iframe's (scaled) position AND scaled by the canvas
   // zoom — their internal getBoundingClientRect is in unscaled iframe pixels,
   // so it must be multiplied by zoom to match the visually scaled iframe.
-  const measure = useCallback((node: HTMLElement) => {
-    const r = node.getBoundingClientRect();
-    const fr = frameRef.current;
-    if (fr && node.ownerDocument === fr.doc) {
-      const z = useCanvasZoom.getState().zoom;
-      const fb = fr.el.getBoundingClientRect();
-      const left = fb.left + r.left * z;
-      const top = fb.top + r.top * z;
-      const width = r.width * z;
-      const height = r.height * z;
-      return { width, height, top, left, right: left + width, bottom: top + height };
-    }
-    return { width: r.width, height: r.height, top: r.top, left: r.left, right: r.right, bottom: r.bottom };
-  }, []);
+  const measure = useCallback(
+    (node: HTMLElement) => {
+      const r = node.getBoundingClientRect();
+      const fr = frameRef.current;
+      if (fr && node.ownerDocument === fr.doc) {
+        const z = useCanvasZoom.getState().zoom;
+        const fb = fr.el.getBoundingClientRect();
+        const left = fb.left + r.left * z;
+        const top = fb.top + r.top * z;
+        const width = r.width * z;
+        const height = r.height * z;
+        return { width, height, top, left, right: left + width, bottom: top + height };
+      }
+      return {
+        width: r.width,
+        height: r.height,
+        top: r.top,
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+      };
+    },
+    [frameRef],
+  );
 
   // While dragging, make the iframe transparent to pointer events so the
   // top-document sensor keeps receiving pointermove over the canvas.
-  const setFramePassthrough = (on: boolean) => {
-    const el = frameRef.current?.el;
-    if (!el) return;
-    if (on) el.style.setProperty("pointer-events", "none");
-    else el.style.removeProperty("pointer-events");
-  };
+  const setFramePassthrough = useCallback(
+    (on: boolean) => {
+      const el = frameRef.current?.el;
+      if (!el) return;
+      if (on) el.style.setProperty("pointer-events", "none");
+      else el.style.removeProperty("pointer-events");
+    },
+    [frameRef],
+  );
 
   // Custom auto-scroll for the canvas iframe (dnd-kit only scrolls the top
   // document, not the iframe's own scroll context).
@@ -83,7 +101,7 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
     };
     cancelAnimationFrame(autoScrollRaf.current);
     autoScrollRaf.current = requestAnimationFrame(tick);
-  }, []);
+  }, [frameRef]);
   const stopAutoScroll = useCallback(() => {
     cancelAnimationFrame(autoScrollRaf.current);
     window.removeEventListener("pointermove", onWindowPointerMove);
@@ -94,7 +112,7 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
   useEffect(() => () => stopAutoScroll(), [stopAutoScroll]);
 
   const onDragStart = (e: DragStartEvent) => {
-    const data = e.active.data.current as any;
+    const data = e.active.data.current as ActiveDragData | undefined;
     if (!data) return;
     setFramePassthrough(true);
     window.addEventListener("pointermove", onWindowPointerMove);
@@ -122,7 +140,7 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
     setFramePassthrough(false);
     stopAutoScroll();
     const over = e.over;
-    const a = e.active.data.current as any;
+    const a = e.active.data.current as ActiveDragData | undefined;
     if (!over || !a) return;
     const d = over.data.current as { parentId: string | null; index: number };
     if (!d) return;
@@ -138,7 +156,7 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
     setDrag(EMPTY);
     setFramePassthrough(false);
     stopAutoScroll();
-  }, [stopAutoScroll]);
+  }, [stopAutoScroll, setFramePassthrough]);
 
   return { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel };
 }

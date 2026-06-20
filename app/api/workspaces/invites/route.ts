@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { newToken } from "@/lib/auth/auth";
 import { withRole } from "@/lib/api/api-handler";
 import { type Role } from "@/lib/auth/workspace";
-import { json, created, badRequest, notFound } from "@/lib/api/api-response";
+import { json, created, badRequest } from "@/lib/api/api-response";
 import { logActivity } from "@/lib/activity";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,13 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
     return json(
-      invites.map((i) => ({ id: i.id, email: i.email, role: i.role, token: i.token, expiresAt: i.expiresAt.toISOString() })),
+      invites.map((i) => ({
+        id: i.id,
+        email: i.email,
+        role: i.role,
+        token: i.token,
+        expiresAt: i.expiresAt.toISOString(),
+      })),
     );
   });
 }
@@ -25,14 +31,25 @@ export async function GET() {
 export async function POST(req: Request) {
   return withRole("ADMIN", async (ws) => {
     const body = await req.json().catch(() => ({}));
-    const email = String(body.email || "").trim().toLowerCase();
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
     const role = (body.role === undefined ? "EDITOR" : body.role) as Role; // EDITOR is the default only when omitted
     if (!ROLES.includes(role)) return badRequest("Invalid role");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return badRequest("Valid email required");
 
     const token = newToken();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
-    await prisma.invite.create({ data: { workspaceId: ws.workspace.id, email, role, token, invitedById: ws.user.id, expiresAt } });
+    await prisma.invite.create({
+      data: {
+        workspaceId: ws.workspace.id,
+        email,
+        role,
+        token,
+        invitedById: ws.user.id,
+        expiresAt,
+      },
+    });
     await logActivity(ws.workspace.id, ws.user.id, "invite.sent", undefined, { email, role });
 
     const origin = new URL(req.url).origin;

@@ -70,19 +70,16 @@ export function DialogProvider({ children }: { children: ReactNode }) {
 
   // Resolve the pending promise and animate the dialog out. `state` is kept
   // mounted so its content stays visible through the exit transition.
-  const respond = useCallback(
-    (result: boolean) => {
-      setOpen(false);
-      setState((s) => {
-        if (s) {
-          if (s.kind === "confirm") s.resolve(result);
-          else s.resolve();
-        }
-        return s;
-      });
-    },
-    [],
-  );
+  const respond = useCallback((result: boolean) => {
+    setOpen(false);
+    setState((s) => {
+      if (s) {
+        if (s.kind === "confirm") s.resolve(result);
+        else s.resolve();
+      }
+      return s;
+    });
+  }, []);
 
   const isConfirm = state?.kind === "confirm";
   const destructive = state?.kind === "confirm" && state.destructive;

@@ -44,7 +44,9 @@ export function TemplatePreview({ blocks }: { blocks: Block[] }) {
       aria-hidden="true"
       className="pointer-events-none aspect-[16/10] w-full overflow-hidden rounded-lg border border-zinc-200 bg-white"
     >
-      <div style={{ width: STAGE_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+      <div
+        style={{ width: STAGE_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
         <BlockRenderer
           tree={blocks}
           viewport="desktop"

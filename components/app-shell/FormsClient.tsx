@@ -14,7 +14,9 @@ export function FormsClient({ pages }: { pages: PageDto[] }) {
   return (
     <div className="mx-auto max-w-[1320px] px-6 py-10 lg:px-12">
       <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Forms</h1>
-      <p className="mt-1 text-sm text-zinc-500">View and export form submissions from your published pages.</p>
+      <p className="mt-1 text-sm text-zinc-500">
+        View and export form submissions from your published pages.
+      </p>
 
       <div className="mt-8">
         {!hasAny ? (

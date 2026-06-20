@@ -18,10 +18,10 @@ Model a page as a **recursive tree of `Block` nodes** serialized as JSON.
 // lib/types.ts
 type Block = {
   id: string;
-  type: string;                 // key into the block registry (ADR 0003)
-  props: Record<string, any>;   // content (text, src, options, …)
-  styles: ResponsiveStyles;     // { desktop?, tablet?, mobile? } (ADR 0009)
-  children: Block[];            // nested blocks
+  type: string; // key into the block registry (ADR 0003)
+  props: Record<string, any>; // content (text, src, options, …)
+  styles: ResponsiveStyles; // { desktop?, tablet?, mobile? } (ADR 0009)
+  children: Block[]; // nested blocks
 };
 ```
 

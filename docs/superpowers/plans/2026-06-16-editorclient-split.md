@@ -23,15 +23,15 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|------|----------------|------|
-| `components/editor/GhostCard.tsx` | drag-overlay preview card (+ ghost size consts) | 1 |
-| `components/editor/use-editor-data.ts` | load components/collections/site; build the 3 provider contexts + maps | 2 |
-| `components/editor/use-editor-persistence.ts` | `save`/`publish`/`unpublish`/`exportHtml` + autosave + beforeunload; owns `exportRef` | 3 |
-| `components/editor/use-keyboard-shortcuts.ts` | the global `onKey` handler (window + iframe) | 4 |
-| `components/editor/use-drag-drop.ts` | `sensors`, `measure`, auto-scroll, `onDragStart/End/Cancel`, drag state | 5 |
-| `components/editor/use-page-navigation.ts` | `loadPageInPlace`/`confirmLeave`/`switchPage` + `saveAsComponent`/`persistComponent` + `actionsCtx` + pending/saveComp state | 6 |
-| `components/editor/EditorClient.tsx` | thin orchestrator: frame glue + page-init + hook calls + JSX | 1–6 |
+| File                                          | Responsibility                                                                                                               | Task |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `components/editor/GhostCard.tsx`             | drag-overlay preview card (+ ghost size consts)                                                                              | 1    |
+| `components/editor/use-editor-data.ts`        | load components/collections/site; build the 3 provider contexts + maps                                                       | 2    |
+| `components/editor/use-editor-persistence.ts` | `save`/`publish`/`unpublish`/`exportHtml` + autosave + beforeunload; owns `exportRef`                                        | 3    |
+| `components/editor/use-keyboard-shortcuts.ts` | the global `onKey` handler (window + iframe)                                                                                 | 4    |
+| `components/editor/use-drag-drop.ts`          | `sensors`, `measure`, auto-scroll, `onDragStart/End/Cancel`, drag state                                                      | 5    |
+| `components/editor/use-page-navigation.ts`    | `loadPageInPlace`/`confirmLeave`/`switchPage` + `saveAsComponent`/`persistComponent` + `actionsCtx` + pending/saveComp state | 6    |
+| `components/editor/EditorClient.tsx`          | thin orchestrator: frame glue + page-init + hook calls + JSX                                                                 | 1–6  |
 
 `EditorClient` retains: the `mode` flags; frame glue (`frame`, `frameRef`, `registerFrame`, `bumpFrame`, `iframeCtx`); `paletteOpen`/`historyOpen`/`ready` state; the page-init effect + readiness gate; `tree` (for the export render); and the JSX tree.
 
@@ -56,8 +56,9 @@ import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 import { Wireframe } from "./Wireframe";
 
 // (paste GHOST_W/GHOST_H/GHOST_STAGE consts + the GhostCard function verbatim here)
-export { /* nothing extra */ };
+export /* nothing extra */ {};
 ```
+
 …and `export function GhostCard(...)` (change the existing `function GhostCard` to `export function GhostCard`). Drop the placeholder `export {}` line — just export the function.
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
@@ -102,7 +103,10 @@ import type { ComponentItem } from "./components-context";
 export function useEditorData(mode: "page" | "component" | "site" | "collection") {
   const [componentList, setComponentList] = useState<ComponentItem[]>([]);
   const [collectionList, setCollectionList] = useState<CollectionData[]>([]);
-  const [site, setSite] = useState<{ header: Block[]; footer: Block[] }>({ header: [], footer: [] });
+  const [site, setSite] = useState<{ header: Block[]; footer: Block[] }>({
+    header: [],
+    footer: [],
+  });
 
   // (move refreshComponents / refreshCollections / refreshSite VERBATIM from
   //  EditorClient.tsx lines 179-207)
@@ -114,23 +118,34 @@ export function useEditorData(mode: "page" | "component" | "site" | "collection"
   // (move componentsMap / componentsCtx / collectionsMap / collectionsCtx / siteCtx
   //  VERBATIM from EditorClient.tsx lines 219-240)
 
-  return { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap, refreshComponents };
+  return {
+    componentsCtx,
+    collectionsCtx,
+    siteCtx,
+    componentsMap,
+    collectionsMap,
+    refreshComponents,
+  };
 }
 ```
+
 Paste the named blocks verbatim where indicated. (`refreshComponents`/`refreshCollections`/`refreshSite` are `useCallback`; the maps/ctx are `useMemo`. All move unchanged.)
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
 
 Delete from `EditorClient`: the `componentList`/`collectionList`/`site` `useState` lines (139–141), the three `refresh*` callbacks (179–207), `loadDesignSystem` + the load effect (209–217), and the maps/ctx memos (219–240). Replace with:
+
 ```tsx
-  const { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap, refreshComponents } =
-    useEditorData(mode);
+const { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap, refreshComponents } =
+  useEditorData(mode);
 ```
+
 Add `import { useEditorData } from "./use-editor-data";`. (`componentsMap`/`collectionsMap` still feed the `DragOverlay` ghost + the export `BlockRenderer`; `refreshComponents` still feeds `persistComponent` — all now from the hook.)
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` (clean; remove unused imports it flags, e.g. `useDesignSystem` if no longer used directly in EditorClient — but note `designSystemCss`/`useDesignSystem.getState()` is used by `exportHtml`, still in EditorClient until Task 3, so keep what's used), `npm test` (111), `npm run build`.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/use-editor-data.ts components/editor/EditorClient.tsx
 git commit -m "refactor(editor): extract useEditorData (loading + provider contexts)
@@ -181,24 +196,28 @@ export function useEditorPersistence(opts: {
   return { save, publish, unpublish, exportHtml, exportRef };
 }
 ```
+
 Paste the blocks verbatim. Note: `save`'s `useCallback` deps are `[isComponentMode, isSiteMode, isCollectionMode, siteRegion]`; `publish` deps `[save]`; `unpublish`/`exportHtml` deps `[]`. The autosave effect references `save`, `dirty`, `tree` (all now local to the hook).
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
 
 Delete from `EditorClient`: `exportRef` (177), `save`/`publish`/`unpublish`/`exportHtml` (265–352), the beforeunload effect (426–435), the autosave effect (438–442), and the `dirty` store subscription (130) IF it's now unused there (the autosave that used it moved). Keep `tree` (still used by the export render at 683). Replace with:
+
 ```tsx
-  const { save, publish, unpublish, exportHtml, exportRef } = useEditorPersistence({
-    isSiteMode,
-    isCollectionMode,
-    isComponentMode,
-    siteRegion,
-  });
+const { save, publish, unpublish, exportHtml, exportRef } = useEditorPersistence({
+  isSiteMode,
+  isCollectionMode,
+  isComponentMode,
+  siteRegion,
+});
 ```
+
 Add `import { useEditorPersistence } from "./use-editor-persistence";`. The export `<div ref={exportRef} …>` (682) keeps using the returned `exportRef`. `save`/`publish`/`unpublish`/`exportHtml` are consumed by `TopBar`, `CommandPalette`, `UnsavedModal`, `VersionHistory` (unchanged).
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` (clean; remove now-unused imports in EditorClient: `buildExportDocument`, `designSystemCss`, and `useDesignSystem` if no longer referenced there). `npm test` (111). `npm run build`.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/use-editor-persistence.ts components/editor/EditorClient.tsx
 git commit -m "refactor(editor): extract useEditorPersistence (save/publish/export/autosave)
@@ -252,19 +271,23 @@ export function useKeyboardShortcuts(opts: {
   }, [save, frame]);
 }
 ```
+
 Move the `onKey` body verbatim; the ONLY change is the ⌘K handler (was `setPaletteOpen((o) => !o)`) becomes `toggleRef.current();`. Everything else (`useEditor.getState()`, `useCanvasZoom.getState()`, `save()`) is unchanged. Effect deps stay `[save, frame]` (matching the original).
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
 
 Delete the keyboard `useEffect` (445–539). Add:
+
 ```tsx
-  useKeyboardShortcuts({ save, togglePalette: () => setPaletteOpen((o) => !o), frame });
+useKeyboardShortcuts({ save, togglePalette: () => setPaletteOpen((o) => !o), frame });
 ```
+
 Add `import { useKeyboardShortcuts } from "./use-keyboard-shortcuts";`. (`save` is from Task 3's hook; `setPaletteOpen` + `frame` remain in EditorClient.)
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` (clean; `useCanvasZoom` may now be unused in EditorClient — remove if so). `npm test` (111). `npm run build`. Manual: undo/redo (⌘Z/⌘⇧Z), ⌘S save, ⌘K palette, ⌘+/-/0 zoom, Delete/⌘D/⌘C/⌘X/⌘V on a selected block, ⌘⌥C/⌘⌥V styles, Escape deselect — all still work, including when focus is inside the canvas.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/use-keyboard-shortcuts.ts components/editor/EditorClient.tsx
 git commit -m "refactor(editor): extract useKeyboardShortcuts
@@ -330,19 +353,24 @@ export function useDragDropManager(frameRef: RefObject<FrameInfo | null>) {
   return { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel };
 }
 ```
+
 Move the named blocks verbatim. Notes: `measure` uses `frameRef.current` + `useCanvasZoom.getState()` (unchanged). `setFramePassthrough` reads `frameRef.current?.el`. `onDragStart`/`onDragEnd` use `addBlock`/`addComponentInstance`/`moveExisting` (now local), `createBlock`/`createComponentInstance`/`findBlockById`/`getDescendantIds`, and `setDrag`. `onDragCancel` replaces the inline cancel handler that was in the DndContext (lines 642–646). Keep `measure`/`onDragStart`/`onDragEnd` as the same kind of function they were (plain functions / `useCallback`) — preserve exactly.
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
 
 Delete from `EditorClient`: the `EMPTY` const (114), `drag` state (135), `measure` (162–175), `sensors` (260–262), the whole drag section (544–621), the store actions `addBlock`/`addComponentInstance`/`moveExisting` (131–133). Replace with:
+
 ```tsx
-  const { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel } = useDragDropManager(frameRef);
+const { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel } =
+  useDragDropManager(frameRef);
 ```
+
 Add `import { useDragDropManager } from "./use-drag-drop";`. Wire the `DndContext`: `sensors={sensors}`, the `measuring` config keeps `measure`, `onDragStart={onDragStart}`, `onDragEnd={onDragEnd}`, and replace the inline `onDragCancel={() => {...}}` with `onDragCancel={onDragCancel}`. The `DragProvider value={drag}` and `DragOverlay` `drag.ghost` stay. Keep `frameRef` (+ `frame`/`registerFrame`/`bumpFrame`/`iframeCtx`) in EditorClient — `frameRef` is passed to the hook.
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` (clean; remove now-unused EditorClient imports: the `@dnd-kit/core` symbols `MeasuringStrategy`/`PointerSensor`/`useSensor`/`useSensors`/`DragStartEvent`/`DragEndEvent` move to the hook — keep `DndContext`/`DragOverlay`/`closestCenter` which are still used in the render; also `createBlock`/`createComponentInstance`/`findBlockById`/`getDescendantIds` move out; `DragInfo` type import — keep only if still referenced). `npm test` (111). `npm run build`. Manual: drag a NEW block from the palette into the canvas (drops at the slot), drag to reorder an EXISTING block, drag near the top/bottom canvas edge (iframe auto-scrolls), and confirm the ghost card follows the cursor — all unchanged.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/use-drag-drop.ts components/editor/EditorClient.tsx
 git commit -m "refactor(editor): extract useDragDropManager
@@ -391,15 +419,18 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
   return { actionsCtx, pending, setPending, saveCompBlock, setSaveCompBlock, persistComponent };
 }
 ```
+
 Move the named blocks verbatim. `loadPageInPlace` deps `[init]`; `confirmLeave` deps `[]` (uses `setPending`); `switchPage` deps `[confirmLeave, loadPageInPlace]`; `saveAsComponent` = `useCallback((block) => setSaveCompBlock(block), [])`; `persistComponent` deps `[saveCompBlock, refreshComponents]` (uses `setSaveCompBlock`). All preserved.
 
 - [ ] **Step 2: Rewire `EditorClient.tsx`**
 
 Delete from `EditorClient`: `pending` state (142), `saveCompBlock` state (176), `loadPageInPlace`/`confirmLeave`/`switchPage` (354–394), `saveAsComponent`/`persistComponent` (396–418), `actionsCtx` (420–423). Replace with:
+
 ```tsx
-  const { actionsCtx, pending, setPending, saveCompBlock, setSaveCompBlock, persistComponent } =
-    usePageNavigation({ refreshComponents });
+const { actionsCtx, pending, setPending, saveCompBlock, setSaveCompBlock, persistComponent } =
+  usePageNavigation({ refreshComponents });
 ```
+
 Add `import { usePageNavigation } from "./use-page-navigation";`. The render keeps using: `EditorActionsProvider value={actionsCtx}`, `UnsavedModal` (`open={!!pending}`, `onCancel/onDiscard/onSave` using `setPending` + `save`), `SaveComponentModal` (`open={!!saveCompBlock}`, `onCancel={() => setSaveCompBlock(null)}`, `onSave={persistComponent}`). `init` is still needed in EditorClient for the page-init effect (242–252) — keep that store subscription.
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` (clean; remove now-unused EditorClient imports: `parseContent`, `parseTheme` move to the hook). `npm test` (111). `npm run build`. Manual: switch pages via the page list with unsaved edits → the unsaved-changes modal appears (Cancel/Discard/Save & continue each behave correctly); "Save as component" on a block → names + creates it and swaps the block for the instance.
@@ -407,6 +438,7 @@ Add `import { usePageNavigation } from "./use-page-navigation";`. The render kee
 - [ ] **Step 4: Final orchestrator check + commit**
 
 Confirm `EditorClient`'s function body is now ~150 lines: the `mode` flags, frame glue (`frame`/`frameRef`/`registerFrame`/`bumpFrame`/`iframeCtx`), `paletteOpen`/`historyOpen`/`ready` state, the page-init effect + readiness gate, the six hook calls, and the JSX. Run `npx tsc --noEmit && npm test && npm run build` once more — all green.
+
 ```bash
 git add components/editor/use-page-navigation.ts components/editor/EditorClient.tsx
 git commit -m "refactor(editor): extract usePageNavigation (page switch + component save)
@@ -417,6 +449,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Self-Review Checklist
+
 - [ ] `GhostCard` + 5 hooks extracted; `EditorClient` is a thin orchestrator (~150 lines).
 - [ ] Behavior preserved: autosave (1200ms debounce), publish/unpublish/export, all keyboard shortcuts (incl. inside the iframe), drag new/move + iframe auto-scroll + ghost, unsaved-changes guard, save-as-component.
 - [ ] Name consistency: `GhostCard`, `useEditorData`, `useEditorPersistence`, `useKeyboardShortcuts`, `useDragDropManager`, `usePageNavigation`; returned shapes match their call sites.
@@ -424,5 +457,6 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - [ ] Manual editor smoke pass clean (no console errors).
 
 ## Deferred
+
 - **Plan C:** split `Inspector.tsx` (806 LOC).
 - Other large functions (`useEditor` store, `DomTreePanel`, `Dashboard`, `CommandPalette`), remaining clone groups, dead exports.

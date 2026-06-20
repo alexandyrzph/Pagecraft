@@ -28,7 +28,13 @@ export function ZoomControl() {
 
   return (
     <div className="relative flex items-center gap-0.5 rounded-xl bg-zinc-100 p-1">
-      <button onClick={zoomOut} disabled={zoom <= ZOOM_MIN + 0.001} title="Zoom out (⌘−)" aria-label="Zoom out" className={btn}>
+      <button
+        onClick={zoomOut}
+        disabled={zoom <= ZOOM_MIN + 0.001}
+        title="Zoom out (⌘−)"
+        aria-label="Zoom out"
+        className={btn}
+      >
         <Minus size={15} />
       </button>
       <button
@@ -37,16 +43,26 @@ export function ZoomControl() {
         aria-label="Zoom level"
         className={cn(
           "min-w-[46px] rounded-lg px-1.5 py-1 text-xs font-semibold tabular-nums transition-colors hover:bg-white",
-          open ? "bg-white text-indigo-600 shadow-xs ring-1 ring-zinc-200" : "text-zinc-600"
+          open ? "bg-white text-indigo-600 shadow-xs ring-1 ring-zinc-200" : "text-zinc-600",
         )}
       >
         {Math.round(zoom * 100)}%
       </button>
-      <button onClick={zoomIn} disabled={zoom >= ZOOM_MAX - 0.001} title="Zoom in (⌘+)" aria-label="Zoom in" className={btn}>
+      <button
+        onClick={zoomIn}
+        disabled={zoom >= ZOOM_MAX - 0.001}
+        title="Zoom in (⌘+)"
+        aria-label="Zoom in"
+        className={btn}
+      >
         <Plus size={15} />
       </button>
 
-      <Popover open={open} onClose={() => setOpen(false)} className="left-1/2 top-11 w-40 -translate-x-1/2 rounded-xl p-1">
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        className="left-1/2 top-11 w-40 -translate-x-1/2 rounded-xl p-1"
+      >
         <button
           onClick={fit}
           className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900"

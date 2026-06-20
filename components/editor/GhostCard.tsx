@@ -25,7 +25,10 @@ export function GhostCard({ block, components }: { block: Block; components: Com
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1, rotate: -2 }}
         transition={{ type: "spring", stiffness: 520, damping: 30 }}
-        className={cn("pointer-events-none w-[220px] rounded-xl bg-white p-3 shadow-2xl ring-2", accent)}
+        className={cn(
+          "pointer-events-none w-[220px] rounded-xl bg-white p-3 shadow-2xl ring-2",
+          accent,
+        )}
       >
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
@@ -47,10 +50,15 @@ export function GhostCard({ block, components }: { block: Block; components: Com
       initial={{ opacity: 0, scale: 0.92 }}
       animate={{ opacity: 1, scale: 1, rotate: -2 }}
       transition={{ type: "spring", stiffness: 520, damping: 30 }}
-      className={cn("pointer-events-none relative overflow-hidden rounded-xl bg-white shadow-2xl ring-2", accent)}
+      className={cn(
+        "pointer-events-none relative overflow-hidden rounded-xl bg-white shadow-2xl ring-2",
+        accent,
+      )}
       style={{ width: GHOST_W, height: GHOST_H }}
     >
-      <div style={{ width: GHOST_STAGE, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+      <div
+        style={{ width: GHOST_STAGE, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
         <BlockRenderer tree={[block]} viewport="desktop" components={components} />
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white/90 to-transparent" />

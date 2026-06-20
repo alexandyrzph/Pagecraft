@@ -15,6 +15,11 @@ import {
 } from "@/lib/blocks/tree";
 import type { Block } from "@/lib/types";
 
+function must<T>(v: T | null | undefined): T {
+  if (v == null) throw new Error("expected a value");
+  return v;
+}
+
 const node = (id: string, type = "text", children: Block[] = []): Block => ({
   id,
   type,
@@ -24,10 +29,7 @@ const node = (id: string, type = "text", children: Block[] = []): Block => ({
 });
 
 function sampleTree(): Block[] {
-  return [
-    node("s1", "section", [node("a"), node("b")]),
-    node("s2", "section", [node("c")]),
-  ];
+  return [node("s1", "section", [node("a"), node("b")]), node("s2", "section", [node("c")])];
 }
 
 describe("findBlockById / locate", () => {
@@ -53,7 +55,7 @@ describe("insertBlock", () => {
 
   it("inserts into a nested parent", () => {
     const t = insertBlock(sampleTree(), node("x"), "s1", 1);
-    expect(findBlockById(t, "s1")!.children.map((c) => c.id)).toEqual(["a", "x", "b"]);
+    expect(must(findBlockById(t, "s1")).children.map((c) => c.id)).toEqual(["a", "x", "b"]);
   });
 
   it("clamps out-of-range indexes", () => {
@@ -67,20 +69,20 @@ describe("removeBlock", () => {
     const { tree, removed } = removeBlock(sampleTree(), "a");
     expect(removed?.id).toBe("a");
     expect(findBlockById(tree, "a")).toBeNull();
-    expect(findBlockById(tree, "s1")!.children.map((c) => c.id)).toEqual(["b"]);
+    expect(must(findBlockById(tree, "s1")).children.map((c) => c.id)).toEqual(["b"]);
   });
 });
 
 describe("moveBlock", () => {
   it("reorders within the same parent", () => {
     const t = moveBlock(sampleTree(), "a", "s1", 2); // a after b
-    expect(findBlockById(t, "s1")!.children.map((c) => c.id)).toEqual(["b", "a"]);
+    expect(must(findBlockById(t, "s1")).children.map((c) => c.id)).toEqual(["b", "a"]);
   });
 
   it("moves across parents", () => {
     const t = moveBlock(sampleTree(), "a", "s2", 0);
-    expect(findBlockById(t, "s1")!.children.map((c) => c.id)).toEqual(["b"]);
-    expect(findBlockById(t, "s2")!.children.map((c) => c.id)).toEqual(["a", "c"]);
+    expect(must(findBlockById(t, "s1")).children.map((c) => c.id)).toEqual(["b"]);
+    expect(must(findBlockById(t, "s2")).children.map((c) => c.id)).toEqual(["a", "c"]);
   });
 
   it("refuses to move a block into its own descendant", () => {
@@ -108,22 +110,24 @@ describe("duplicateBlock", () => {
 describe("updateBlockProp", () => {
   it("sets a top-level prop", () => {
     const t = updateBlockProp(sampleTree(), "a", "text", "hello");
-    expect(findBlockById(t, "a")!.props.text).toBe("hello");
+    expect(must(findBlockById(t, "a")).props.text).toBe("hello");
   });
 
   it("sets a dotted array path", () => {
-    const start = [{ id: "l", type: "list", props: { items: ["one", "two"] }, styles: {}, children: [] }] as Block[];
+    const start = [
+      { id: "l", type: "list", props: { items: ["one", "two"] }, styles: {}, children: [] },
+    ] as Block[];
     const t = updateBlockProp(start, "l", "items.1", "TWO");
-    expect(findBlockById(t, "l")!.props.items).toEqual(["one", "TWO"]);
+    expect(must(findBlockById(t, "l")).props.items).toEqual(["one", "TWO"]);
   });
 });
 
 describe("updateBlockStyle", () => {
   it("sets and clears style values per viewport", () => {
     let t = updateBlockStyle(sampleTree(), "a", "desktop", "color", "#fff");
-    expect(findBlockById(t, "a")!.styles.desktop?.color).toBe("#fff");
+    expect(must(findBlockById(t, "a")).styles.desktop?.color).toBe("#fff");
     t = updateBlockStyle(t, "a", "desktop", "color", "");
-    expect(findBlockById(t, "a")!.styles.desktop?.color).toBeUndefined();
+    expect(must(findBlockById(t, "a")).styles.desktop?.color).toBeUndefined();
   });
 });
 
@@ -137,8 +141,8 @@ describe("getDescendantIds", () => {
 describe("pathToBlock", () => {
   it("returns the ancestor chain including the block", () => {
     const t = sampleTree();
-    expect(pathToBlock(t, "b")!.map((n) => n.id)).toEqual(["s1", "b"]);
-    expect(pathToBlock(t, "s2")!.map((n) => n.id)).toEqual(["s2"]);
+    expect(must(pathToBlock(t, "b")).map((n) => n.id)).toEqual(["s1", "b"]);
+    expect(must(pathToBlock(t, "s2")).map((n) => n.id)).toEqual(["s2"]);
     expect(pathToBlock(t, "missing")).toBeNull();
   });
 });
@@ -147,10 +151,10 @@ describe("setBlockStyles", () => {
   it("replaces the whole responsive style set with a deep copy", () => {
     const src = { desktop: { color: "#fff" }, mobile: { fontSize: "12px" } };
     const t = setBlockStyles(sampleTree(), "a", src);
-    expect(findBlockById(t, "a")!.styles).toEqual(src);
+    expect(must(findBlockById(t, "a")).styles).toEqual(src);
     // mutating the source must not leak into the tree (deep copy)
     src.desktop.color = "#000";
-    expect(findBlockById(t, "a")!.styles.desktop?.color).toBe("#fff");
+    expect(must(findBlockById(t, "a")).styles.desktop?.color).toBe("#fff");
   });
 });
 

@@ -8,9 +8,10 @@ describe("designSystemCss", () => {
   });
 
   it("emits text styles as single-class rules", () => {
-    const css = designSystemCss([], [
-      { id: "h1", name: "Display", props: { fontSize: "48px", fontWeight: "700" } },
-    ]);
+    const css = designSystemCss(
+      [],
+      [{ id: "h1", name: "Display", props: { fontSize: "48px", fontWeight: "700" } }],
+    );
     expect(css).toContain(".ts-h1 {");
     expect(css).toContain("font-size: 48px;");
     expect(css).toContain("font-weight: 700;");
@@ -18,7 +19,9 @@ describe("designSystemCss", () => {
 
   it("skips empty tokens and styles", () => {
     expect(designSystemCss([], [])).toBe("");
-    expect(designSystemCss([{ id: "x", name: "", value: "" }], [{ id: "y", name: "", props: {} }])).toBe("");
+    expect(
+      designSystemCss([{ id: "x", name: "", value: "" }], [{ id: "y", name: "", props: {} }]),
+    ).toBe("");
   });
 });
 
@@ -34,6 +37,9 @@ describe("parseDesignSystem", () => {
 
   it("is resilient to null/garbage", () => {
     expect(parseDesignSystem(null)).toEqual({ colors: [], textStyles: [] });
-    expect(parseDesignSystem({ colors: "not json", textStyles: undefined })).toEqual({ colors: [], textStyles: [] });
+    expect(parseDesignSystem({ colors: "not json", textStyles: undefined })).toEqual({
+      colors: [],
+      textStyles: [],
+    });
   });
 });

@@ -36,12 +36,16 @@ export function FloatingInspector() {
             initial={{ opacity: 0, scale: 0.97, x: docked ? 8 : -6 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            transition={dragging || resizing ? { duration: 0 } : { type: "spring", stiffness: 460, damping: 34 }}
+            transition={
+              dragging || resizing
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 460, damping: 34 }
+            }
             style={style}
             className={cn(
               "z-40 flex flex-col overflow-hidden border-zinc-200 bg-white shadow-2xl ring-1 ring-black/5",
               docked ? "border-l rounded-none" : "rounded-2xl border",
-              (dragging || resizing) && "ring-indigo-300/60 select-none"
+              (dragging || resizing) && "ring-indigo-300/60 select-none",
             )}
             onClick={(e) => e.stopPropagation()}
           >

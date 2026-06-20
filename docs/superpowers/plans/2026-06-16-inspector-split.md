@@ -25,13 +25,13 @@
 
 ## File Structure
 
-| File | Responsibility | Exports | Task |
-|------|----------------|---------|------|
-| `components/editor/inspector/style-fields.tsx` | `useStyleField`, `useThemeSwatches`, `SRow`, `SUnit/SText/SColor/SSelect/SSegment/SOpacity`, `SpacingControl`, `StyleControl`, `StyleGroupView`, `Section` | `StyleGroupView`, `Section` | 1 |
-| `components/editor/inspector/block-controls.tsx` | `TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `MotionSection`, `ContentField`, `VP`, `ANIM_OPTIONS` | `TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `MotionSection`, `ContentField`, `VP` | 2 |
-| `components/editor/inspector/InspectorContent.tsx` | the content/style tabs component | `InspectorContent` | 3 |
-| `components/editor/inspector/useFloatingPanel.ts` | panel position/drag/resize/dock/scroll-tracking | `useFloatingPanel` | 4 |
-| `components/editor/Inspector.tsx` | thin `FloatingInspector` (hook + panel shell + `<InspectorContent>`) | `FloatingInspector` | 4 |
+| File                                               | Responsibility                                                                                                                                             | Exports                                                                                                             | Task |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---- |
+| `components/editor/inspector/style-fields.tsx`     | `useStyleField`, `useThemeSwatches`, `SRow`, `SUnit/SText/SColor/SSelect/SSegment/SOpacity`, `SpacingControl`, `StyleControl`, `StyleGroupView`, `Section` | `StyleGroupView`, `Section`                                                                                         | 1    |
+| `components/editor/inspector/block-controls.tsx`   | `TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `MotionSection`, `ContentField`, `VP`, `ANIM_OPTIONS`                        | `TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `MotionSection`, `ContentField`, `VP` | 2    |
+| `components/editor/inspector/InspectorContent.tsx` | the content/style tabs component                                                                                                                           | `InspectorContent`                                                                                                  | 3    |
+| `components/editor/inspector/useFloatingPanel.ts`  | panel position/drag/resize/dock/scroll-tracking                                                                                                            | `useFloatingPanel`                                                                                                  | 4    |
+| `components/editor/Inspector.tsx`                  | thin `FloatingInspector` (hook + panel shell + `<InspectorContent>`)                                                                                       | `FloatingInspector`                                                                                                 | 4    |
 
 ---
 
@@ -56,14 +56,16 @@ import { useEditor } from "@/store/editor-store";
 import { ColorInput, Segmented, SelectInput, Slider, TextInput, UnitInput } from "../controls";
 import { STYLE_GROUP_SCHEMAS, type StyleFieldDef } from "@/lib/style-groups";
 ```
+
 (Then the moved code. `StyleGroupView` uses `Section`, `StyleControl`, `STYLE_GROUP_SCHEMAS`; `StyleControl` uses the `S*` controls; the `S*` use `useStyleField` + `SRow` + the `../controls` inputs; `SColor` uses `useThemeSwatches`. All self-contained here.)
 
 - [ ] **Step 2: Rewire `Inspector.tsx`**
-Delete those 13 definitions from `Inspector.tsx`. Add `import { StyleGroupView, Section } from "./inspector/style-fields";`. (`Section` is still used by `MotionSection`, still in Inspector for now; `StyleGroupView` by `InspectorContent`, still in Inspector for now.)
+      Delete those 13 definitions from `Inspector.tsx`. Add `import { StyleGroupView, Section } from "./inspector/style-fields";`. (`Section` is still used by `MotionSection`, still in Inspector for now; `StyleGroupView` by `InspectorContent`, still in Inspector for now.)
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` clean; remove imports tsc flags as now-unused in `Inspector.tsx` (likely `Slider`, `Segmented`, `UnitInput`, `ColorInput`, `Link2`, `findBlockById`, `StyleProps`/`StyleGroup` types, `StyleFieldDef`, `STYLE_GROUP_SCHEMAS` — but KEEP anything still referenced by the remaining Inspector code: e.g. `SelectInput`/`TextInput`/`NumberInput` used by block sections, `cn`, `useEditor`, `ChevronDown`?/`X` used elsewhere). Only remove what tsc reports. `npm test` → 111. `npm run build` → succeeds.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/inspector/style-fields.tsx components/editor/Inspector.tsx
 git commit -m "refactor(inspector): extract style-field controls
@@ -84,7 +86,17 @@ Move VERBATIM from `Inspector.tsx`: `TextStyleControl`, `StyleActions`, `Visibil
 ```tsx
 "use client";
 
-import { ClipboardPaste, Copy, Eye, EyeOff, Monitor, Plus, Smartphone, Tablet, Type } from "lucide-react";
+import {
+  ClipboardPaste,
+  Copy,
+  Eye,
+  EyeOff,
+  Monitor,
+  Plus,
+  Smartphone,
+  Tablet,
+  Type,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Block, SettingField, Viewport } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
@@ -93,10 +105,12 @@ import { Field, NumberInput, SelectInput, TextInput } from "../controls";
 import { ItemsEditor, LEAF_INPUTS } from "@/lib/field-inputs";
 import { Section } from "./style-fields";
 ```
+
 (Then the moved code. `MotionSection` uses `Section` from `./style-fields`; `VisibilityControl` uses `VP` + `cn`; `ContentField` uses `Field`/`ItemsEditor`/`LEAF_INPUTS`. `VP` is module-level — placement within the file doesn't matter since it's referenced at render time.)
 
 - [ ] **Step 2: Rewire `Inspector.tsx`**
-Delete those definitions (`TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `ANIM_OPTIONS`, `MotionSection`, `ContentField`, `VP`) from `Inspector.tsx`. Add:
+      Delete those definitions (`TextStyleControl`, `StyleActions`, `VisibilityControl`, `AttributesControl`, `ANIM_OPTIONS`, `MotionSection`, `ContentField`, `VP`) from `Inspector.tsx`. Add:
+
 ```tsx
 import {
   AttributesControl,
@@ -108,11 +122,13 @@ import {
   VP,
 } from "./inspector/block-controls";
 ```
+
 (All are consumed by `InspectorContent`, still in Inspector for now.)
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` clean; remove now-unused Inspector imports (likely `Type`/`Plus`/`Eye`/`EyeOff`/`ClipboardPaste` lucide icons, `useDesignSystem`, `Field`, `NumberInput`, `ItemsEditor`/`LEAF_INPUTS`, `SettingField`/`Viewport` types — but KEEP what `InspectorContent`/`FloatingInspector` still use: `Copy`/`Trash2`/`GripVertical`/`PanelRight`/`X`/`Monitor`/`Smartphone`/`Tablet`/`ComponentIcon`, `SelectInput`?/`TextInput`?). Only remove what tsc reports. `npm test` → 111. `npm run build` → succeeds.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/inspector/block-controls.tsx components/editor/Inspector.tsx
 git commit -m "refactor(inspector): extract per-block control sections
@@ -135,7 +151,14 @@ Move the `InspectorContent` function VERBATIM (current lines ~425–573) and `ex
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Component as ComponentIcon, Copy, GripVertical, PanelRight, Trash2, X } from "lucide-react";
+import {
+  Component as ComponentIcon,
+  Copy,
+  GripVertical,
+  PanelRight,
+  Trash2,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Block } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
@@ -154,14 +177,16 @@ import {
   VP,
 } from "./block-controls";
 ```
+
 (The `InspectorContent` body is unchanged — it already references all of these.)
 
 - [ ] **Step 2: Rewire `Inspector.tsx`**
-Delete the `InspectorContent` function from `Inspector.tsx`. Add `import { InspectorContent } from "./inspector/InspectorContent";`. Remove the now-redundant `StyleGroupView`/block-controls imports from `Inspector.tsx` (they were only used by `InspectorContent`, which now imports them itself) — let tsc confirm. `FloatingInspector` still renders `<InspectorContent block={block} onHandlePointerDown={...} dragging={...} docked={...} onToggleDock={...} />` unchanged.
+      Delete the `InspectorContent` function from `Inspector.tsx`. Add `import { InspectorContent } from "./inspector/InspectorContent";`. Remove the now-redundant `StyleGroupView`/block-controls imports from `Inspector.tsx` (they were only used by `InspectorContent`, which now imports them itself) — let tsc confirm. `FloatingInspector` still renders `<InspectorContent block={block} onHandlePointerDown={...} dragging={...} docked={...} onToggleDock={...} />` unchanged.
 
 - [ ] **Step 3: Verify** — `npx tsc --noEmit` clean (remove all now-unused imports tsc flags — after this task `Inspector.tsx` should import little beyond what `FloatingInspector` needs: `useCallback/useEffect/useLayoutEffect/useState` from react, `AnimatePresence`/`motion`, `cn`, `useEditor`/`useSelectedBlock`, `useIframe`, `useCanvasZoom`, `useDrag`, and `InspectorContent`). `npm test` → 111. `npm run build` → succeeds.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/inspector/InspectorContent.tsx components/editor/Inspector.tsx
 git commit -m "refactor(inspector): extract InspectorContent tabs component
@@ -229,6 +254,7 @@ export function useFloatingPanel() {
   };
 }
 ```
+
 Move the indicated code verbatim. Note: `block`, `show`, `style`, `width`, `dragging`, `resizing`, `docked`, `dockHint`, `handlePointerDown`, `handleResizeDown` are all already defined in that body; `toggleDock` is new (replacing the inline `onToggleDock={() => setDocked((d) => !d)}` from the render). The `PanelPos` type + the 5 constants move here too (shown above — delete them from Inspector).
 
 - [ ] **Step 2: Replace `Inspector.tsx` with the thin entry**
@@ -274,12 +300,16 @@ export function FloatingInspector() {
             initial={{ opacity: 0, scale: 0.97, x: docked ? 8 : -6 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            transition={dragging || resizing ? { duration: 0 } : { type: "spring", stiffness: 460, damping: 34 }}
+            transition={
+              dragging || resizing
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 460, damping: 34 }
+            }
             style={style}
             className={cn(
               "z-40 flex flex-col overflow-hidden border-zinc-200 bg-white shadow-2xl ring-1 ring-black/5",
               docked ? "border-l rounded-none" : "rounded-2xl border",
-              (dragging || resizing) && "ring-indigo-300/60 select-none"
+              (dragging || resizing) && "ring-indigo-300/60 select-none",
             )}
             onClick={(e) => e.stopPropagation()}
           >
@@ -305,13 +335,15 @@ export function FloatingInspector() {
   );
 }
 ```
+
 This JSX is byte-identical to the current `FloatingInspector` return, with `onToggleDock={() => setDocked((d) => !d)}` replaced by `onToggleDock={toggleDock}`.
 
 - [ ] **Step 3: Verify**
-`npx tsc --noEmit` → clean. `npm test` → 111. `npm run build` → succeeds. `npx fallow 2>&1 | grep -iE "circular"` → still 0 (no new cycle among the inspector files). Confirm `Inspector.tsx` still exports `FloatingInspector` and nothing else imports the moved internals from `./Inspector` (`grep -rn "from \"./Inspector\"\|from \"@/components/editor/Inspector\"" components app` → only `FloatingInspector`).
-Manual: select a block → panel appears anchored next to it; switch Content/Style tabs; edit a style field (reset dot appears, spacing link toggles); drag the panel by its header; resize via the left edge; drag to the right edge to dock / undock; scroll the canvas (panel re-anchors); ESC deselects/closes.
+      `npx tsc --noEmit` → clean. `npm test` → 111. `npm run build` → succeeds. `npx fallow 2>&1 | grep -iE "circular"` → still 0 (no new cycle among the inspector files). Confirm `Inspector.tsx` still exports `FloatingInspector` and nothing else imports the moved internals from `./Inspector` (`grep -rn "from \"./Inspector\"\|from \"@/components/editor/Inspector\"" components app` → only `FloatingInspector`).
+      Manual: select a block → panel appears anchored next to it; switch Content/Style tabs; edit a style field (reset dot appears, spacing link toggles); drag the panel by its header; resize via the left edge; drag to the right edge to dock / undock; scroll the canvas (panel re-anchors); ESC deselects/closes.
 
 - [ ] **Step 4: Commit**
+
 ```bash
 git add components/editor/inspector/useFloatingPanel.ts components/editor/Inspector.tsx
 git commit -m "refactor(inspector): extract useFloatingPanel; Inspector is a thin entry
@@ -322,11 +354,13 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ---
 
 ## Self-Review Checklist
+
 - [ ] `Inspector.tsx` is a ~60-line thin `FloatingInspector` (hook + panel shell + `<InspectorContent>`); still the only external consumer is `EditorClient` (import unchanged).
 - [ ] Behavior preserved: style reset dots, spacing link, data-driven style groups, content/style tabs, custom inspector (collection), attributes, motion, save-as-component/duplicate/delete/close header actions, panel drag/resize/dock, iframe-pointer passthrough, position recompute on scroll/resize/zoom/select, ESC-to-close.
 - [ ] Name consistency: `StyleGroupView`/`Section`; `TextStyleControl`/`StyleActions`/`VisibilityControl`/`AttributesControl`/`MotionSection`/`ContentField`/`VP`; `InspectorContent`; `useFloatingPanel`.
 - [ ] No new circular deps (`npx fallow` → 0). `npx tsc --noEmit && npm test && npm run build` green (111). Manual smoke clean.
 
 ## Deferred
+
 - The `compute`-on-every-`tree`-change re-render optimization in `useFloatingPanel` (recomputes panel position on each keystroke) — scope it to selected-block changes in a follow-up.
 - Remaining large functions (`useEditor` store 285, `DomTreePanel`, `Dashboard`, `CommandPalette`, `CollectionManager`).

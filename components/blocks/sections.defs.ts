@@ -1,4 +1,12 @@
-import { PanelTop, LayoutGrid, CreditCard, MessageSquareQuote, BarChart3, Rocket, PanelBottom } from "lucide-react";
+import {
+  PanelTop,
+  LayoutGrid,
+  CreditCard,
+  MessageSquareQuote,
+  BarChart3,
+  Rocket,
+  PanelBottom,
+} from "lucide-react";
 import type { BlockDefinition } from "@/lib/blocks/registry-types";
 import {
   HeroBlock,
@@ -26,7 +34,10 @@ export const sectionBlocks: BlockDefinition[] = [
       align: "center",
     },
     defaultStyles: {
-      desktop: { backgroundImage: "linear-gradient(135deg, var(--pc-brand, #6366f1), #8b5cf6)", color: "#ffffff" },
+      desktop: {
+        backgroundImage: "linear-gradient(135deg, var(--pc-brand, #6366f1), #8b5cf6)",
+        color: "#ffffff",
+      },
     },
     fields: [
       { key: "eyebrow", label: "Eyebrow", type: "text" },
@@ -49,9 +60,21 @@ export const sectionBlocks: BlockDefinition[] = [
       subtitle: "Powerful features that help you move faster.",
       columns: 3,
       items: [
-        { icon: "Zap", title: "Lightning fast", text: "Built for speed so your pages load instantly." },
-        { icon: "Shield", title: "Secure by default", text: "Best-in-class security baked into every layer." },
-        { icon: "Sparkles", title: "Beautiful design", text: "Polished components that look great anywhere." },
+        {
+          icon: "Zap",
+          title: "Lightning fast",
+          text: "Built for speed so your pages load instantly.",
+        },
+        {
+          icon: "Shield",
+          title: "Secure by default",
+          text: "Best-in-class security baked into every layer.",
+        },
+        {
+          icon: "Sparkles",
+          title: "Beautiful design",
+          text: "Polished components that look great anywhere.",
+        },
       ],
     },
     defaultStyles: { desktop: { backgroundColor: "#ffffff" } },
@@ -91,9 +114,30 @@ export const sectionBlocks: BlockDefinition[] = [
       title: "Simple pricing",
       subtitle: "Choose the plan that fits.",
       items: [
-        { name: "Starter", price: "$0", period: "/mo", features: "1 project\nCommunity support\nBasic blocks", buttonText: "Get started", featured: false },
-        { name: "Pro", price: "$19", period: "/mo", features: "Unlimited projects\nPriority support\nAll blocks\nExport HTML", buttonText: "Start free trial", featured: true },
-        { name: "Team", price: "$49", period: "/mo", features: "Everything in Pro\nTeam workspaces\nSSO\nAudit logs", buttonText: "Contact sales", featured: false },
+        {
+          name: "Starter",
+          price: "$0",
+          period: "/mo",
+          features: "1 project\nCommunity support\nBasic blocks",
+          buttonText: "Get started",
+          featured: false,
+        },
+        {
+          name: "Pro",
+          price: "$19",
+          period: "/mo",
+          features: "Unlimited projects\nPriority support\nAll blocks\nExport HTML",
+          buttonText: "Start free trial",
+          featured: true,
+        },
+        {
+          name: "Team",
+          price: "$49",
+          period: "/mo",
+          features: "Everything in Pro\nTeam workspaces\nSSO\nAudit logs",
+          buttonText: "Contact sales",
+          featured: false,
+        },
       ],
     },
     defaultStyles: { desktop: { backgroundColor: "#f8fafc" } },
@@ -180,7 +224,10 @@ export const sectionBlocks: BlockDefinition[] = [
       buttonHref: "#",
     },
     defaultStyles: {
-      desktop: { backgroundImage: "linear-gradient(135deg, var(--pc-brand, #6366f1), #8b5cf6)", color: "#ffffff" },
+      desktop: {
+        backgroundImage: "linear-gradient(135deg, var(--pc-brand, #6366f1), #8b5cf6)",
+        color: "#ffffff",
+      },
     },
     fields: [
       { key: "title", label: "Title", type: "text" },

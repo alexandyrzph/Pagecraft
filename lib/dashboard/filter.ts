@@ -11,8 +11,7 @@ export function filterPages<T extends FilterablePage>(
 ): T[] {
   const q = query.trim().toLowerCase();
   return pages.filter((p) => {
-    const matchQ =
-      !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
+    const matchQ = !q || p.title.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
     const matchF =
       filter === "all" ||
       (filter === "live" && p.published) ||

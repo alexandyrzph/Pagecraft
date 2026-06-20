@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { Select } from "../Select";
 
-const items = [{ id: "admin", label: "Admin" }, { id: "editor", label: "Editor" }];
+const items = [
+  { id: "admin", label: "Admin" },
+  { id: "editor", label: "Editor" },
+];
 
 describe("Select", () => {
   it("opens and reports the chosen key", async () => {

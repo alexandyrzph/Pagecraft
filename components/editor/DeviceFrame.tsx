@@ -44,13 +44,13 @@ export function DeviceFrame({
     <div
       className={cn(
         "relative mx-auto h-full w-full overflow-hidden bg-zinc-900 shadow-2xl ring-1 ring-black/30",
-        mobile ? "rounded-[44px] p-3" : "rounded-[34px] p-3.5"
+        mobile ? "rounded-[44px] p-3" : "rounded-[34px] p-3.5",
       )}
     >
       <div
         className={cn(
           "relative h-full overflow-hidden bg-white",
-          mobile ? "rounded-[32px]" : "rounded-[22px]"
+          mobile ? "rounded-[32px]" : "rounded-[22px]",
         )}
       >
         <div className="h-full overflow-y-auto">{children}</div>
@@ -69,7 +69,7 @@ export function DeviceFrame({
         <div
           className={cn(
             "pointer-events-none absolute bottom-1.5 left-1/2 z-20 -translate-x-1/2 rounded-full bg-zinc-400/80",
-            mobile ? "h-1 w-28" : "h-1 w-24"
+            mobile ? "h-1 w-28" : "h-1 w-24",
           )}
         />
       </div>

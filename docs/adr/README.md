@@ -2,8 +2,8 @@
 
 This directory records the significant architectural decisions behind **Pagecraft**
 (`dnd-pagebuilder`). Each record captures the context at the time, the decision
-taken, and the consequences — so future contributors understand *why* the system
-looks the way it does, not just *what* it does.
+taken, and the consequences — so future contributors understand _why_ the system
+looks the way it does, not just _what_ it does.
 
 ## Format
 
@@ -12,10 +12,9 @@ ADR template: **Context → Decision → Consequences → Alternatives considere
 
 - Files are numbered sequentially and never renumbered.
 - A decision is never edited away; if it changes, add a new ADR that
-**supersedes** the old one and update the status of both.
+  **supersedes** the old one and update the status of both.
 
 ## Status legend
-
 
 | Status       | Meaning                                              |
 | ------------ | ---------------------------------------------------- |
@@ -24,9 +23,7 @@ ADR template: **Context → Decision → Consequences → Alternatives considere
 | `Deprecated` | No longer recommended but still present.             |
 | `Proposed`   | Under discussion, not yet implemented.               |
 
-
 ## Index
-
 
 | #                                                | Title                                                         | Status   |
 | ------------------------------------------------ | ------------------------------------------------------------- | -------- |
@@ -41,5 +38,3 @@ ADR template: **Context → Decision → Consequences → Alternatives considere
 | [0009](0009-responsive-scoped-styles.md)         | Per-breakpoint styles compiled to scoped stylesheets          | Accepted |
 | [0010](0010-zod-guarded-api-handlers.md)         | Zod-validated, role-guarded API handlers                      | Accepted |
 | [0011](0011-vitest-no-eslint.md)                 | Vitest dual-project testing; no ESLint                        | Accepted |
-
-

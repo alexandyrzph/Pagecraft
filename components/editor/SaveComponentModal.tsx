@@ -19,12 +19,18 @@ export function SaveComponentModal({
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [seen, setSeen] = useState({ open, defaultName });
+  if (seen.open !== open || seen.defaultName !== defaultName) {
+    setSeen({ open, defaultName });
     if (open) {
       setName(defaultName);
       setSaving(false);
-      requestAnimationFrame(() => inputRef.current?.select());
     }
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => inputRef.current?.select());
   }, [open, defaultName]);
 
   async function submit() {

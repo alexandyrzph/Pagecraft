@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  MeasuringStrategy,
-  closestCenter,
-} from "@dnd-kit/core";
+import { DndContext, DragOverlay, MeasuringStrategy, closestCenter } from "@dnd-kit/core";
 import type { Block, Seo, Theme } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
 import { BlockRenderer } from "@/components/BlockRenderer";
@@ -79,13 +74,20 @@ export function EditorClient({
   const bumpFrame = useCallback(() => setFrameTick((t) => t + 1), []);
   const iframeCtx = useMemo(
     () => ({ frame, tick: frameTick, register: registerFrame, bump: bumpFrame }),
-    [frame, frameTick, registerFrame, bumpFrame]
+    [frame, frameTick, registerFrame, bumpFrame],
   );
 
-  const { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel } = useDragDropManager(frameRef);
+  const { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel } =
+    useDragDropManager(frameRef);
 
-  const { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap, refreshComponents } =
-    useEditorData(mode);
+  const {
+    componentsCtx,
+    collectionsCtx,
+    siteCtx,
+    componentsMap,
+    collectionsMap,
+    refreshComponents,
+  } = useEditorData(mode);
 
   useEffect(() => {
     init({
@@ -123,93 +125,106 @@ export function EditorClient({
 
   return (
     <IframeProvider value={iframeCtx}>
-    <ComponentsProvider value={componentsCtx}>
-    <CollectionsProvider value={collectionsCtx}>
-    <SiteProvider value={siteCtx}>
-    <EditorActionsProvider value={actionsCtx}>
-    <DragProvider value={drag}>
-      <DndContext
-        id="pagebuilder-dnd"
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        measuring={{
-          droppable: { strategy: MeasuringStrategy.WhileDragging, measure },
-          draggable: { measure },
-        }}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragCancel={onDragCancel}
-      >
-        <div className="flex h-screen flex-col overflow-clip overscroll-none bg-zinc-100">
-          <TopBar
-            mode={mode}
-            onSave={save}
-            onExport={exportHtml}
-            onPublish={publish}
-            onUnpublish={unpublish}
-            onOpenPalette={() => setPaletteOpen(true)}
-            onOpenHistory={() => setHistoryOpen(true)}
-          />
-          <div className="flex min-h-0 flex-1">
-            <LeftPanel />
-            <Canvas />
-          </div>
-          <FloatingInspector />
-          <CanvasOverlay />
-          <SelectionBreadcrumb />
-          <DomTreePanel />
-        </div>
+      <ComponentsProvider value={componentsCtx}>
+        <CollectionsProvider value={collectionsCtx}>
+          <SiteProvider value={siteCtx}>
+            <EditorActionsProvider value={actionsCtx}>
+              <DragProvider value={drag}>
+                <DndContext
+                  id="pagebuilder-dnd"
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  measuring={{
+                    droppable: { strategy: MeasuringStrategy.WhileDragging, measure },
+                    draggable: { measure },
+                  }}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                  onDragCancel={onDragCancel}
+                >
+                  <div className="flex h-screen flex-col overflow-clip overscroll-none bg-zinc-100">
+                    <TopBar
+                      mode={mode}
+                      onSave={save}
+                      onExport={exportHtml}
+                      onPublish={publish}
+                      onUnpublish={unpublish}
+                      onOpenPalette={() => setPaletteOpen(true)}
+                      onOpenHistory={() => setHistoryOpen(true)}
+                    />
+                    <div className="flex min-h-0 flex-1">
+                      <LeftPanel />
+                      <Canvas />
+                    </div>
+                    <FloatingInspector />
+                    <CanvasOverlay />
+                    <SelectionBreadcrumb />
+                    <DomTreePanel />
+                  </div>
 
-        <DragOverlay dropAnimation={null}>
-          {drag.ghost ? <GhostCard block={drag.ghost} components={componentsMap} /> : null}
-        </DragOverlay>
+                  <DragOverlay dropAnimation={null}>
+                    {drag.ghost ? (
+                      <GhostCard block={drag.ghost} components={componentsMap} />
+                    ) : null}
+                  </DragOverlay>
 
-        <CommandPalette
-          open={paletteOpen}
-          onClose={() => setPaletteOpen(false)}
-          onSave={save}
-          onExport={exportHtml}
-          onPublish={publish}
-        />
-      </DndContext>
+                  <CommandPalette
+                    open={paletteOpen}
+                    onClose={() => setPaletteOpen(false)}
+                    onSave={save}
+                    onExport={exportHtml}
+                    onPublish={publish}
+                  />
+                </DndContext>
 
-      {/* hidden clean render used by HTML export */}
-      <div ref={exportRef} className="hidden" aria-hidden>
-        <BlockRenderer tree={tree} viewport="desktop" inlineStyles={false} components={componentsMap} collections={collectionsMap} />
-      </div>
+                {/* hidden clean render used by HTML export */}
+                <div ref={exportRef} className="hidden" aria-hidden>
+                  <BlockRenderer
+                    tree={tree}
+                    viewport="desktop"
+                    inlineStyles={false}
+                    components={componentsMap}
+                    collections={collectionsMap}
+                  />
+                </div>
 
-      <UnsavedModal
-        open={!!pending}
-        onCancel={() => setPending(null)}
-        onDiscard={() => {
-          useEditor.setState({ dirty: false });
-          pending?.run();
-          setPending(null);
-        }}
-        onSave={async () => {
-          await save();
-          pending?.run();
-          setPending(null);
-        }}
-      />
+                <UnsavedModal
+                  open={!!pending}
+                  onCancel={() => setPending(null)}
+                  onDiscard={() => {
+                    useEditor.setState({ dirty: false });
+                    pending?.run();
+                    setPending(null);
+                  }}
+                  onSave={async () => {
+                    await save();
+                    pending?.run();
+                    setPending(null);
+                  }}
+                />
 
-      <SaveComponentModal
-        open={!!saveCompBlock}
-        defaultName="New component"
-        onCancel={() => setSaveCompBlock(null)}
-        onSave={persistComponent}
-      />
+                <SaveComponentModal
+                  open={!!saveCompBlock}
+                  defaultName="New component"
+                  onCancel={() => setSaveCompBlock(null)}
+                  onSave={persistComponent}
+                />
 
-      <ContextMenu />
-      <SectionInserter />
-      <AiGenerateModal />
-      <RichTextToolbar />
-      <VersionHistory open={historyOpen} onClose={() => setHistoryOpen(false)} pageId={page.id} save={save} />
-    </DragProvider>
-    </EditorActionsProvider>
-    </SiteProvider>
-    </CollectionsProvider>
-    </ComponentsProvider>
+                <ContextMenu />
+                <SectionInserter />
+                <AiGenerateModal />
+                <RichTextToolbar />
+                <VersionHistory
+                  open={historyOpen}
+                  onClose={() => setHistoryOpen(false)}
+                  pageId={page.id}
+                  save={save}
+                />
+              </DragProvider>
+            </EditorActionsProvider>
+          </SiteProvider>
+        </CollectionsProvider>
+      </ComponentsProvider>
     </IframeProvider>
   );
 }

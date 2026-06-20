@@ -10,7 +10,7 @@ describe("RadioGroup", () => {
       <RadioGroup label="Plan" onChange={onChange}>
         <Radio value="free">Free</Radio>
         <Radio value="pro">Pro</Radio>
-      </RadioGroup>
+      </RadioGroup>,
     );
     await userEvent.click(screen.getByRole("radio", { name: "Pro" }));
     expect(onChange).toHaveBeenCalledWith("pro");

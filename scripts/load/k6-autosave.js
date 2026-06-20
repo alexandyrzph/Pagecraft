@@ -59,7 +59,7 @@ function buildContent(n) {
 
 const PAYLOAD = JSON.stringify({ content: buildContent(40) });
 
-export default function () {
+function autosave() {
   const res = http.put(`${BASE_URL}/api/pages/${PAGE_ID}`, PAYLOAD, {
     headers: { "Content-Type": "application/json", Cookie: `pc_session=${SESSION}` },
   });
@@ -71,3 +71,5 @@ export default function () {
   // Authors don't save continuously; ~1 save / 2s while actively editing.
   sleep(2);
 }
+
+export default autosave;
