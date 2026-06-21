@@ -7,15 +7,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Site {
+  id          String       @id @default(cuid())
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String       @default("Untitled site")
+  handle      String       @default("main")
+  homePageId  String?
+  header      String       @default("[]")
+  footer      String       @default("[]")
+  colors      String       @default("[]")
+  textStyles  String       @default("[]")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  pages       Page[]
+  collections Collection[]
+  assets      Asset[]
+  components  Component[]
+
+  @@unique([workspaceId, handle])
+  @@index([workspaceId])
+}
+
 model Page {
   id              String   @id @default(cuid())
   title           String   @default("Untitled Page")
-  slug            String   @unique
-  content         String   @default("[]") // JSON-encoded block tree (Block[])
-  theme           String   @default("{}") // JSON design tokens
-  workspaceId     String?
+  slug            String
+  content         String   @default("[]")
+  theme           String   @default("{}")
+  siteId          String
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   published       Boolean  @default(false)
-  // SEO
   metaTitle       String?
   metaDescription String?
   ogImage         String?
@@ -26,14 +48,15 @@ model Page {
   versions    PageVersion[]
   thumbnail   PageThumbnail?
 
-  @@index([workspaceId])
+  @@unique([siteId, slug])
+  @@index([siteId])
 }
 
 model PageThumbnail {
   pageId            String   @id
   page              Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  url               String   // e.g. "/uploads/thumbnails/<pageId>.png"
-  takenForUpdatedAt DateTime // the Page.updatedAt value this screenshot reflects
+  url               String
+  takenForUpdatedAt DateTime
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -43,7 +66,7 @@ model PageVersion {
   pageId    String
   page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
   label     String   @default("")
-  content   String   @default("[]") // JSON snapshot of the block tree
+  content   String   @default("[]")
   theme     String   @default("{}")
   createdAt DateTime @default(now())
 
@@ -55,49 +78,51 @@ model Submission {
   pageId    String
   page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
   formId    String   @default("form")
-  data      String   @default("{}") // JSON of field -> value
+  data      String   @default("{}")
   createdAt DateTime @default(now())
 }
 
 model Component {
-  id          String   @id @default(cuid())
-  name        String   @default("Component")
-  content     String   @default("[]") // JSON block subtree (Block[])
-  workspaceId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @default("Component")
+  content   String   @default("[]")
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([workspaceId])
+  @@index([siteId])
 }
 
 model Asset {
-  id          String   @id @default(cuid())
-  name        String
-  url         String
-  type        String   @default("")
-  size        Int      @default(0)
-  workspaceId String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  type      String   @default("")
+  size      Int      @default(0)
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  @@index([workspaceId])
+  @@index([siteId])
 }
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  name           String          @default("")
-  passwordHash   String?
-  onboardedAt    DateTime?
-  createdAt      DateTime        @default(now())
-  sessions       Session[]
-  resets         PasswordReset[]
-  memberships    Membership[]
-  oauthAccounts  OAuthAccount[]
+  id            String          @id @default(cuid())
+  email         String          @unique
+  name          String          @default("")
+  passwordHash  String?
+  onboardedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  sessions      Session[]
+  resets        PasswordReset[]
+  memberships   Membership[]
+  oauthAccounts OAuthAccount[]
 }
 
 model OAuthAccount {
   id                String   @id @default(cuid())
-  provider          String   // "google" | "github"
+  provider          String
   providerAccountId String
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -128,37 +153,29 @@ model PasswordReset {
   createdAt DateTime  @default(now())
 }
 
-model Site {
-  id          String   @id @default(cuid())
-  workspaceId String?  @unique // one Site per workspace; NULL = unscoped/legacy (SQLite treats NULLs as distinct)
-  header      String   @default("[]") // JSON Block[] rendered atop every page
-  footer      String   @default("[]") // JSON Block[] rendered below every page
-  colors      String   @default("[]") // JSON ColorToken[] — shared design-system colors
-  textStyles  String   @default("[]") // JSON TextStyle[] — shared typography presets
-  updatedAt   DateTime @updatedAt
-}
-
 model Collection {
   id             String   @id @default(cuid())
   name           String   @default("Collection")
-  slug           String   @unique
-  fields         String   @default("[]") // JSON: CollectionField[]
+  slug           String
+  fields         String   @default("[]")
   detailEnabled  Boolean  @default(false)
-  detailTemplate String   @default("[]") // JSON Block[] with {{field}} tokens
-  workspaceId    String?
+  detailTemplate String   @default("[]")
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   items CollectionItem[]
 
-  @@index([workspaceId])
+  @@unique([siteId, slug])
+  @@index([siteId])
 }
 
 model CollectionItem {
   id           String     @id @default(cuid())
   collectionId String
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  data         String     @default("{}") // JSON: { fieldKey: value }
+  data         String     @default("{}")
   order        Int        @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -182,6 +199,7 @@ model Workspace {
   updatedAt   DateTime     @updatedAt
   memberships Membership[]
   invites     Invite[]
+  sites       Site[]
 }
 
 model Membership {

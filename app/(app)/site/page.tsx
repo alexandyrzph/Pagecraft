@@ -1,14 +1,16 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PanelTop, PanelBottom, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 import { parseContent } from "@/lib/page-service";
 
 export const dynamic = "force-dynamic";
 
 export default async function SitePage() {
-  const { workspace } = await requireWorkspace();
-  const site = await prisma.site.findUnique({ where: { workspaceId: workspace.id } });
+  const ctx = await getActiveSite();
+  if (!ctx) redirect("/onboarding");
+  const site = await prisma.site.findFirst({ where: { id: ctx.site.id } });
 
   const headerCount = parseContent(site?.header ?? "[]").length;
   const footerCount = parseContent(site?.footer ?? "[]").length;

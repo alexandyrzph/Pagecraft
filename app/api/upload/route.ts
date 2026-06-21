@@ -1,4 +1,4 @@
-import { withRole } from "@/lib/api/api-handler";
+import { withSiteRole } from "@/lib/api/api-handler";
 import { created, badRequest, error } from "@/lib/api/api-response";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -8,13 +8,12 @@ import { slugify } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+const MAX_BYTES = 25 * 1024 * 1024;
 
 let seq = 0;
 
-// POST /api/upload — multipart file upload → saved under /public/uploads
 export async function POST(req: Request) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const form = await req.formData().catch(() => null);
     const file = form?.get("file");
     if (!file || typeof file === "string") {
@@ -46,7 +45,7 @@ export async function POST(req: Request) {
         url,
         type: file.type || "",
         size: file.size,
-        workspaceId: ws.workspace.id,
+        siteId: ctx.site.id,
       },
     });
 

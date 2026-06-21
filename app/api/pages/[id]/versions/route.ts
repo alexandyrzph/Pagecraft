@@ -1,17 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { withWorkspace, withRole } from "@/lib/api/api-handler";
+import { withSite, withSiteRole } from "@/lib/api/api-handler";
 import { json, created, notFound } from "@/lib/api/api-response";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET /api/pages/[id]/versions — lightweight list (no content)
 export async function GET(_req: Request, { params }: Ctx) {
-  return withWorkspace(async (ws) => {
+  return withSite(async (ctx) => {
     const { id } = await params;
 
-    const page = await prisma.page.findFirst({ where: { id, workspaceId: ws.workspace.id } });
+    const page = await prisma.page.findFirst({ where: { id, siteId: ctx.site.id } });
     if (!page) return notFound();
 
     const versions = await prisma.pageVersion.findMany({
@@ -26,12 +25,11 @@ export async function GET(_req: Request, { params }: Ctx) {
   });
 }
 
-// POST /api/pages/[id]/versions — snapshot the page's current content + theme
 export async function POST(req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
 
-    const page = await prisma.page.findFirst({ where: { id, workspaceId: ws.workspace.id } });
+    const page = await prisma.page.findFirst({ where: { id, siteId: ctx.site.id } });
     if (!page) return notFound();
 
     const body = await req.json().catch(() => ({}));
@@ -41,7 +39,6 @@ export async function POST(req: Request, { params }: Ctx) {
       data: { pageId: id, label, content: page.content, theme: page.theme },
     });
 
-    // keep only the 30 most recent versions per page
     const old = await prisma.pageVersion.findMany({
       where: { pageId: id },
       orderBy: { createdAt: "desc" },

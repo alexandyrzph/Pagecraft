@@ -4,20 +4,12 @@ import {
   type Role,
   type WorkspaceCtx,
 } from "@/lib/auth/workspace";
+import { requireApiSite, requireApiSiteRole, type SiteCtx } from "@/lib/auth/site";
 import { authzTotal } from "@/lib/observability";
 
-type Guarded = WorkspaceCtx | { response: Response };
-
-/**
- * Pure core: if the guard short-circuited, return its Response untouched;
- * otherwise invoke `fn` with the resolved workspace context.
- *
- * Records the authorization decision as a metric so denied/allowed rates are
- * visible for every guarded route without per-handler wiring.
- */
-export async function runGuarded(
-  guard: Guarded,
-  fn: (ws: WorkspaceCtx) => Response | Promise<Response>,
+export async function runGuarded<C extends { role: Role }>(
+  guard: C | { response: Response },
+  fn: (ctx: C) => Response | Promise<Response>,
 ): Promise<Response> {
   if ("response" in guard) {
     authzTotal.inc({ result: "denied", status: guard.response.status });
@@ -27,17 +19,28 @@ export async function runGuarded(
   return fn(guard);
 }
 
-/** Require any workspace membership (VIEWER+), then run `fn` with the workspace context. */
 export async function withWorkspace(
   fn: (ws: WorkspaceCtx) => Response | Promise<Response>,
 ): Promise<Response> {
   return runGuarded(await requireApiWorkspace(), fn);
 }
 
-/** Require at least `min` role, then run `fn` with the workspace context. */
 export async function withRole(
   min: Role,
   fn: (ws: WorkspaceCtx) => Response | Promise<Response>,
 ): Promise<Response> {
   return runGuarded(await requireApiRole(min), fn);
+}
+
+export async function withSite(
+  fn: (ctx: SiteCtx) => Response | Promise<Response>,
+): Promise<Response> {
+  return runGuarded(await requireApiSite(), fn);
+}
+
+export async function withSiteRole(
+  min: Role,
+  fn: (ctx: SiteCtx) => Response | Promise<Response>,
+): Promise<Response> {
+  return runGuarded(await requireApiSiteRole(min), fn);
 }

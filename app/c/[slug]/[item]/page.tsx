@@ -11,7 +11,7 @@ import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 export const dynamic = "force-dynamic";
 
 async function load(slug: string, itemId: string) {
-  const collection = await prisma.collection.findUnique({ where: { slug } });
+  const collection = await prisma.collection.findFirst({ where: { slug } });
   if (!collection || !collection.detailEnabled) return null;
   const item = await prisma.collectionItem.findUnique({ where: { id: itemId } });
   if (!item || item.collectionId !== collection.id) return null;
@@ -44,13 +44,12 @@ export default async function CollectionDetailPage({
   const template = parseContent(found.collection.detailTemplate);
   const tree = applyTokens(template, data);
 
-  // header / footer + components + collections, scoped to the collection's workspace
-  const workspaceId = found.collection.workspaceId;
-  const site = workspaceId ? await prisma.site.findUnique({ where: { workspaceId } }) : null;
+  const siteId = found.collection.siteId;
+  const site = await prisma.site.findFirst({ where: { id: siteId } });
   const header = site ? parseContent(site.header) : [];
   const footer = site ? parseContent(site.footer) : [];
 
-  const comps = await prisma.component.findMany({ where: { workspaceId } });
+  const comps = await prisma.component.findMany({ where: { siteId } });
   const components: ComponentMap = {};
   for (const c of comps) {
     try {
@@ -60,7 +59,7 @@ export default async function CollectionDetailPage({
     }
   }
   const collectionRows = await prisma.collection.findMany({
-    where: { workspaceId },
+    where: { siteId },
     include: { items: { orderBy: { order: "asc" } } },
   });
   const collections = buildCollectionMap(collectionRows);

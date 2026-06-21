@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { serializeItem } from "@/lib/cms/collection-service";
-import { withRole } from "@/lib/api/api-handler";
+import { withSiteRole } from "@/lib/api/api-handler";
 import { json, notFound } from "@/lib/api/api-response";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string; itemId: string }> };
 
 export async function PUT(req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id, itemId } = await params;
 
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
     });
     if (!collection) return notFound();
 
@@ -33,11 +33,11 @@ export async function PUT(req: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id, itemId } = await params;
 
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
     });
     if (!collection) return notFound();
 

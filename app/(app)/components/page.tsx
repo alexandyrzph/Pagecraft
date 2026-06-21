@@ -1,14 +1,16 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Component } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 
 export const dynamic = "force-dynamic";
 
 export default async function ComponentsPage() {
-  const { workspace } = await requireWorkspace();
+  const ctx = await getActiveSite();
+  if (!ctx) redirect("/onboarding");
   const components = await prisma.component.findMany({
-    where: { workspaceId: workspace.id },
+    where: { siteId: ctx.site.id },
     orderBy: { updatedAt: "desc" },
   });
 

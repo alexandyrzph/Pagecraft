@@ -1,15 +1,17 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Database, LayoutGrid } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 import { NewCollectionButton } from "@/components/app-shell/cms/NewCollectionButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function CmsPage() {
-  const { workspace } = await requireWorkspace();
+  const ctx = await getActiveSite();
+  if (!ctx) redirect("/onboarding");
   const collections = await prisma.collection.findMany({
-    where: { workspaceId: workspace.id },
+    where: { siteId: ctx.site.id },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { items: true } } },
   });

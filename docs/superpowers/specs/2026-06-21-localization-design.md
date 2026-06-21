@@ -213,7 +213,7 @@ Proxy also sets a `pc_locale` cookie (non-authoritative, for the client locale s
 | -------------- | ---------------------- | ------------------------------------ |
 | `en`           | `/p/about`             | `en`, base content                   |
 | `en`           | `/fr/p/about`          | `fr` overlay over base               |
-| `en`           | `/en/p/about`          | 301 → `/p/about`                      |
+| `en`           | `/en/p/about`          | 301 → `/p/about`                     |
 | `en`           | `/zz/p/about`          | 404 (`zz` ∉ `Site.locales`)          |
 | `en`           | `/fr/c/blog/<itemId>`  | `fr` overlay over item + template    |
 | `en`           | `/` (custom domain)    | `en` home page (custom-domains spec) |

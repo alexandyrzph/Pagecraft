@@ -33,21 +33,21 @@ references this one. Per-site member permissions are a noted future enhancement.
 
 ## 2. What scopes to Workspace vs. Site
 
-| Concern | Scope | Notes |
-| --- | --- | --- |
-| Members, `Membership` (Role), `Invite` | **Workspace** | A workspace member can access **all** of its sites at their workspace role. Per-site roles are future. |
-| Billing / plan | **Workspace** | Future. |
-| `ActivityEvent` (audit) | **Workspace** | Gains an optional `siteId` for context. |
-| `Site` (name, home page, header/footer, design tokens) | itself | Many per workspace. |
-| `Page`, `Collection` (+ `CollectionItem`) | **Site** | `siteId`. |
-| `Asset` (media library), `Component` (reusable) | **Site** | Per the product decision — each site has its own isolated assets + components. |
-| Design tokens (`colors`, `textStyles`) | **Site** | Stay on `Site` (zero-move). Each site has its own branding. Workspace-level shared libraries are a future enhancement. |
-| `Domain` | **Site** | Added by the custom-domains spec; FK is `siteId`. |
-| Products / orders | **Site** | Added by the e-commerce spec; a site is a "store" when commerce is enabled. |
-| Locale config | **Site** | Added by the localization spec (`defaultLocale`, `locales`). |
+| Concern                                                | Scope         | Notes                                                                                                                  |
+| ------------------------------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Members, `Membership` (Role), `Invite`                 | **Workspace** | A workspace member can access **all** of its sites at their workspace role. Per-site roles are future.                 |
+| Billing / plan                                         | **Workspace** | Future.                                                                                                                |
+| `ActivityEvent` (audit)                                | **Workspace** | Gains an optional `siteId` for context.                                                                                |
+| `Site` (name, home page, header/footer, design tokens) | itself        | Many per workspace.                                                                                                    |
+| `Page`, `Collection` (+ `CollectionItem`)              | **Site**      | `siteId`.                                                                                                              |
+| `Asset` (media library), `Component` (reusable)        | **Site**      | Per the product decision — each site has its own isolated assets + components.                                         |
+| Design tokens (`colors`, `textStyles`)                 | **Site**      | Stay on `Site` (zero-move). Each site has its own branding. Workspace-level shared libraries are a future enhancement. |
+| `Domain`                                               | **Site**      | Added by the custom-domains spec; FK is `siteId`.                                                                      |
+| Products / orders                                      | **Site**      | Added by the e-commerce spec; a site is a "store" when commerce is enabled.                                            |
+| Locale config                                          | **Site**      | Added by the localization spec (`defaultLocale`, `locales`).                                                           |
 
-**Rule of thumb:** the workspace is the *team & billing boundary*; the site is the *website &
-content boundary*.
+**Rule of thumb:** the workspace is the _team & billing boundary_; the site is the _website &
+content boundary_.
 
 ---
 
@@ -102,7 +102,7 @@ Transitively scoped (unchanged, reached via their parent): `CollectionItem` (→
 `PageVersion` / `PageThumbnail` / `Submission` (→ Page).
 
 **Key fix this unlocks:** `Page.slug` is currently **globally** `@unique`, which makes
-`acme.com/about` and `globex.com/about` impossible — and even two sites in the *same* workspace
+`acme.com/about` and `globex.com/about` impossible — and even two sites in the _same_ workspace
 couldn't both have `/about`, `/contact`, `/privacy`. Scoping to `@@unique([siteId, slug])` (not
 `[workspaceId, slug]`) is what makes true multi-tenant paths work — a prerequisite the
 custom-domains spec depended on.

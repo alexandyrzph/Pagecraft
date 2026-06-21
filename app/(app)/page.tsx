@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/auth";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { isThumbnailStale } from "@/lib/thumbnails/staleness";
 
@@ -11,10 +11,11 @@ export default async function Home() {
   const user = await requireUser();
   if (!user.onboarded) redirect("/onboarding");
 
-  const { workspace } = await requireWorkspace();
+  const ctx = await getActiveSite();
+  if (!ctx) redirect("/onboarding");
 
   const pages = await prisma.page.findMany({
-    where: { workspaceId: workspace.id },
+    where: { siteId: ctx.site.id },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { submissions: true } }, thumbnail: true },
   });

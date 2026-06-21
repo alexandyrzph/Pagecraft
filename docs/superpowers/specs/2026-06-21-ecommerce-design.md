@@ -67,7 +67,7 @@ Each store-`Site` connects **its own** Stripe account via **Stripe Connect (Stan
 
 [Medusa v2](https://medusajs.com) is an open-source headless commerce engine (Node service + Postgres) that ships warehouses/stock locations, multi-region pricing, B2B price lists, multi-channel/POS, fulfillment providers, and a full admin out of the box. It's the "right" answer if commerce becomes the product rather than a feature of the builder.
 
-**Why deferred:** it's a *second backend* — a separate Node service, a Postgres database (we're on SQLite), and a sync layer between Medusa's catalog/orders and our page/CMS/site models. That's a large infra and operational step for a feature most workspaces will use in a basic single-region, single-warehouse way. Stripe-native covers that 90% with one SDK.
+**Why deferred:** it's a _second backend_ — a separate Node service, a Postgres database (we're on SQLite), and a sync layer between Medusa's catalog/orders and our page/CMS/site models. That's a large infra and operational step for a feature most workspaces will use in a basic single-region, single-warehouse way. Stripe-native covers that 90% with one SDK.
 
 **When to switch to Medusa:** when we need any of — real multi-location/warehouse inventory, B2B customer-specific price lists, multi-channel/POS sharing one catalog, complex tax/fulfillment provider routing, or our own checkout UI with deep cart logic (bundles, gift cards, store credit). At that point Stripe becomes Medusa's payment provider and our blocks bind to Medusa's catalog instead of local Prisma models. The block/binding layer and admin UI designed here are the parts we'd keep; the data model would move behind Medusa.
 
@@ -77,11 +77,11 @@ Each store-`Site` connects **its own** Stripe account via **Stripe Connect (Stan
 
 All new models follow the existing schema conventions in `prisma/schema.prisma`: `cuid()` ids, JSON-as-`String` columns for flexible blobs (as `Page.content`, `Collection.fields`, `CollectionItem.data` already do), `DateTime` `createdAt`/`updatedAt`, and `onDelete: Cascade` on owned relations. Per the foundation model, commerce content scopes to a **`Site`** (or, equivalently, to its `Store`), not to a workspace: catalog/cart/order rows carry `siteId` (with `@@index([siteId])`) — or `storeId`, since `Store` is 1:1 with `Site` — and resolve their owning workspace through the `Site` row. The model bodies below use `siteId` as the scoping column; `storeId` is interchangeable wherever a row already joins to `Store`.
 
-**Mirrored vs Stripe-owned** is called out per model. Rule of thumb: catalog and order *records* are ours; the `stripe*Id` columns are foreign keys into Stripe; money/tax *math* is Stripe's and only reflected here.
+**Mirrored vs Stripe-owned** is called out per model. Rule of thumb: catalog and order _records_ are ours; the `stripe*Id` columns are foreign keys into Stripe; money/tax _math_ is Stripe's and only reflected here.
 
 ### Store settings (1:1 satellite of a Site)
 
-Commerce is enabled on a `Site` by giving it a `Store` row. Rather than push commerce columns onto every `Site` (most sites aren't stores), add a 1:1 `Store` satellite keyed by `siteId @unique` — present only for sites that sell, so non-store sites carry no commerce columns. A `Site` *is* a store exactly when a `Store` row exists for it; that row holds the store settings and the connected `stripeAccountId`:
+Commerce is enabled on a `Site` by giving it a `Store` row. Rather than push commerce columns onto every `Site` (most sites aren't stores), add a 1:1 `Store` satellite keyed by `siteId @unique` — present only for sites that sell, so non-store sites carry no commerce columns. A `Site` _is_ a store exactly when a `Store` row exists for it; that row holds the store settings and the connected `stripeAccountId`:
 
 ```
 model Store {
@@ -276,7 +276,7 @@ model DiscountCode {
 }
 ```
 
-The discount *math* (percent/amount, currency restrictions, expiry, usage limits) is **Stripe-owned**; we mirror identifiers + the human code so the admin can list and deactivate them. Order discount totals come back on the settled session.
+The discount _math_ (percent/amount, currency restrictions, expiry, usage limits) is **Stripe-owned**; we mirror identifiers + the human code so the admin can list and deactivate them. Order discount totals come back on the settled session.
 
 ### ShippingRate / zone — Stripe-first, local optional
 
@@ -345,7 +345,7 @@ The CMS detail mechanism is the exact pattern to reuse. Today `app/c/[slug]/[ite
 
 A **storefront index** at `app/store/page.tsx` (or any normal page on the store-site hosting a `ProductGrid` block) lists that site's products. Both `/store` routes must be added to the **public allowlist in `proxy.ts`** next to `/p/` and `/c/` (they're buyer-facing, not builder pages). Like the existing public pages, they're `export const dynamic = "force-dynamic"`.
 
-> Alternative considered: extend the CMS detail mechanism itself (treat products as a special Collection). Rejected — products need typed price/inventory/variant structure and Stripe sync that the generic `CollectionItem.data` blob doesn't model well. A dedicated route + models is cleaner, while still *reusing the rendering pattern*.
+> Alternative considered: extend the CMS detail mechanism itself (treat products as a special Collection). Rejected — products need typed price/inventory/variant structure and Stripe sync that the generic `CollectionItem.data` blob doesn't model well. A dedicated route + models is cleaner, while still _reusing the rendering pattern_.
 
 ---
 
@@ -392,12 +392,12 @@ Two options, sequenced:
 
 ## 6. Tax, shipping, discounts, multi-currency mapping
 
-| Capability | Stripe primitive | How it maps here |
-|---|---|---|
-| **Tax** | **Stripe Tax** (`automatic_tax.enabled` on the Checkout Session) | Toggled by `Store.taxEnabled`. Stripe computes tax from the buyer's address and the merchant's registrations at checkout. We **never compute tax locally**; `Order.taxAmount` is copied from `total_details.amount_tax`. Merchant manages registrations in their Stripe dashboard (Standard Connect). |
-| **Shipping** | Checkout **`shipping_options`** (+ `shipping_address_collection`) | `Store.shippingMode`: `"stripe"` → reference mirrored `ShippingRate.stripeShippingRateId`; `"local"` → pass rate data inline at session create; `"none"` → digital/no shipping. `ShippingRate.countries` gates options by destination. `Order.shippingAmount` ← `amount_shipping`. |
-| **Discounts** | **Coupons + Promotion Codes** | `allow_promotion_codes: true` lets buyers enter codes on Stripe's page. `DiscountCode` mirrors id + human code for admin listing; discount math is Stripe-owned. `Order.discountAmount` ← `total_details.amount_discount`. |
-| **Multi-currency** | **Adaptive Pricing** (presentment currencies) | Enabled on the connected account; Stripe presents prices in the buyer's local currency at checkout from our single authored price. `Order.currency` records the settlement currency. P5 may add explicit per-currency authored prices if Adaptive Pricing's auto-conversion isn't enough. Local prices stay authored in `Store.currency`; presentment is Stripe's job. |
+| Capability         | Stripe primitive                                                  | How it maps here                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tax**            | **Stripe Tax** (`automatic_tax.enabled` on the Checkout Session)  | Toggled by `Store.taxEnabled`. Stripe computes tax from the buyer's address and the merchant's registrations at checkout. We **never compute tax locally**; `Order.taxAmount` is copied from `total_details.amount_tax`. Merchant manages registrations in their Stripe dashboard (Standard Connect).                                                                  |
+| **Shipping**       | Checkout **`shipping_options`** (+ `shipping_address_collection`) | `Store.shippingMode`: `"stripe"` → reference mirrored `ShippingRate.stripeShippingRateId`; `"local"` → pass rate data inline at session create; `"none"` → digital/no shipping. `ShippingRate.countries` gates options by destination. `Order.shippingAmount` ← `amount_shipping`.                                                                                     |
+| **Discounts**      | **Coupons + Promotion Codes**                                     | `allow_promotion_codes: true` lets buyers enter codes on Stripe's page. `DiscountCode` mirrors id + human code for admin listing; discount math is Stripe-owned. `Order.discountAmount` ← `total_details.amount_discount`.                                                                                                                                             |
+| **Multi-currency** | **Adaptive Pricing** (presentment currencies)                     | Enabled on the connected account; Stripe presents prices in the buyer's local currency at checkout from our single authored price. `Order.currency` records the settlement currency. P5 may add explicit per-currency authored prices if Adaptive Pricing's auto-conversion isn't enough. Local prices stay authored in `Store.currency`; presentment is Stripe's job. |
 
 The throughline: we **author** catalog + base price + shipping/discount intent locally, **delegate** tax/currency/discount math + hosted UI to Stripe, and **record** the computed money outcomes back onto `Order`.
 
@@ -429,7 +429,7 @@ New admin surface under `app/(app)/` (sibling to existing `cms`, `design`, `sett
 - **Role guards.** Mutations use `withRole`/`requireApiRole` (`lib/api/api-handler.ts`); read endpoints use `withWorkspace`. Public storefront read endpoints (catalog, cart) are intentionally unauthenticated but workspace-scoped and rate-limit-eligible.
 - **Webhook signature verification.** `POST /api/webhooks/stripe` reads the **raw body** (Next 16 route handler: read `await req.text()`, do not pre-parse JSON) and verifies via `stripe.webhooks.constructEvent(rawBody, sig, secret)`. Reject (400) on bad signature. The route is under `/api`, already exempt from the `proxy.ts` session gate. Connect events may arrive with an account context — verify against the platform endpoint secret (and per-account secret if used).
 - **Idempotency.** Webhooks retry; settlement must be safe to replay. Use `Order.stripeCheckoutSessionId @unique` (and/or a processed-event log keyed by Stripe event id) so a duplicate `checkout.session.completed` is a no-op. Outbound Stripe writes (checkout create, refunds) pass an **Idempotency-Key** so client retries don't double-charge.
-- **Inventory race conditions.** Two webhooks (or a webhook + manual edit) must not over-decrement. Decrement inside a Prisma `$transaction` with a guarded conditional update (`UPDATE … SET inventory = inventory - qty WHERE inventory >= qty` semantics). SQLite serializes writes, which helps, but the order-creation + decrement must be one transaction so a partially-applied order can't exist. Oversell is bounded by checking stock at checkout-session creation *and* at settlement; if stock ran out between (rare, since Checkout sessions are short-lived), the policy decides (deny → flag the order for manual resolution; `continue` → allow backorder).
+- **Inventory race conditions.** Two webhooks (or a webhook + manual edit) must not over-decrement. Decrement inside a Prisma `$transaction` with a guarded conditional update (`UPDATE … SET inventory = inventory - qty WHERE inventory >= qty` semantics). SQLite serializes writes, which helps, but the order-creation + decrement must be one transaction so a partially-applied order can't exist. Oversell is bounded by checking stock at checkout-session creation _and_ at settlement; if stock ran out between (rare, since Checkout sessions are short-lived), the policy decides (deny → flag the order for manual resolution; `continue` → allow backorder).
 - **Money authority.** Never trust client-sent prices. The checkout route re-derives line items from `ProductVariant`/`stripePriceId`; `Order` money fields come only from Stripe's computed session totals.
 - **No secrets in the client.** The Stripe **secret key** and webhook secret are server-only env (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`); only `stripeAccountId` and publishable identifiers are ever exposed.
 
@@ -467,7 +467,7 @@ Framework-free logic gets unit tests, the way `lib/cms/cms.ts` is tested in isol
 - **Cart math** — line totals, subtotal, quantity clamping to inventory, currency consistency.
 - **Pricing/variant** — option→variant resolution, min-price for grid cards, minor-unit formatting per currency.
 - **Inventory** — decrement guard (no negative under `deny`), `continue` backorder, race-safe transactional helper (pure function over a fake store + a transaction integration test).
-- **Webhook handler** — signature-verified event parsing, idempotent order creation (replay a duplicate `checkout.session.completed` → exactly one `Order`), money-field mapping from session totals, `account.updated`/`charge.refunded` reducers. Stripe SDK calls are mocked; the *handler logic* is unit-tested.
+- **Webhook handler** — signature-verified event parsing, idempotent order creation (replay a duplicate `checkout.session.completed` → exactly one `Order`), money-field mapping from session totals, `account.updated`/`charge.refunded` reducers. Stripe SDK calls are mocked; the _handler logic_ is unit-tested.
 - **Token fill for product template** — `applyTokens` over product data (reuses the existing `cms-tokens` test approach).
 - **Block defs** — each new block's `defaultProps`/`defaultStyles`/registry registration sanity (mirrors how `collection.defs` is structured).
 
@@ -477,7 +477,7 @@ Framework-free logic gets unit tests, the way `lib/cms/cms.ts` is tested in isol
 
 ## 11. Risks & open questions
 
-- **Buyer accounts vs builder members.** §5.6's native order history needs a *buyer* identity, which doesn't exist (`Membership`/`User` are for builders). P4 ships the Stripe customer portal to avoid building buyer auth now; native accounts are a deferred, separate spec. **Open.**
+- **Buyer accounts vs builder members.** §5.6's native order history needs a _buyer_ identity, which doesn't exist (`Membership`/`User` are for builders). P4 ships the Stripe customer portal to avoid building buyer auth now; native accounts are a deferred, separate spec. **Open.**
 - **Local↔Stripe drift.** Prices, products, and inventory can diverge if a webhook is missed or a Stripe-side edit happens. Mitigation: webhooks are the reconciliation channel + a manual "resync" action; consider a periodic reconcile job. **Open: do we need scheduled reconciliation, or is on-demand enough?**
 - **SQLite under store load.** SQLite serializes writes; high-frequency webhook settlement + inventory decrements could contend. Fine for typical small-store volume; a busy store is another reason to graduate (Postgres, or Medusa per §2). **Watch.**
 - **Stripe Tax registration burden.** Stripe computes tax but the merchant must register in jurisdictions. We surface status; we can't do it for them. **Document for merchants.**

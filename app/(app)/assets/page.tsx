@@ -1,6 +1,7 @@
+import { redirect } from "next/navigation";
 import { FileImage, File } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requireWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,10 @@ function formatBytes(bytes: number): string {
 }
 
 export default async function AssetsPage() {
-  const { workspace } = await requireWorkspace();
+  const ctx = await getActiveSite();
+  if (!ctx) redirect("/onboarding");
   const assets = await prisma.asset.findMany({
-    where: { workspaceId: workspace.id },
+    where: { siteId: ctx.site.id },
     orderBy: { createdAt: "desc" },
   });
 

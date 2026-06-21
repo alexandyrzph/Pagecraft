@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { serializeCollection } from "@/lib/cms/collection-service";
-import { withWorkspace, withRole } from "@/lib/api/api-handler";
+import { withSite, withSiteRole } from "@/lib/api/api-handler";
 import { json, notFound } from "@/lib/api/api-response";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
-  return withWorkspace(async (ws) => {
+  return withSite(async (ctx) => {
     const { id } = await params;
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
       include: { items: { orderBy: { order: "asc" } } },
     });
     if (!collection) return notFound();
@@ -20,7 +20,7 @@ export async function GET(_req: Request, { params }: Ctx) {
 }
 
 export async function PUT(req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const data: {
@@ -35,12 +35,12 @@ export async function PUT(req: Request, { params }: Ctx) {
       data.detailTemplate = JSON.stringify(body.detailTemplate);
     if (typeof body.detailEnabled === "boolean") data.detailEnabled = body.detailEnabled;
     const result = await prisma.collection.updateMany({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
       data,
     });
     if (result.count === 0) return notFound();
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
       include: { items: { orderBy: { order: "asc" } } },
     });
     if (!collection) return notFound();
@@ -49,10 +49,10 @@ export async function PUT(req: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
     const result = await prisma.collection.deleteMany({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
     });
     if (result.count === 0) return notFound();
     return json({ ok: true });

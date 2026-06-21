@@ -4,7 +4,7 @@
 
 **Goal:** Promote `Site` to a first-class entity so a workspace owns many sites, with all content (`Page`/`Collection`/`Asset`/`Component`) scoped to a `siteId` and page/collection slugs unique per-site.
 
-**Architecture:** The app is pre-launch and its dev data is disposable, so this is a **clean reset**, not a careful migration: write the target schema directly (required `siteId` with `Site` relations + `onDelete: Cascade`; `@@unique([siteId, slug])`; drop `workspaceId` from content models), then `prisma db push --force-reset`. Workspace creation now also creates a default `Site` + home page, so onboarding produces a usable site. An "active site" is resolved from a `pc_site` cookie via a new `lib/auth/site.ts` layer mirroring `lib/auth/workspace.ts`, and every content API route is rescoped from `workspaceId` to `siteId`. Public multi-site *serving* (host → site) ships with the custom-domains plan; this plan keeps the default site rendering.
+**Architecture:** The app is pre-launch and its dev data is disposable, so this is a **clean reset**, not a careful migration: write the target schema directly (required `siteId` with `Site` relations + `onDelete: Cascade`; `@@unique([siteId, slug])`; drop `workspaceId` from content models), then `prisma db push --force-reset`. Workspace creation now also creates a default `Site` + home page, so onboarding produces a usable site. An "active site" is resolved from a `pc_site` cookie via a new `lib/auth/site.ts` layer mirroring `lib/auth/workspace.ts`, and every content API route is rescoped from `workspaceId` to `siteId`. Public multi-site _serving_ (host → site) ships with the custom-domains plan; this plan keeps the default site rendering.
 
 **Tech Stack:** Next.js 16 (App Router, route handlers, `proxy.ts`), Prisma 6 + SQLite, Vitest (node env), TypeScript strict, ESLint flat + Prettier.
 
@@ -25,6 +25,7 @@
 ## File Structure
 
 **Create:**
+
 - `lib/auth/site.ts` — active-site resolution + `requireApiSite`/`requireApiSiteRole`/`setActiveSite` (mirrors `lib/auth/workspace.ts`).
 - `lib/sites/create.ts` — `createSite()` (a site + its blank home page), used by both onboarding and the sites API.
 - `app/api/sites/route.ts` — `GET` list / `POST` create.
@@ -34,6 +35,7 @@
 - `tests/site-auth.test.ts`, `tests/site-slug.test.ts`, `tests/sites-api.test.ts`.
 
 **Modify:**
+
 - `prisma/schema.prisma` — the clean multi-site model.
 - `lib/auth/workspace.ts` — `createWorkspace` also creates a default site.
 - `lib/api/api-handler.ts` — generic `runGuarded` + `withSite`/`withSiteRole`.
@@ -47,6 +49,7 @@
 ## Task 1: Clean multi-site schema + reset
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 
 - [ ] **Step 1: Rewrite the content + Site models**
@@ -137,6 +140,7 @@ model Collection {
 ```bash
 npx prisma db push --force-reset && npx prisma generate
 ```
+
 Expected: "The SQLite database … was successfully reset." + "in sync" + "Generated Prisma Client". (All dev data is intentionally wiped.)
 
 - [ ] **Step 3: Confirm the client typings updated**
@@ -144,6 +148,7 @@ Expected: "The SQLite database … was successfully reset." + "in sync" + "Gener
 ```bash
 npx tsx -e "import {PrismaClient} from '@prisma/client'; const p=new PrismaClient(); p.site.findMany({where:{workspaceId:'x'}}).then(()=>{console.log('site relation ok'); return p.\$disconnect()})"
 ```
+
 Expected: `site relation ok`.
 
 > No commit yet — `tsc` is red across the API until Task 3. Continue.
@@ -155,11 +160,13 @@ Expected: `site relation ok`.
 New code that compiles against the Task-1 schema. The helper unit tests run green here even though the whole-project `tsc` gate waits for Task 3.
 
 **Files:**
+
 - Create: `lib/auth/site.ts`, `lib/sites/create.ts`
 - Modify: `lib/api/api-handler.ts`, `lib/page-service.ts`, `lib/auth/workspace.ts`
 - Test: `tests/site-auth.test.ts`, `tests/site-slug.test.ts`
 
 **Interfaces:**
+
 - Produces: `resolveActiveSite(sites, wantedId)`, `getActiveSite()`, `requireApiSite()`, `requireApiSiteRole(min)`, `setActiveSite(id)`, types `SiteCtx`/`ActiveSite`; `withSite(fn)`/`withSiteRole(min, fn)`; `createSite(workspaceId, name) → { id, name, handle, homePageId }`; `uniqueSlug(siteId, title)`.
 - Consumes: `getActiveWorkspace`, `hasRole`, `Role`, `WorkspaceCtx`, `createWorkspace` from `@/lib/auth/workspace`; `getCurrentUser` from `@/lib/auth/auth`.
 
@@ -197,12 +204,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth/auth";
-import {
-  getActiveWorkspace,
-  hasRole,
-  type Role,
-  type WorkspaceCtx,
-} from "@/lib/auth/workspace";
+import { getActiveWorkspace, hasRole, type Role, type WorkspaceCtx } from "@/lib/auth/workspace";
 
 const SITE_COOKIE = "pc_site";
 const jsonHeaders = { "content-type": "application/json" } as const;
@@ -371,6 +373,7 @@ export async function uniqueSlug(siteId: string, title: string): Promise<string>
   return `${base}-${Date.now()}`;
 }
 ```
+
 (If a `uniqueCollectionSlug` exists in the file, give it the same `(siteId, name)` shape against `prisma.collection.findFirst`.)
 
 - [ ] **Step 7: Run the slug test — expect PASS**
@@ -491,6 +494,7 @@ Change its `GET` to read the **active site's** `header/footer/colors/textStyles`
 grep -rn "findUnique({ where: { slug" app lib components
 grep -rln "requireWorkspace()\|workspaceId:" "app/(app)" components/editor components/dashboard
 ```
+
 For each printed file: change `page`/`collection` `findUnique({ where: { slug } })` → `findFirst({ where: { slug } })`; in builder server components, swap `requireWorkspace()` + `prisma.page.findMany({ where: { workspaceId } })` for `getActiveSite()` (from `@/lib/auth/site`) + `where: { siteId: ctx.site.id }`, redirecting to `/onboarding` when it's null. Apply the same to collection/asset/component server loads.
 
 - [ ] **Step 5: Run the FULL gate (first green checkpoint)**
@@ -521,6 +525,7 @@ default site is created with each workspace; content APIs scoped to the active s
 `createSite` already exists (Task 2). This adds the routes + registry. Deletion just cascades via the `Site` relations.
 
 **Files:**
+
 - Create: `app/api/sites/route.ts`, `app/api/sites/[id]/route.ts`, `app/api/sites/switch/route.ts`, `app/api/sites/[id]/home/route.ts`
 - Modify: `lib/api/endpoints.ts`
 - Test: `tests/sites-api.test.ts`
@@ -662,7 +667,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const site = await prisma.site.findFirst({ where: { id, workspaceId: ws.workspace.id } });
     if (!site) return notFound();
     const body = await req.json().catch(() => ({}));
-    const page = await prisma.page.findFirst({ where: { id: String(body?.pageId ?? ""), siteId: id } });
+    const page = await prisma.page.findFirst({
+      where: { id: String(body?.pageId ?? ""), siteId: id },
+    });
     if (!page) return badRequest("Page not in this site");
     const updated = await prisma.site.update({ where: { id }, data: { homePageId: page.id } });
     return json(updated);
@@ -708,6 +715,7 @@ curl -X POST localhost:3000/api/sites -H 'content-type: application/json' -d '{"
 curl -X POST localhost:3000/api/sites/switch -H 'content-type: application/json' -d '{"id":"<new-site-id>"}' --cookie "<session+pc_ws>"
 curl localhost:3000/api/pages --cookie "<session+pc_ws+pc_site>"
 ```
+
 Expected: the new site has only its "Home" page; `GET /api/pages` after switching returns just that site's pages. Switch back → the first site's pages return. (Serving the second site at a clean public URL is the custom-domains plan.)
 
 - [ ] **Step 2: Final gate**

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { withRole } from "@/lib/api/api-handler";
+import { withSiteRole } from "@/lib/api/api-handler";
 import { json, notFound, error } from "@/lib/api/api-response";
 import { isThumbnailStale } from "@/lib/thumbnails/staleness";
 import { captureThumbnail } from "@/lib/thumbnails/screenshot";
@@ -10,13 +10,11 @@ export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// POST /api/pages/:id/thumbnail — (re)generate the preview screenshot if stale.
-// Idempotent: returns the current image untouched when it's already fresh.
 export async function POST(_req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
     const page = await prisma.page.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
       include: { thumbnail: true },
     });
     if (!page) return notFound();

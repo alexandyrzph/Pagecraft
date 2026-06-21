@@ -1,4 +1,5 @@
 import { slugify } from "@/lib/utils";
+import { createSite } from "@/lib/sites/create";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -132,5 +133,6 @@ export async function createWorkspace(userId: string, name: string): Promise<Act
     await tx.membership.create({ data: { userId, workspaceId: created.id, role: "OWNER" } });
     return created;
   });
+  await createSite(ws.id, "Main site");
   return { id: ws.id, name: ws.name, slug: ws.slug };
 }

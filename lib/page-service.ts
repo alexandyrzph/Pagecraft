@@ -12,17 +12,13 @@ export function parseContent(content: string): Block[] {
   }
 }
 
-/** Produce a slug derived from `base` that is unique across pages. */
-export async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
-  const root = slugify(base);
-  let slug = root;
-  let n = 1;
-  // bounded loop; slugs collide rarely
-  while (n < 1000) {
-    const existing = await prisma.page.findUnique({ where: { slug } });
-    if (!existing || existing.id === excludeId) return slug;
-    n++;
-    slug = `${root}-${n}`;
+/** Produce a slug derived from `title` that is unique within the given site. */
+export async function uniqueSlug(siteId: string, title: string): Promise<string> {
+  const base = slugify(title) || "page";
+  for (let n = 1; n < 1000; n++) {
+    const slug = n === 1 ? base : `${base}-${n}`;
+    const existing = await prisma.page.findFirst({ where: { siteId, slug } });
+    if (!existing) return slug;
   }
-  return `${root}-${Date.now()}`;
+  return `${base}-${Date.now()}`;
 }

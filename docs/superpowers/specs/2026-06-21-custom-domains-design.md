@@ -50,10 +50,10 @@ is allowed (the **ask endpoint**, §6); if yes, it obtains a per-domain Let's En
 on demand and caches/renews it automatically. The app owns the source of truth (the `Domain` table);
 Caddy owns certificates and the renewal cron.
 
-| Option | Why / why not |
-| --- | --- |
-| **Caddy on-demand TLS (chosen)** | No third-party dependency or per-domain SaaS fee; certs issue automatically the first time a verified domain is hit; renewal is Caddy's problem. Fits a self-hosted Next 16 + SQLite deployment. Cost is operational (we run/monitor Caddy + cert storage). |
-| Traefik on-demand | Equivalent capability; Caddy's `on_demand_tls { ask … }` is the simplest concrete contract for our app to implement, so we standardize on Caddy. Traefik remains a drop-in alternative — the app side (ask endpoint, routing) is proxy-agnostic. |
+| Option                                             | Why / why not                                                                                                                                                                                                                                                              |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Caddy on-demand TLS (chosen)**                   | No third-party dependency or per-domain SaaS fee; certs issue automatically the first time a verified domain is hit; renewal is Caddy's problem. Fits a self-hosted Next 16 + SQLite deployment. Cost is operational (we run/monitor Caddy + cert storage).                |
+| Traefik on-demand                                  | Equivalent capability; Caddy's `on_demand_tls { ask … }` is the simplest concrete contract for our app to implement, so we standardize on Caddy. Traefik remains a drop-in alternative — the app side (ask endpoint, routing) is proxy-agnostic.                           |
 | Platform SSL-for-SaaS (Vercel/Cloudflare for SaaS) | Lowest ops burden, but introduces a vendor + API + cost, and couples routing to that platform. Explicitly **not chosen now** per the product decision. The app-side contract (one hostname ↔ one site, verified ownership) is portable, so a future migration stays cheap. |
 
 **Corollary decision — keep Prisma out of `proxy.ts`.** Even though Next 16's proxy runs on the
@@ -140,10 +140,10 @@ cert. All DNS work runs in a **Node-runtime route handler** (`dns/promises`); ne
 
 **DNS instructions shown to the user**
 
-| Record | Purpose | Apex (`acme.com`) | Subdomain (`www.acme.com`) |
-| --- | --- | --- | --- |
-| Ownership | proves control | `TXT _pagecraft-verify.acme.com = "pagecraft-domain-verification=<token>"` | `TXT _pagecraft-verify.www.acme.com = "…=<token>"` |
-| Routing | points traffic at us | `A acme.com → <server IP>` (or `ALIAS/ANAME` if the provider supports it) | `CNAME www.acme.com → cname.pagecraft.app` |
+| Record    | Purpose              | Apex (`acme.com`)                                                          | Subdomain (`www.acme.com`)                         |
+| --------- | -------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| Ownership | proves control       | `TXT _pagecraft-verify.acme.com = "pagecraft-domain-verification=<token>"` | `TXT _pagecraft-verify.www.acme.com = "…=<token>"` |
+| Routing   | points traffic at us | `A acme.com → <server IP>` (or `ALIAS/ANAME` if the provider supports it)  | `CNAME www.acme.com → cname.pagecraft.app`         |
 
 (Apex cannot use a CNAME per DNS rules; we instruct an `A`/`ALIAS`. `cname.pagecraft.app` is a stable
 DNS name that resolves to the Caddy front-door, so the server IP can change without customer action.)
@@ -172,22 +172,22 @@ Prisma in the proxy. The lookup chain is **Host → `Domain.hostname` → `siteI
 
 ### Resolution strategy — render-layer lookup (chosen)
 
-**`proxy.ts` does no DB work.** Its only new job is a pure string test: *is this request's host the
-app's own host, or a custom domain?* It compares `Host` against `APP_PRIMARY_HOST`
+**`proxy.ts` does no DB work.** Its only new job is a pure string test: _is this request's host the
+app's own host, or a custom domain?_ It compares `Host` against `APP_PRIMARY_HOST`
 (e.g. `pagecraft.app`, plus `localhost`/preview hosts). It does **not** need a host → site map at
 all, because Caddy has already refused the TLS handshake for any host that isn't an `ACTIVE` domain
 (§6) — so by the time a custom-domain request reaches Next, the host is known-good. (Defense in depth:
 the render layer re-validates against the DB and 404s an unknown host.)
 
-For a **custom-domain** request, the proxy rewrites the *path shape* so existing render routes handle
+For a **custom-domain** request, the proxy rewrites the _path shape_ so existing render routes handle
 it, then lets the page resolve the site from the host:
 
-| Incoming (on `acme.com`) | Proxy action | Renders |
-| --- | --- | --- |
-| `/` | rewrite → `/p/__home__` (sentinel) | home route resolves `Site.homePageId` for the host's site |
-| `/about` | rewrite → `/p/about` | `app/p/[slug]` (host-scoped, see below) |
-| `/c/blog/<item>` | pass through | `app/c/[slug]/[item]` (host-scoped) |
-| `/api/*`, `/_next/*`, assets | pass through | unchanged |
+| Incoming (on `acme.com`)     | Proxy action                       | Renders                                                   |
+| ---------------------------- | ---------------------------------- | --------------------------------------------------------- |
+| `/`                          | rewrite → `/p/__home__` (sentinel) | home route resolves `Site.homePageId` for the host's site |
+| `/about`                     | rewrite → `/p/about`               | `app/p/[slug]` (host-scoped, see below)                   |
+| `/c/blog/<item>`             | pass through                       | `app/c/[slug]/[item]` (host-scoped)                       |
+| `/api/*`, `/_next/*`, assets | pass through                       | unchanged                                                 |
 
 The proxy passes the host forward (it is already on the request; optionally also set an explicit
 `x-pc-host` request header via `NextResponse.rewrite({ request: { headers } })` for clarity). All
@@ -217,13 +217,13 @@ export const resolveHostSite = cache(async (host: string) => {
 
 **Why this over the alternatives**
 
-- *In-proxy in-memory cache of host → siteId.* Rejected: the proxy docs explicitly say not to rely
+- _In-proxy in-memory cache of host → siteId._ Rejected: the proxy docs explicitly say not to rely
   on shared modules/globals; a per-instance Map is unreliable across the "separately invoked" proxy and
   needs invalidation plumbing for slow value (cache only saves the lookup the render layer already does
   cheaply and cache-able).
-- *Internal resolve API (`fetch` from proxy on every request).* Rejected: adds a network round-trip to
+- _Internal resolve API (`fetch` from proxy on every request)._ Rejected: adds a network round-trip to
   every navigation for no benefit over resolving once in the render layer.
-- *Prisma directly in proxy.* Technically possible on Next 16's Node runtime, but violates the
+- _Prisma directly in proxy._ Technically possible on Next 16's Node runtime, but violates the
   separation guidance and risks DB hits on asset/prefetch paths.
 
 ### Dropping the `pc_ws` / `pc_site` dependency on the public path
@@ -287,7 +287,7 @@ body, fast. **Register it in `endpoints.ts`** for completeness/tests even though
 client — is the caller.
 
 **Rate-limiting / abuse.** Because the ask endpoint only approves `ACTIVE` (DNS-verified) hostnames,
-the cert-issuance surface is bounded by *verified* domains, which defuses cert-flooding by design.
+the cert-issuance surface is bounded by _verified_ domains, which defuses cert-flooding by design.
 Additional hardening: bind the ask endpoint to loopback/the Caddy network only; add a lightweight
 IP/host rate limit so a flood of bogus SNIs (which all get `403`) can't hammer the DB; optionally enable
 Caddy's rate-limit module in front of on-demand issuance.
@@ -347,15 +347,15 @@ domains: {
 
 ## 9. Edge cases
 
-| Case | Handling |
-| --- | --- |
-| **apex + www** | Two `Domain` rows; one `isPrimary`. The non-primary (with `redirectToPrimary`) issues a `308` to the primary host, preserving path + query. Redirect applied in the home/`[slug]` render layer (host-aware) or by a Caddy redirect block. |
-| **Domain already taken** | `hostname @unique` → `409` at add-time (against any site); no silent reassignment. |
-| **Local dev / preview** | `APP_PRIMARY_HOST` includes `localhost:3000` and preview hosts; the proxy's custom-domain branch is skipped for them, so dev keeps using `pagecraft.app/p/<slug>`. Testing a real custom domain locally needs a hosts-file entry + the ask endpoint returning 200. |
-| **Removing an ACTIVE domain** | Row deleted → ask endpoint now `403`s that host → new handshakes fail and the render layer 404s it. Optionally purge the cached cert via Caddy's admin API; otherwise it simply expires. |
-| **DNS points at us but unverified** | Caddy refuses the cert (ask `403`) until `ACTIVE`; user sees a TLS error until verification completes — surfaced as a clear "verify your domain" state in the UI. |
-| **Wildcard / `*.acme.com`** | Out of scope: on-demand HTTP issuance can't do wildcards (needs DNS-01). Deferred (§12). |
-| **Page slug collision across sites** | Already handled by the foundation's `@@unique([siteId, slug])`; the render layer additionally asserts the resolved page belongs to the host's site (§5). |
+| Case                                 | Handling                                                                                                                                                                                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **apex + www**                       | Two `Domain` rows; one `isPrimary`. The non-primary (with `redirectToPrimary`) issues a `308` to the primary host, preserving path + query. Redirect applied in the home/`[slug]` render layer (host-aware) or by a Caddy redirect block.                          |
+| **Domain already taken**             | `hostname @unique` → `409` at add-time (against any site); no silent reassignment.                                                                                                                                                                                 |
+| **Local dev / preview**              | `APP_PRIMARY_HOST` includes `localhost:3000` and preview hosts; the proxy's custom-domain branch is skipped for them, so dev keeps using `pagecraft.app/p/<slug>`. Testing a real custom domain locally needs a hosts-file entry + the ask endpoint returning 200. |
+| **Removing an ACTIVE domain**        | Row deleted → ask endpoint now `403`s that host → new handshakes fail and the render layer 404s it. Optionally purge the cached cert via Caddy's admin API; otherwise it simply expires.                                                                           |
+| **DNS points at us but unverified**  | Caddy refuses the cert (ask `403`) until `ACTIVE`; user sees a TLS error until verification completes — surfaced as a clear "verify your domain" state in the UI.                                                                                                  |
+| **Wildcard / `*.acme.com`**          | Out of scope: on-demand HTTP issuance can't do wildcards (needs DNS-01). Deferred (§12).                                                                                                                                                                           |
+| **Page slug collision across sites** | Already handled by the foundation's `@@unique([siteId, slug])`; the render layer additionally asserts the resolved page belongs to the host's site (§5).                                                                                                           |
 
 ---
 

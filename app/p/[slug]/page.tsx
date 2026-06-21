@@ -11,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const page = await prisma.page.findUnique({ where: { slug } });
+  const page = await prisma.page.findFirst({ where: { slug } });
   if (!page) return { title: "Page not found" };
 
   const title = page.metaTitle || page.title;
@@ -28,7 +28,7 @@ export async function generateMetadata({
 
 export default async function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = await prisma.page.findUnique({ where: { slug } });
+  const page = await prisma.page.findFirst({ where: { slug } });
   if (!page || !page.published) notFound();
 
   const jsonLd = {

@@ -1,19 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { serializeItem } from "@/lib/cms/collection-service";
-import { withWorkspace, withRole } from "@/lib/api/api-handler";
+import { withSite, withSiteRole } from "@/lib/api/api-handler";
 import { json, created, notFound } from "@/lib/api/api-response";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// GET /api/collections/[id]/items — list items for a collection
 export async function GET(_req: Request, { params }: Ctx) {
-  return withWorkspace(async (ws) => {
+  return withSite(async (ctx) => {
     const { id } = await params;
 
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
     });
     if (!collection) return notFound();
 
@@ -25,13 +24,12 @@ export async function GET(_req: Request, { params }: Ctx) {
   });
 }
 
-// POST /api/collections/[id]/items — append a new item
 export async function POST(req: Request, { params }: Ctx) {
-  return withRole("EDITOR", async (ws) => {
+  return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
 
     const collection = await prisma.collection.findFirst({
-      where: { id, workspaceId: ws.workspace.id },
+      where: { id, siteId: ctx.site.id },
     });
     if (!collection) return notFound();
 

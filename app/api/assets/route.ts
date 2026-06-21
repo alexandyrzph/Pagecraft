@@ -1,15 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { withWorkspace } from "@/lib/api/api-handler";
+import { withSite } from "@/lib/api/api-handler";
 import { json } from "@/lib/api/api-response";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/assets — recent uploads for the active workspace (optionally filter to images with ?kind=image)
 export async function GET(req: Request) {
-  return withWorkspace(async (ws) => {
+  return withSite(async (ctx) => {
     const kind = new URL(req.url).searchParams.get("kind");
     const assets = await prisma.asset.findMany({
-      where: { workspaceId: ws.workspace.id },
+      where: { siteId: ctx.site.id },
       orderBy: { createdAt: "desc" },
       take: 200,
     });

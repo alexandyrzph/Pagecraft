@@ -6,7 +6,7 @@ import { themeVars, parseTheme } from "@/lib/design/theme";
 import { buildCollectionMap } from "@/lib/cms/collection-service";
 import { BlockRenderer, type ComponentMap } from "@/components/BlockRenderer";
 
-type PageRow = { content: string; theme: string; workspaceId: string | null };
+type PageRow = { content: string; theme: string; siteId: string };
 
 /**
  * Renders a page exactly as the public site does — shared by the public route
@@ -17,10 +17,7 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
   const tree = parseContent(page.content);
   const theme = parseTheme(page.theme);
 
-  // shared site header + footer (scoped to this page's workspace)
-  const site = page.workspaceId
-    ? await prisma.site.findUnique({ where: { workspaceId: page.workspaceId } })
-    : null;
+  const site = await prisma.site.findFirst({ where: { id: page.siteId } });
   const header = site ? parseContent(site.header) : [];
   const footer = site ? parseContent(site.footer) : [];
   const ds = parseDesignSystem(site);
@@ -30,7 +27,7 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
     "\n" +
     responsiveCss([...header, ...tree, ...footer]);
 
-  const comps = await prisma.component.findMany({ where: { workspaceId: page.workspaceId } });
+  const comps = await prisma.component.findMany({ where: { siteId: page.siteId } });
   const components: ComponentMap = {};
   for (const c of comps) {
     try {
@@ -41,7 +38,7 @@ export async function PageDocument({ page, animate = true }: { page: PageRow; an
   }
 
   const collectionRows = await prisma.collection.findMany({
-    where: { workspaceId: page.workspaceId },
+    where: { siteId: page.siteId },
     include: { items: { orderBy: { order: "asc" } } },
   });
   const collections = buildCollectionMap(collectionRows);
