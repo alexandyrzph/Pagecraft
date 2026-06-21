@@ -24,6 +24,7 @@ model Site {
   collections Collection[]
   assets      Asset[]
   components  Component[]
+  domains     Domain[]
 
   @@unique([workspaceId, handle])
   @@index([workspaceId])
@@ -181,6 +182,31 @@ model CollectionItem {
   updatedAt    DateTime   @updatedAt
 
   @@index([collectionId])
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFYING
+  ACTIVE
+  ERROR
+}
+
+model Domain {
+  id                String       @id @default(cuid())
+  siteId            String
+  site              Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  hostname          String       @unique
+  status            DomainStatus @default(PENDING)
+  verificationToken String       @default(cuid())
+  verifiedAt        DateTime?
+  isPrimary         Boolean      @default(false)
+  redirectToPrimary Boolean      @default(true)
+  lastCheckedAt     DateTime?
+  lastError         String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([siteId])
 }
 
 enum Role {
