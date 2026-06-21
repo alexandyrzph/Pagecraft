@@ -31,7 +31,8 @@ export default function proxy(req: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/p/") ||
     pathname.startsWith("/c/") ||
-    pathname.startsWith("/internal/")
+    pathname.startsWith("/internal/") ||
+    pathname.startsWith("/store")
   ) {
     return NextResponse.next();
   }
