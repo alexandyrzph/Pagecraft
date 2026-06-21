@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { json, badRequest, notFound } from "@/lib/api/api-response";
 import { getStripe, appUrl } from "@/lib/commerce/stripe";
@@ -37,7 +38,10 @@ export async function POST() {
     },
     {
       stripeAccount: store.stripeAccountId,
-      idempotencyKey: `checkout_${cart.id}_${cart.items.length}`,
+      idempotencyKey: `checkout_${cart.id}_${createHash("sha256")
+        .update(line_items.map((l) => `${l.price}:${l.quantity}`).join("|"))
+        .digest("hex")
+        .slice(0, 32)}`,
     },
   );
   await prisma.cart.update({
