@@ -127,7 +127,7 @@ export type Block = {
   children: Block[];
 };
 
-export type BlockCategory = "Layout" | "Basic" | "Sections" | "Dynamic";
+export type BlockCategory = "Layout" | "Basic" | "Sections" | "Dynamic" | "Commerce";
 
 // --- Inspector field schema (drives the content controls) -------------------
 

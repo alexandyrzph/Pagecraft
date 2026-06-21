@@ -10,6 +10,7 @@ import { navbarBlocks } from "@/components/blocks/navbar.defs";
 import { formBlocks } from "@/components/blocks/form.defs";
 import { sectionBlocks } from "@/components/blocks/sections.defs";
 import { collectionBlocks } from "@/components/blocks/collection.defs";
+import { commerceBlocks } from "@/components/blocks/commerce.defs";
 
 const ALL_BLOCKS: BlockDefinition[] = [
   ...layoutBlocks,
@@ -20,6 +21,7 @@ const ALL_BLOCKS: BlockDefinition[] = [
   ...formBlocks,
   ...sectionBlocks,
   ...collectionBlocks,
+  ...commerceBlocks,
 ];
 
 export const REGISTRY: Record<string, BlockDefinition> = Object.fromEntries(
@@ -61,6 +63,7 @@ export const CATEGORIES: { name: BlockCategory; types: string[] }[] = [
     ],
   },
   { name: "Dynamic", types: ["collection"] },
+  { name: "Commerce", types: ["product-grid", "product"] },
 ];
 
 export function getDefinition(type: string): BlockDefinition | undefined {
