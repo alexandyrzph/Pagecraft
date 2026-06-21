@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
-import { AssetPicker } from "@/components/editor/AssetPicker";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import {
+  Field,
+  TextInput,
+  TextArea,
+  NumberInput,
+  SelectInput,
+  ImageInput,
+} from "@/components/editor/controls";
 
 export type EditableProduct = {
   id: string;
@@ -11,16 +21,62 @@ export type EditableProduct = {
   title: string;
   description: string;
   status: string;
-  variants: { id: string; title: string; priceAmount: number; inventory: number }[];
+  variants: {
+    id: string;
+    title: string;
+    priceAmount: number;
+    currency: string;
+    inventory: number;
+  }[];
   images: { url: string; alt: string }[];
 };
 
+const STATUS_OPTIONS = [
+  { label: "Draft", value: "draft" },
+  { label: "Active", value: "active" },
+  { label: "Archived", value: "archived" },
+];
+
 export function ProductEditor({
   product,
-  onClose,
+  onSaved,
+  onCancel,
+  onDelete,
+}: {
+  product: EditableProduct | null;
+  onSaved: (product: EditableProduct) => void;
+  onCancel: () => void;
+  onDelete: (id: string) => void;
+}) {
+  const [last, setLast] = useState<EditableProduct | null>(product);
+  if (product && product !== last) setLast(product);
+  const view = product ?? last;
+
+  return (
+    <Modal open={!!product} onClose={onCancel} align="top" className="max-w-lg p-6">
+      {view && (
+        <Editor
+          key={view.id}
+          product={view}
+          onSaved={onSaved}
+          onCancel={onCancel}
+          onDelete={onDelete}
+        />
+      )}
+    </Modal>
+  );
+}
+
+function Editor({
+  product,
+  onSaved,
+  onCancel,
+  onDelete,
 }: {
   product: EditableProduct;
-  onClose: () => void;
+  onSaved: (product: EditableProduct) => void;
+  onCancel: () => void;
+  onDelete: (id: string) => void;
 }) {
   const [title, setTitle] = useState(product.title);
   const [description, setDescription] = useState(product.description);
@@ -28,114 +84,101 @@ export function ProductEditor({
   const [price, setPrice] = useState((product.variants[0]?.priceAmount ?? 0) / 100);
   const [inventory, setInventory] = useState(product.variants[0]?.inventory ?? 0);
   const [images, setImages] = useState(product.images);
-  const [picking, setPicking] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function save() {
     setSaving(true);
-    await api.patch(endpoints.products.byId(product.id), {
-      title,
-      description,
-      status,
-      variants: [{ id: product.variants[0]?.id, priceAmount: Math.round(price * 100), inventory }],
-      images,
-    });
-    setSaving(false);
-    onClose();
+    try {
+      const { data } = await api.patch<{ product: EditableProduct }>(
+        endpoints.products.byId(product.id),
+        {
+          title,
+          description,
+          status,
+          variants: [
+            { id: product.variants[0]?.id, priceAmount: Math.round(price * 100), inventory },
+          ],
+          images,
+        },
+      );
+      onSaved(data.product);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl bg-white p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-4 text-lg font-semibold">Edit product</h2>
-        <label className="block text-sm font-medium">Title</label>
-        <input
-          className="mt-1 mb-3 w-full rounded-lg border px-3 py-2"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <label className="block text-sm font-medium">Description</label>
-        <textarea
-          className="mt-1 mb-3 w-full rounded-lg border px-3 py-2"
-          rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+    <>
+      <h3 className="mb-4 text-sm font-bold text-zinc-900">Edit product</h3>
+      <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+        <Field label="Title">
+          <TextInput value={title} onChange={setTitle} />
+        </Field>
+        <Field label="Description">
+          <TextArea value={description} onChange={setDescription} rows={4} />
+        </Field>
         <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="block text-sm font-medium">Price</label>
-            <input
-              type="number"
-              step="0.01"
-              className="mt-1 w-full rounded-lg border px-3 py-2"
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Inventory</label>
-            <input
-              type="number"
-              className="mt-1 w-full rounded-lg border px-3 py-2"
-              value={inventory}
-              onChange={(e) => setInventory(Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Status</label>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="draft">draft</option>
-              <option value="active">active</option>
-              <option value="archived">archived</option>
-            </select>
-          </div>
+          <Field label="Price ($)">
+            <NumberInput value={price} onChange={setPrice} />
+          </Field>
+          <Field label="Inventory">
+            <NumberInput value={inventory} onChange={setInventory} />
+          </Field>
+          <Field label="Status">
+            <SelectInput value={status} onChange={setStatus} options={STATUS_OPTIONS} />
+          </Field>
         </div>
-        <div className="mt-3">
-          <button
-            className="rounded-lg border px-3 py-1.5 text-sm"
-            onClick={() => setPicking(true)}
-          >
-            Add image
-          </button>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <Field label="Images">
+          <div className="space-y-2">
             {images.map((im, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={im.url} alt={im.alt} className="h-16 w-16 rounded object-cover" />
+              <div key={i} className="flex items-start gap-2">
+                <div className="flex-1">
+                  <ImageInput
+                    value={im.url}
+                    onChange={(url) =>
+                      setImages((list) => list.map((x, j) => (j === i ? { ...x, url } : x)))
+                    }
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Remove image"
+                  onPress={() => setImages((list) => list.filter((_, j) => j !== i))}
+                  className="text-fg-subtle hover:bg-danger-50 hover:text-danger-500"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
             ))}
+            <Button
+              variant="secondary"
+              size="sm"
+              leadingIcon={<Plus size={14} />}
+              onPress={() => setImages((list) => [...list, { url: "", alt: "" }])}
+            >
+              Add image
+            </Button>
           </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button className="rounded-lg border px-4 py-2 text-sm" onClick={onClose}>
+        </Field>
+      </div>
+      <div className="mt-5 flex items-center justify-between gap-2">
+        <Button
+          variant="danger"
+          leadingIcon={<Trash2 size={15} />}
+          onPress={() => onDelete(product.id)}
+        >
+          Delete product
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" onPress={onCancel}>
             Cancel
-          </button>
-          <button
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white"
-            disabled={saving}
-            onClick={save}
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
+          </Button>
+          <Button variant="neutral" onPress={save} isLoading={saving} autoFocus>
+            Save
+          </Button>
         </div>
       </div>
-      <AssetPicker
-        open={picking}
-        kind="image"
-        onClose={() => setPicking(false)}
-        onSelect={(url) => {
-          setImages((im) => [...im, { url, alt: "" }]);
-          setPicking(false);
-        }}
-      />
-    </div>
+    </>
   );
 }
