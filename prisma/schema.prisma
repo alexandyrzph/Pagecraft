@@ -25,6 +25,8 @@ model Site {
   assets      Asset[]
   components  Component[]
   domains     Domain[]
+  store       Store?
+  products    Product[]
 
   @@unique([workspaceId, handle])
   @@index([workspaceId])
@@ -266,4 +268,76 @@ model ActivityEvent {
   createdAt   DateTime @default(now())
 
   @@index([workspaceId, createdAt])
+}
+
+model Store {
+  id              String   @id @default(cuid())
+  siteId          String   @unique
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  stripeAccountId String?
+  chargesEnabled  Boolean  @default(false)
+  payoutsEnabled  Boolean  @default(false)
+  currency        String   @default("usd")
+  taxEnabled      Boolean  @default(false)
+  shippingMode    String   @default("none")
+  productTemplate String   @default("[]")
+  successPath     String   @default("/store/checkout/success")
+  cancelPath      String   @default("/store/checkout/cancel")
+  webhookSecret   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  siteId          String
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  handle          String
+  title           String   @default("Untitled product")
+  description     String   @default("")
+  status          String   @default("draft")
+  data            String   @default("{}")
+  stripeProductId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  variants ProductVariant[]
+  images   ProductImage[]
+
+  @@unique([siteId, handle])
+  @@index([siteId])
+}
+
+model ProductVariant {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  siteId          String
+  title           String   @default("Default")
+  options         String   @default("{}")
+  sku             String?
+  priceAmount     Int      @default(0)
+  currency        String   @default("usd")
+  inventory       Int      @default(0)
+  inventoryPolicy String   @default("deny")
+  stripePriceId   String?
+  position        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([siteId])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  assetId   String?
+  url       String
+  alt       String   @default("")
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
