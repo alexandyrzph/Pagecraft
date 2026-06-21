@@ -24,6 +24,10 @@ type EditorUI = {
   domTree: boolean;
   toggleDomTree: () => void;
   closeDomTree: () => void;
+
+  // Autosave — off by default; toggled from the editor navbar
+  autosave: boolean;
+  toggleAutosave: () => void;
 };
 
 export const useEditorUI = create<EditorUI>((set) => ({
@@ -43,4 +47,7 @@ export const useEditorUI = create<EditorUI>((set) => ({
   domTree: false,
   toggleDomTree: () => set((s) => ({ domTree: !s.domTree })),
   closeDomTree: () => set({ domTree: false }),
+
+  autosave: false,
+  toggleAutosave: () => set((s) => ({ autosave: !s.autosave })),
 }));

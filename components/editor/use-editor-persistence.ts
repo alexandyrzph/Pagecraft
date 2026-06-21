@@ -6,6 +6,7 @@ import { endpoints } from "@/lib/api/endpoints";
 import { buildExportDocument } from "@/lib/blocks/export-html";
 import { designSystemCss } from "@/lib/design/design-system";
 import { useEditor } from "@/store/editor-store";
+import { useEditorUI } from "@/store/editor-ui";
 import { useDesignSystem } from "@/store/design-system";
 
 /**
@@ -23,6 +24,7 @@ export function useEditorPersistence(opts: {
   const exportRef = useRef<HTMLDivElement>(null);
   const dirty = useEditor((s) => s.dirty);
   const tree = useEditor((s) => s.tree);
+  const autosave = useEditorUI((s) => s.autosave);
 
   const save = useCallback(async () => {
     const s = useEditor.getState();
@@ -112,12 +114,12 @@ export function useEditorPersistence(opts: {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  // debounced autosave
+  // debounced autosave (off by default; toggled from the editor navbar)
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || !autosave) return;
     const t = setTimeout(() => void save(), 1200);
     return () => clearTimeout(t);
-  }, [dirty, tree, save]);
+  }, [dirty, autosave, tree, save]);
 
   return { save, publish, unpublish, exportHtml, exportRef };
 }

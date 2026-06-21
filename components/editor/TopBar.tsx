@@ -15,6 +15,7 @@ import {
   Network,
   Pencil,
   Redo2,
+  RefreshCw,
   Rocket,
   Save,
   Search,
@@ -182,6 +183,8 @@ export function TopBar({
   const saving = useEditor((s) => s.saving);
   const domTree = useEditorUI((s) => s.domTree);
   const toggleDomTree = useEditorUI((s) => s.toggleDomTree);
+  const autosave = useEditorUI((s) => s.autosave);
+  const toggleAutosave = useEditorUI((s) => s.toggleAutosave);
   const router = useRouter();
   const { confirmLeave } = useEditorActions();
   const goHome = () => confirmLeave(() => router.push("/"));
@@ -268,6 +271,12 @@ export function TopBar({
         {!isComponentMode && (
           <IconBtn icon={<Download size={16} />} label="Export HTML" onClick={onExport} />
         )}
+        <IconBtn
+          icon={<RefreshCw size={16} />}
+          label={autosave ? "Autosave on" : "Autosave off"}
+          onClick={toggleAutosave}
+          active={autosave}
+        />
         <IconBtn icon={<Save size={16} />} label="Save (⌘S)" onClick={onSave} />
         <SaveStatus />
         <div className="mx-1.5" />
