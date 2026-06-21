@@ -17,17 +17,10 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "account.updated") {
-    const account = event.data.object as {
-      id: string;
-      charges_enabled?: boolean;
-      payouts_enabled?: boolean;
-    };
+    const account = event.data.object;
     await prisma.store.updateMany({
       where: { stripeAccountId: account.id },
-      data: {
-        chargesEnabled: !!account.charges_enabled,
-        payoutsEnabled: !!account.payouts_enabled,
-      },
+      data: { chargesEnabled: account.charges_enabled, payoutsEnabled: account.payouts_enabled },
     });
   }
 

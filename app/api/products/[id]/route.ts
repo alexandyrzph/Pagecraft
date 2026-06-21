@@ -77,6 +77,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         images: { orderBy: { position: "asc" } },
       },
     });
+    if (!updated) return notFound();
     return json({ product: updated });
   });
 }
