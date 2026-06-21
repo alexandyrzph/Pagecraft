@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAppHost, customDomainRewrite } from "@/lib/domains/host";
 
 // Next 16 renamed `middleware` → `proxy`. This does an OPTIMISTIC auth gate
 // (cookie presence only — fast, runs on every navigation). The real/secure
@@ -16,6 +17,13 @@ const AUTH_PAGES = ["/login", "/signup", "/forgot", "/reset"];
 
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  if (!isAppHost(host)) {
+    const rewriteTo = customDomainRewrite(pathname);
+    if (!rewriteTo) return NextResponse.next();
+    return NextResponse.rewrite(new URL(rewriteTo, req.url));
+  }
 
   // Never gate: API (handlers enforce), published pages, the internal
   // screenshot render route (token-gated), Next internals.
