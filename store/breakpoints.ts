@@ -35,6 +35,13 @@ const clampWidth = (w: number) => Math.max(MIN_WIDTH, Math.min(Math.round(w), MA
 /** Which style bucket / device chrome a given width maps to. */
 const baseFor = (w: number): Viewport => (w >= 1024 ? "desktop" : w >= 640 ? "tablet" : "mobile");
 
+/** The width band a device may be drag-resized within, so it can't cross into another device's range. */
+export function widthBand(base: Viewport): [number, number] {
+  if (base === "mobile") return [MIN_WIDTH, 639];
+  if (base === "tablet") return [640, 1023];
+  return [1024, MAX_WIDTH];
+}
+
 type State = {
   custom: Breakpoint[];
   activeId: string;

@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/store/editor-store";
-import { useBreakpoints } from "@/store/breakpoints";
+import { useBreakpoints, widthBand } from "@/store/breakpoints";
 import { useCanvasZoom } from "@/store/canvas-zoom";
 import { BlockRenderer } from "@/components/BlockRenderer";
 import { SlottedChildren } from "./EditorBlock";
@@ -47,6 +47,7 @@ export function Canvas() {
 
     const startX = e.clientX;
     const startW = active.width;
+    const [minW, maxW] = widthBand(active.base);
     setResizeSide(side);
     const fr = frame?.el;
     fr?.style.setProperty("pointer-events", "none");
@@ -55,7 +56,8 @@ export function Canvas() {
 
     const move = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
-      setDragWidth(startW + ((side === "right" ? dx : -dx) * 2) / zoom);
+      const next = startW + ((side === "right" ? dx : -dx) * 2) / zoom;
+      setDragWidth(Math.max(minW, Math.min(maxW, next)));
     };
     const end = () => {
       setResizeSide(null);
