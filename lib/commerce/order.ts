@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type Session = {
@@ -34,7 +35,7 @@ export async function settleCheckout(session: Session): Promise<{ created: boole
   if (!cart) return { created: false };
 
   const variants = await prisma.productVariant.findMany({
-    where: { id: { in: cart.items.map((i) => i.variantId) } },
+    where: { id: { in: cart.items.map((i) => i.variantId) }, siteId },
     include: { product: true },
   });
   const vmap = new Map(variants.map((v) => [v.id, v]));
@@ -86,7 +87,10 @@ export async function settleCheckout(session: Session): Promise<{ created: boole
       await tx.cart.update({ where: { id: cart.id }, data: { status: "converted" } });
     });
     return { created: true };
-  } catch {
-    return { created: false };
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { created: false };
+    }
+    throw e;
   }
 }

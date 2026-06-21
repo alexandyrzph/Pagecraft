@@ -58,4 +58,34 @@ describe("settleCheckout", () => {
     const reread = await prisma.cart.findUnique({ where: { id: cart.id } });
     expect(reread?.status).toBe("converted");
   });
+
+  it("creates exactly one order under concurrent settlement of the same session", async () => {
+    const ws = await prisma.workspace.create({ data: { name: "T2", slug: `t2-${Date.now()}` } });
+    wsIds.push(ws.id);
+    const site = await prisma.site.create({
+      data: { workspaceId: ws.id, name: "S2", handle: "s2" },
+    });
+    const product = await prisma.product.create({
+      data: { siteId: site.id, handle: "hat", title: "Hat" },
+    });
+    const variant = await prisma.productVariant.create({
+      data: {
+        siteId: site.id,
+        productId: product.id,
+        title: "Default",
+        priceAmount: 2000,
+        inventory: 5,
+      },
+    });
+    const cart = await prisma.cart.create({ data: { siteId: site.id } });
+    await prisma.cartItem.create({
+      data: { cartId: cart.id, variantId: variant.id, quantity: 1, unitAmount: 2000 },
+    });
+
+    const payload = sessionPayload(cart.id, site.id, `cs_conc_${Date.now()}`);
+    const [a, b] = await Promise.all([settleCheckout(payload), settleCheckout(payload)]);
+    expect([a.created, b.created].filter(Boolean).length).toBe(1);
+    const orders = await prisma.order.findMany({ where: { stripeCheckoutSessionId: payload.id } });
+    expect(orders.length).toBe(1);
+  });
 });
