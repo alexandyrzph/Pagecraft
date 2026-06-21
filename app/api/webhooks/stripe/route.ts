@@ -24,5 +24,10 @@ export async function POST(req: Request) {
     });
   }
 
+  if (event.type === "checkout.session.completed") {
+    const { settleCheckout } = await import("@/lib/commerce/order");
+    await settleCheckout(event.data.object as Parameters<typeof settleCheckout>[0]);
+  }
+
   return new Response(null, { status: 200 });
 }
