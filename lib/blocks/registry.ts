@@ -63,7 +63,7 @@ export const CATEGORIES: { name: BlockCategory; types: string[] }[] = [
     ],
   },
   { name: "Dynamic", types: ["collection"] },
-  { name: "Commerce", types: ["product-grid", "product"] },
+  { name: "Commerce", types: ["product-grid", "product", "add-to-cart", "cart", "checkout"] },
 ];
 
 export function getDefinition(type: string): BlockDefinition | undefined {

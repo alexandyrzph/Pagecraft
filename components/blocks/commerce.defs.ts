@@ -1,7 +1,10 @@
-import { ShoppingBag, Package } from "lucide-react";
+import { ShoppingBag, Package, ShoppingCart, CreditCard } from "lucide-react";
 import type { BlockDefinition } from "@/lib/blocks/registry-types";
 import { ProductGridBlock } from "./product-grid";
 import { ProductBlock } from "./product";
+import { AddToCartBlock } from "./add-to-cart";
+import { CartBlock } from "./cart";
+import { CheckoutBlock } from "./checkout";
 
 export const commerceBlocks: BlockDefinition[] = [
   {
@@ -45,5 +48,49 @@ export const commerceBlocks: BlockDefinition[] = [
     ],
     styleGroups: ["background", "spacing"],
     Render: ProductBlock,
+  },
+  {
+    type: "add-to-cart",
+    label: "Add to Cart",
+    icon: ShoppingCart,
+    category: "Commerce",
+    description: "Button that adds the selected variant to the cart",
+    defaultProps: { variantId: "", label: "Add to cart" },
+    defaultStyles: {},
+    fields: [
+      {
+        key: "variantId",
+        label: "Variant ID",
+        type: "text",
+        placeholder: "auto-set by product block",
+      },
+      { key: "label", label: "Button label", type: "text" },
+    ],
+    styleGroups: ["spacing"],
+    Render: AddToCartBlock,
+  },
+  {
+    type: "cart",
+    label: "Cart",
+    icon: ShoppingCart,
+    category: "Commerce",
+    description: "Line-item cart with quantity controls and subtotal",
+    defaultProps: {},
+    defaultStyles: {},
+    fields: [],
+    styleGroups: ["background", "spacing"],
+    Render: CartBlock,
+  },
+  {
+    type: "checkout",
+    label: "Checkout",
+    icon: CreditCard,
+    category: "Commerce",
+    description: "Button that initiates Stripe Checkout",
+    defaultProps: { label: "Checkout" },
+    defaultStyles: {},
+    fields: [{ key: "label", label: "Button label", type: "text" }],
+    styleGroups: ["spacing"],
+    Render: CheckoutBlock,
   },
 ];

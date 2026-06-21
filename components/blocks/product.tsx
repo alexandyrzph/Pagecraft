@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { BlockRenderProps } from "@/lib/blocks/registry-types";
 import { useProducts } from "@/components/store/products-context";
+import { useCart } from "@/components/store/cart-context";
 import { formatMoney } from "@/lib/commerce/pricing";
 import type { StoreVariant } from "@/lib/commerce/product-service";
 
@@ -20,6 +21,7 @@ function variantForSelected(
 
 export function ProductBlock({ block, editable, style, className, id }: BlockRenderProps) {
   const { map } = useProducts();
+  const { addItem } = useCart();
   const { productId = "" } = block.props as { productId?: string };
   const product = productId ? map[productId] : Object.values(map)[0];
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -84,11 +86,17 @@ export function ProductBlock({ block, editable, style, className, id }: BlockRen
               </div>
             );
           })}
-          <div className="mt-8 text-xs text-slate-400" data-variant-id={matched?.id}>
-            {matched && matched.inventory === 0 && matched.inventoryPolicy === "deny"
-              ? "Out of stock"
-              : "In stock"}
-          </div>
+          {matched && (
+            <button
+              className="mt-8 rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              disabled={editable || (matched.inventory === 0 && matched.inventoryPolicy === "deny")}
+              onClick={() => addItem(matched.id)}
+            >
+              {matched.inventory === 0 && matched.inventoryPolicy === "deny"
+                ? "Out of stock"
+                : "Add to cart"}
+            </button>
+          )}
         </div>
       </div>
     </section>
