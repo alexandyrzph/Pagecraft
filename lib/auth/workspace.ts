@@ -131,8 +131,8 @@ export async function createWorkspace(userId: string, name: string): Promise<Act
   const ws = await prisma.$transaction(async (tx) => {
     const created = await tx.workspace.create({ data: { name: cleanName, slug } });
     await tx.membership.create({ data: { userId, workspaceId: created.id, role: "OWNER" } });
+    await createSite(created.id, "Main site", tx);
     return created;
   });
-  await createSite(ws.id, "Main site");
   return { id: ws.id, name: ws.name, slug: ws.slug };
 }
