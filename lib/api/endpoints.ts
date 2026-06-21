@@ -42,6 +42,12 @@ export const endpoints = {
     create: "/api/submissions",
     byPage: (pageId: string) => `/api/submissions?pageId=${pageId}`,
   },
+  sites: {
+    list: "/api/sites",
+    byId: (id: string) => `/api/sites/${id}`,
+    switch: "/api/sites/switch",
+    home: (id: string) => `/api/sites/${id}/home`,
+  },
   workspaces: {
     list: "/api/workspaces",
     switch: "/api/workspaces/switch",

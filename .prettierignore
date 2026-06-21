@@ -15,3 +15,6 @@ prisma/migrations/
 # Editor / misc
 .idea/
 coverage/
+
+# Internal planning docs
+.superpowers/
