@@ -8,7 +8,7 @@ export async function verifyDns(
   let ownership = false;
   try {
     const records = await resolveTxt(`_pagecraft-verify.${hostname}`);
-    ownership = records.some((parts) => parts.join("").includes(expected));
+    ownership = records.some((parts) => parts.join("").trim() === expected);
   } catch {
     ownership = false;
   }

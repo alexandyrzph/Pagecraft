@@ -21,7 +21,7 @@ export function isAppHost(host: string): boolean {
   return h === app || h === `www.${app}` || `www.${h}` === app;
 }
 
-const PASSTHROUGH = ["/api", "/_next", "/c/", "/p/", "/internal/"];
+const PASSTHROUGH = ["/api/", "/_next", "/c/", "/p/", "/internal/"];
 
 export function customDomainRewrite(pathname: string): string | null {
   if (pathname === "/") return "/p/__home__";

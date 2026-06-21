@@ -43,6 +43,9 @@ describe("customDomainRewrite", () => {
       expect(customDomainRewrite(p)).toBeNull();
     }
   });
+  it("rewrites a page slug that merely starts with 'api'", () => {
+    expect(customDomainRewrite("/apiguide")).toBe("/p/apiguide");
+  });
 });
 
 describe("dnsInstructions", () => {
