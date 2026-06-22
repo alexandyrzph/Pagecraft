@@ -3,45 +3,82 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useEditor, useSelectedBlock } from "@/store/editor-store";
 import { useCanvasZoom } from "@/store/canvas-zoom";
-import { useIframe, type FrameInfo } from "../iframe-context";
+import { useIframe } from "../iframe-context";
 import { useDrag } from "../drag-context";
-
-const PANEL_WIDTH = 304;
-const LEFT_PANEL = 256; // keep clear of the components panel
-const GAP = 14;
-const DOCK_THRESHOLD = 60; // px from the right edge that triggers docking
-const clampW = (w: number) => Math.max(264, Math.min(w, 560));
-
-type PanelPos = { left: number; top: number; maxHeight: number };
+import {
+  PANEL_WIDTH,
+  clampW,
+  measurePos,
+  setFramePassthrough,
+  undockedPos,
+  dragMovePos,
+  isInDockZone,
+  shouldShow,
+  panelStyle,
+  type PanelPos,
+} from "./useFloatingPanel.helpers";
 
 /**
- * Translate a selected block's rect into the anchored floating-panel position.
- * Pure: takes the measured element + frame/zoom/width and returns coords, so it
- * can be reused by both the synchronous layout pass and the async re-measure.
+ * Bundles every store selector / context read / piece of panel state into one
+ * hook so the component-facing `useFloatingPanel` stays at low hook-density.
  */
-function positionFor(el: Element, frame: FrameInfo | null, zoom: number, width: number): PanelPos {
-  const r = el.getBoundingClientRect();
-  // translate iframe-relative rect into top-document viewport coords. Blocks
-  // inside the iframe are in unscaled internal px, so scale by the canvas zoom
-  // to match the visually scaled iframe before offsetting by its position.
-  const inFrame = !!(frame && el.ownerDocument === frame.doc);
-  const off = inFrame && frame ? frame.el.getBoundingClientRect() : { left: 0, top: 0 };
-  const sc = inFrame ? zoom : 1;
-  const rect = {
-    top: r.top * sc + off.top,
-    left: r.left * sc + off.left,
-    right: r.right * sc + off.left,
+function useFloatingPanelStores() {
+  const block = useSelectedBlock();
+  const selectedId = useEditor((s) => s.selectedId);
+  const tree = useEditor((s) => s.tree);
+  const viewport = useEditor((s) => s.viewport);
+  const previewMode = useEditor((s) => s.previewMode);
+  const select = useEditor((s) => s.select);
+  const { frame, tick } = useIframe();
+  const zoom = useCanvasZoom((s) => s.zoom);
+  const dragActive = !!useDrag().type;
+  return { block, selectedId, tree, viewport, previewMode, select, frame, tick, zoom, dragActive };
+}
+
+function useFloatingPanelLocalState(selectedId: string | null) {
+  const [pos, setPos] = useState<PanelPos | null>(null);
+  const [dragPos, setDragPos] = useState<PanelPos | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const [docked, setDocked] = useState(false);
+  const [dockHint, setDockHint] = useState(false);
+  const [width, setWidth] = useState(PANEL_WIDTH);
+  const [anchoredId, setAnchoredId] = useState(selectedId);
+  return {
+    pos,
+    setPos,
+    dragPos,
+    setDragPos,
+    dragging,
+    setDragging,
+    resizing,
+    setResizing,
+    docked,
+    setDocked,
+    dockHint,
+    setDockHint,
+    width,
+    setWidth,
+    anchoredId,
+    setAnchoredId,
   };
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+}
 
-  let left: number;
-  if (rect.right + GAP + width <= vw - 8) left = rect.right + GAP;
-  else if (rect.left - GAP - width >= LEFT_PANEL + 8) left = rect.left - GAP - width;
-  else left = vw - width - 8;
+function useFloatingPanelState() {
+  const stores = useFloatingPanelStores();
+  const local = useFloatingPanelLocalState(stores.selectedId);
+  return { ...stores, ...local };
+}
 
-  const top = Math.max(64, Math.min(rect.top, vh - 360));
-  return { left, top, maxHeight: vh - top - 16 };
+/** ESC closes the panel (deselect). */
+function useEscToClose(select: (id: string | null) => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && useEditor.getState().selectedId) select(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [select]);
 }
 
 /**
@@ -51,76 +88,66 @@ function positionFor(el: Element, frame: FrameInfo | null, zoom: number, width: 
  * and live repositioning on scroll/resize/zoom.
  */
 export function useFloatingPanel() {
-  const block = useSelectedBlock();
-  const selectedId = useEditor((s) => s.selectedId);
-  const tree = useEditor((s) => s.tree);
-  const viewport = useEditor((s) => s.viewport);
-  const previewMode = useEditor((s) => s.previewMode);
-  const select = useEditor((s) => s.select);
-  const [pos, setPos] = useState<PanelPos | null>(null);
-  const [dragPos, setDragPos] = useState<PanelPos | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const [resizing, setResizing] = useState(false);
-  const [docked, setDocked] = useState(false);
-  const [dockHint, setDockHint] = useState(false);
-  const [width, setWidth] = useState(PANEL_WIDTH);
-  const { frame, tick } = useIframe();
-  const zoom = useCanvasZoom((s) => s.zoom);
-  const dragActive = !!useDrag().type;
+  const s = useFloatingPanelState();
+  const {
+    block,
+    selectedId,
+    tree,
+    viewport,
+    previewMode,
+    select,
+    pos,
+    setPos,
+    dragPos,
+    setDragPos,
+    dragging,
+    setDragging,
+    resizing,
+    setResizing,
+    docked,
+    setDocked,
+    dockHint,
+    setDockHint,
+    width,
+    setWidth,
+    frame,
+    tick,
+    zoom,
+    dragActive,
+    anchoredId,
+    setAnchoredId,
+  } = s;
 
   const posInputs = useRef({ frame, zoom, width });
 
-  // While dragging/resizing the panel, make the canvas iframe transparent to
-  // pointer events. Otherwise, when the cursor crosses into the cross-document
-  // iframe it swallows pointermove/pointerup and the drag silently stops.
-  const setFramePassthrough = (on: boolean) => {
-    const el = frame?.el;
-    if (!el) return;
-    if (on) el.style.setProperty("pointer-events", "none");
-    else el.style.removeProperty("pointer-events");
-  };
-
-  const [anchoredId, setAnchoredId] = useState(selectedId);
   if (selectedId !== anchoredId) {
     setAnchoredId(selectedId);
     setDragPos(null);
   }
 
-  // ESC closes the panel (deselect)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && useEditor.getState().selectedId) select(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [select]);
+  useEscToClose(select);
 
   function handlePointerDown(e: React.PointerEvent) {
     const vw = window.innerWidth;
     let base = dragPos ?? pos;
     if (docked) {
       // undock: pop out as a floating panel near the right edge
-      base = { left: Math.max(8, vw - width - 16), top: 72, maxHeight: window.innerHeight - 88 };
+      base = undockedPos(vw, width);
       setDocked(false);
       setDragPos(base);
     }
     if (!base) return;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startLeft = base.left;
-    const startTop = base.top;
+    const start = { x: e.clientX, y: e.clientY, left: base.left, top: base.top };
     setDragging(true);
-    setFramePassthrough(true);
+    setFramePassthrough(frame, true);
     const onMove = (ev: PointerEvent) => {
-      const left = Math.max(8, Math.min(startLeft + ev.clientX - startX, vw - width - 8));
-      const top = Math.max(56, Math.min(startTop + ev.clientY - startY, window.innerHeight - 90));
-      setDragPos({ left, top, maxHeight: window.innerHeight - top - 16 });
-      setDockHint(ev.clientX > vw - DOCK_THRESHOLD);
+      setDragPos(dragMovePos(ev, start, vw, width));
+      setDockHint(isInDockZone(ev.clientX, vw));
     };
     const onUp = (ev: PointerEvent) => {
       setDragging(false);
-      setFramePassthrough(false);
-      if (ev.clientX > vw - DOCK_THRESHOLD) setDocked(true);
+      setFramePassthrough(frame, false);
+      if (isInDockZone(ev.clientX, vw)) setDocked(true);
       setDockHint(false);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -139,7 +166,7 @@ export function useFloatingPanel() {
     const base = dragPos ?? pos;
     const rightEdge = docked ? vw : base ? base.left + width : vw - 8;
     setResizing(true);
-    setFramePassthrough(true);
+    setFramePassthrough(frame, true);
     const onMove = (ev: PointerEvent) => {
       const w = clampW(rightEdge - ev.clientX);
       setWidth(w);
@@ -149,7 +176,7 @@ export function useFloatingPanel() {
     };
     const onUp = () => {
       setResizing(false);
-      setFramePassthrough(false);
+      setFramePassthrough(frame, false);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -160,19 +187,14 @@ export function useFloatingPanel() {
   }
 
   const compute = useCallback(() => {
-    const doc = frame?.doc ?? document;
-    const el = doc.querySelector(`[data-block-id="${selectedId ?? ""}"]`);
-    setPos(el ? positionFor(el, frame, zoom, width) : null);
-  }, [selectedId, width, frame, zoom]);
+    setPos(measurePos(selectedId, frame, zoom, width));
+  }, [selectedId, width, frame, zoom, setPos]);
 
   useLayoutEffect(() => {
     posInputs.current = { frame, zoom, width };
     const { frame: f, zoom: z, width: w } = posInputs.current;
-    const doc = f?.doc ?? document;
-    const el = doc.querySelector(`[data-block-id="${selectedId ?? ""}"]`);
-    if (el) setPos(positionFor(el, f, z, w));
-    else setPos(null);
-  }, [selectedId, width, frame, zoom, tree, viewport, tick]);
+    setPos(measurePos(selectedId, f, z, w));
+  }, [selectedId, width, frame, zoom, tree, viewport, tick, setPos]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -203,19 +225,9 @@ export function useFloatingPanel() {
   }, [selectedId, compute, frame]);
 
   const eff = dragPos ?? pos;
-  const show = !!block && !previewMode && !dragActive && (docked || !!eff);
-
-  const style: React.CSSProperties = docked
-    ? { position: "fixed", top: 56, right: 0, bottom: 0, width }
-    : {
-        position: "fixed",
-        left: eff?.left ?? 0,
-        top: eff?.top ?? 64,
-        width,
-        maxHeight: eff?.maxHeight,
-      };
-
-  const toggleDock = useCallback(() => setDocked((d) => !d), []);
+  const show = shouldShow(block, previewMode, dragActive, docked, eff);
+  const style = panelStyle(docked, width, eff);
+  const toggleDock = useCallback(() => setDocked((d) => !d), [setDocked]);
 
   return {
     block,

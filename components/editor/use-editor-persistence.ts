@@ -8,6 +8,7 @@ import { designSystemCss } from "@/lib/design/design-system";
 import { useEditor } from "@/store/editor-store";
 import { useEditorUI } from "@/store/editor-ui";
 import { useDesignSystem } from "@/store/design-system";
+import { resolveSaveMode, savePayload, saveUrl } from "./use-editor-persistence.helpers";
 
 /**
  * Save/publish/unpublish/export for whichever editor mode is active, plus the
@@ -28,24 +29,18 @@ export function useEditorPersistence(opts: {
 
   const save = useCallback(async () => {
     const s = useEditor.getState();
-    if (!s.pageId) return;
+    const pageId = s.pageId;
+    if (!pageId) return;
     s.setSaving(true);
     const started = Date.now();
     try {
-      const url = isSiteMode
-        ? endpoints.site
-        : isCollectionMode
-          ? endpoints.collections.byId(s.pageId)
-          : isComponentMode
-            ? endpoints.components.byId(s.pageId)
-            : endpoints.pages.byId(s.pageId);
-      const payload = isSiteMode
-        ? { [siteRegion ?? "header"]: s.tree }
-        : isCollectionMode
-          ? { detailTemplate: s.tree }
-          : isComponentMode
-            ? { name: s.title, content: s.tree }
-            : { title: s.title, content: s.tree, seo: s.seo, theme: s.theme };
+      const mode = resolveSaveMode({ isSiteMode, isCollectionMode, isComponentMode });
+      const url = saveUrl(mode, pageId);
+      const payload = savePayload(
+        mode,
+        { pageId, title: s.title, tree: s.tree, seo: s.seo, theme: s.theme },
+        siteRegion,
+      );
       await api.put(url, payload);
       // keep the saving indicator visible long enough to read
       const elapsed = Date.now() - started;

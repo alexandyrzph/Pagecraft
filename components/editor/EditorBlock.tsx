@@ -2,16 +2,20 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Component as ComponentIcon } from "lucide-react";
 import { getDefinition } from "@/lib/blocks/registry";
-import { blockHtmlClass, blockHtmlId } from "@/lib/blocks/styles";
-import { cn } from "@/lib/utils";
-import type { Block } from "@/lib/types";
+import type { Block, Viewport } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
-import { BlockRenderer } from "@/components/BlockRenderer";
 import { Slot, EmptyDrop } from "./Slot";
-import { useDrag } from "./drag-context";
+import { useDrag, type DragInfo } from "./drag-context";
 import { useComponents } from "./components-context";
+import type { ComponentItem } from "./components-context";
+import {
+  blockClassName,
+  blockHtmlId,
+  buildContainerChildren,
+  ComponentBody,
+  scrollNewIntoView,
+} from "./EditorBlock.helpers";
 
 export function SlottedChildren({
   parentId,
@@ -45,6 +49,27 @@ export function SlottedChildren({
   );
 }
 
+type EditorBlockState = {
+  components: { map: Record<string, ComponentItem> };
+  viewport: Viewport;
+  setProp: (id: string, key: string, value: unknown) => void;
+  isNew: boolean;
+  clearLastAdded: () => void;
+  drag: DragInfo;
+};
+
+// All store/context reads for one EditorBlock, collected in a single custom
+// hook so the component sits at low hook-density. Just hook calls + a return.
+function useEditorBlockState(blockId: string): EditorBlockState {
+  const components = useComponents();
+  const viewport = useEditor((s) => s.viewport);
+  const setProp = useEditor((s) => s.setProp);
+  const isNew = useEditor((s) => s.lastAddedId === blockId);
+  const clearLastAdded = useEditor((s) => s.clearLastAdded);
+  const drag = useDrag();
+  return { components, viewport, setProp, isNew, clearLastAdded, drag };
+}
+
 // A block inside the editable canvas. The visual content lives here (portaled
 // into the iframe); selection chrome + the toolbar/drag-handle are drawn by the
 // top-document CanvasOverlay, anchored to this node's `data-block-id`.
@@ -59,74 +84,44 @@ function EditorBlock({
   parentType: string | null;
   index: number;
 }) {
-  const components = useComponents();
-  const def = getDefinition(block.type);
-  const isComponent = block.type === "component";
-  const comp = isComponent ? components.map[block.props?.componentId as string] : undefined;
-
-  const viewport = useEditor((s) => s.viewport);
-  const setProp = useEditor((s) => s.setProp);
-  const isNew = useEditor((s) => s.lastAddedId === block.id);
-  const clearLastAdded = useEditor((s) => s.clearLastAdded);
-  const drag = useDrag();
-  const isDragging = drag.id === block.id;
+  const { components, viewport, setProp, isNew, clearLastAdded, drag } = useEditorBlockState(
+    block.id,
+  );
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isNew) return;
-    const raf = requestAnimationFrame(() => {
-      ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      clearLastAdded();
-    });
-    return () => cancelAnimationFrame(raf);
+    return scrollNewIntoView(ref, clearLastAdded);
   }, [isNew, clearLastAdded]);
+
+  const def = getDefinition(block.type);
+  const isComponent = block.type === "component";
+  const comp = isComponent ? components.map[block.props?.componentId as string] : undefined;
+  const isDragging = drag.id === block.id;
 
   if (!isComponent && !def) return null;
 
   // --- body -----------------------------------------------------------------
   let body: ReactNode;
   if (isComponent) {
-    body = (
-      <div className="pointer-events-none">
-        {comp ? (
-          <BlockRenderer
-            tree={comp.content}
-            viewport={viewport}
-            inlineStyles={false}
-            components={components.map}
-          />
-        ) : (
-          <div className="flex items-center justify-center gap-2 bg-violet-50 p-8 text-sm font-medium text-violet-500">
-            <ComponentIcon size={16} /> Component not found
-          </div>
-        )}
-      </div>
-    );
+    body = <ComponentBody comp={comp} viewport={viewport} componentsMap={components.map} />;
   } else {
     if (!def) return null;
     const Cmp = def.Render;
-    let children: ReactNode = undefined;
-    if (def.isContainer) {
-      children =
-        def.containerStrategy === "fixed" ? (
-          block.children.map((c, i) => (
-            <EditorBlock
-              key={c.id}
-              block={c}
-              parentId={block.id}
-              parentType={block.type}
-              index={i}
-            />
-          ))
-        ) : (
-          <SlottedChildren
-            parentId={block.id}
-            parentType={block.type}
-            items={block.children}
-            emptyMinHeight={def.emptyMinHeight}
-          />
-        );
-    }
+    const children = buildContainerChildren(
+      block,
+      (c, i) => (
+        <EditorBlock key={c.id} block={c} parentId={block.id} parentType={block.type} index={i} />
+      ),
+      (items, emptyMinHeight) => (
+        <SlottedChildren
+          parentId={block.id}
+          parentType={block.type}
+          items={items}
+          emptyMinHeight={emptyMinHeight}
+        />
+      ),
+    );
     body = (
       // style is intentionally empty — the injected responsive stylesheet
       // (.b-<id> base + @media) drives styling so breakpoints resolve live.
@@ -136,11 +131,7 @@ function EditorBlock({
         editable
         selected={false}
         style={{}}
-        className={cn(
-          `b-${block.id}`,
-          (block.props?.textStyle as string) && `ts-${block.props.textStyle as string}`,
-          blockHtmlClass(block),
-        )}
+        className={blockClassName(block)}
         id={blockHtmlId(block)}
         setProp={(k, v) => setProp(block.id, k, v)}
       >

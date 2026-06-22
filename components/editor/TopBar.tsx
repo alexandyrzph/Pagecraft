@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Popover } from "./Popover";
 import {
@@ -26,9 +25,9 @@ import { cn } from "@/lib/utils";
 import { useEditor } from "@/store/editor-store";
 import { useEditorUI } from "@/store/editor-ui";
 import { LogoMark } from "@/components/Brand";
-import { useEditorActions } from "./editor-actions";
 import { BreakpointSwitcher } from "./BreakpointSwitcher";
 import { ZoomControl } from "./ZoomControl";
+import { isComponentMode, useTopBarState, type TopBarMode } from "./TopBar.helpers";
 
 function SaveStatus() {
   const dirty = useEditor((s) => s.dirty);
@@ -169,25 +168,25 @@ export function TopBar({
   onUnpublish?: () => void;
   onOpenPalette: () => void;
   onOpenHistory: () => void;
-  mode?: "page" | "component" | "site" | "collection";
+  mode?: TopBarMode;
 }) {
-  const isComponentMode = mode === "component" || mode === "site" || mode === "collection";
-  const previewMode = useEditor((s) => s.previewMode);
-  const togglePreview = useEditor((s) => s.togglePreview);
-  const undo = useEditor((s) => s.undo);
-  const redo = useEditor((s) => s.redo);
-  const past = useEditor((s) => s.past.length);
-  const future = useEditor((s) => s.future.length);
-  const published = useEditor((s) => s.published);
-  const slug = useEditor((s) => s.slug);
-  const saving = useEditor((s) => s.saving);
-  const domTree = useEditorUI((s) => s.domTree);
-  const toggleDomTree = useEditorUI((s) => s.toggleDomTree);
-  const autosave = useEditorUI((s) => s.autosave);
-  const toggleAutosave = useEditorUI((s) => s.toggleAutosave);
-  const router = useRouter();
-  const { confirmLeave } = useEditorActions();
-  const goHome = () => confirmLeave(() => router.push("/"));
+  const {
+    previewMode,
+    togglePreview,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    published,
+    slug,
+    saving,
+    domTree,
+    toggleDomTree,
+    autosave,
+    toggleAutosave,
+    goHome,
+  } = useTopBarState();
+  const componentMode = isComponentMode(mode);
 
   return (
     <header className="relative flex h-14 shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-3">
@@ -239,18 +238,8 @@ export function TopBar({
 
       {/* right: icon-only actions with tooltips */}
       <div className="flex items-center gap-0.5">
-        <IconBtn
-          icon={<Undo2 size={16} />}
-          label="Undo (⌘Z)"
-          onClick={undo}
-          disabled={past === 0}
-        />
-        <IconBtn
-          icon={<Redo2 size={16} />}
-          label="Redo (⌘⇧Z)"
-          onClick={redo}
-          disabled={future === 0}
-        />
+        <IconBtn icon={<Undo2 size={16} />} label="Undo (⌘Z)" onClick={undo} disabled={!canUndo} />
+        <IconBtn icon={<Redo2 size={16} />} label="Redo (⌘⇧Z)" onClick={redo} disabled={!canRedo} />
         <Divider />
         <IconBtn
           icon={<Network size={16} />}
@@ -268,7 +257,7 @@ export function TopBar({
         {mode === "page" && (
           <IconBtn icon={<History size={16} />} label="Version history" onClick={onOpenHistory} />
         )}
-        {!isComponentMode && (
+        {!componentMode && (
           <IconBtn icon={<Download size={16} />} label="Export HTML" onClick={onExport} />
         )}
         <IconBtn
@@ -281,7 +270,7 @@ export function TopBar({
         <SaveStatus />
         <div className="mx-1.5" />
 
-        {isComponentMode ? (
+        {componentMode ? (
           <button
             onClick={goHome}
             className="rounded-lg bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-violet-700"

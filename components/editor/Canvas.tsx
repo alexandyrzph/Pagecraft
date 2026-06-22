@@ -1,105 +1,78 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useEditor } from "@/store/editor-store";
-import { useBreakpoints } from "@/store/breakpoints";
-import { useCanvasZoom } from "@/store/canvas-zoom";
 import { DeviceFrame } from "./DeviceFrame";
 import { CanvasFrame } from "./CanvasFrame";
 import { DeviceResizer } from "./DeviceResizer";
-import { useComponents } from "./components-context";
-import { useCollections } from "./collections-context";
-import { useSite } from "./site-context";
-import { useIframe } from "./iframe-context";
-import { CanvasContent, createStartResize } from "./Canvas.helpers";
+import {
+  CanvasContent,
+  applyAutoFit,
+  contentMotionKey,
+  createStartResize,
+  deriveRenderWidth,
+  deriveRenderZoom,
+  isDesktopFill,
+  measureAvail,
+  useCanvasState,
+} from "./Canvas.helpers";
 
 export function Canvas() {
-  const tree = useEditor((s) => s.tree);
-  const previewMode = useEditor((s) => s.previewMode);
-  const slug = useEditor((s) => s.slug);
-  const theme = useEditor((s) => s.theme);
-  const pageId = useEditor((s) => s.pageId);
-  const select = useEditor((s) => s.select);
-  const setViewport = useEditor((s) => s.setViewport);
-  const components = useComponents();
-  const collections = useCollections();
-  const site = useSite();
-  const { active, setDragWidth, dragWidth } = useBreakpoints();
-  const zoom = useCanvasZoom((s) => s.zoom);
-  const setZoom = useCanvasZoom((s) => s.setZoom);
-  const setViewportWidth = useCanvasZoom((s) => s.setViewportWidth);
-  const { frame } = useIframe();
-  const [resizeSide, setResizeSide] = useState<"left" | "right" | null>(null);
-  const resizing = resizeSide !== null;
-  const desktopFill = active.id === "desktop" && dragWidth == null;
+  const s = useCanvasState();
+  const resizing = s.resizeSide !== null;
+  const desktopFill = isDesktopFill(s.active, s.dragWidth);
 
-  const startResize = createStartResize({ active, zoom, frame, setResizeSide, setDragWidth });
+  const startResize = createStartResize({
+    active: s.active,
+    zoom: s.zoom,
+    frame: s.frame,
+    setResizeSide: s.setResizeSide,
+    setDragWidth: s.setDragWidth,
+  });
 
-  // Measure the scrollable canvas area so the zoomed device gets a correctly
-  // sized scroll footprint (CSS transforms don't affect layout/scroll area) and
-  // so the zoom control can offer "fit to width".
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [avail, setAvail] = useState({ w: 0, h: 0 });
+  const lastFitKey = useRef("");
+
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const update = () => {
-      const cs = getComputedStyle(el);
-      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
-      const w = el.clientWidth - padX;
-      const h = el.clientHeight - padY;
-      setAvail({ w, h });
-      setViewportWidth(w);
-    };
+    const update = () => measureAvail(el, s.setAvail, s.setViewportWidth);
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [setViewportWidth]);
+  }, [s.setAvail, s.setViewportWidth]);
 
-  // Auto-fit: when a breakpoint is wider than the canvas area, fit it to width on
-  // load and on every breakpoint switch (so it never overflows by default).
-  // Keyed on the breakpoint id so manual zoom + resizes afterward are preserved
-  // until the next switch.
-  const lastFitKey = useRef("");
   useEffect(() => {
-    if (!avail.w) return;
-    if (desktopFill) {
-      lastFitKey.current = "";
-      setZoom(1);
-      return;
-    }
-    if (lastFitKey.current === active.id) return; // already fit this breakpoint
-    lastFitKey.current = active.id;
-    const fit = avail.w / active.width;
-    setZoom(fit < 0.999 ? fit : 1);
-  }, [desktopFill, active.id, active.width, avail.w, setZoom]);
+    applyAutoFit({
+      availW: s.avail.w,
+      desktopFill,
+      activeId: s.active.id,
+      activeWidth: s.active.width,
+      lastFitKey,
+      setZoom: s.setZoom,
+    });
+  }, [desktopFill, s.active.id, s.active.width, s.avail.w, s.setZoom]);
 
   // Authoring viewport follows the active breakpoint's base bucket.
+  const { id: activeId, base: activeBase } = s.active;
+  const setViewport = s.setViewport;
   useEffect(() => {
-    setViewport(active.base);
-  }, [active.id, active.base, setViewport]);
+    setViewport(activeBase);
+  }, [activeId, activeBase, setViewport]);
 
-  const renderWidth = desktopFill && avail.w ? Math.round(avail.w) : active.width;
-  const renderZoom = desktopFill ? 1 : zoom;
-
-  // Stable reference so CanvasFrame's CSS effect doesn't loop.
-  const cssExtra = useMemo(
-    () => (previewMode ? [...site.header, ...site.footer] : undefined),
-    [previewMode, site.header, site.footer],
-  );
+  const renderWidth = deriveRenderWidth(desktopFill, s.avail.w, s.active);
+  const renderZoom = deriveRenderZoom(desktopFill, s.zoom);
 
   const content = (
     <CanvasContent
-      previewMode={previewMode}
-      tree={tree}
-      header={site.header}
-      footer={site.footer}
-      componentsMap={components.map}
-      collectionsMap={collections.map}
+      previewMode={s.previewMode}
+      tree={s.tree}
+      header={s.header}
+      footer={s.footer}
+      componentsMap={s.componentsMap}
+      collectionsMap={s.collectionsMap}
     />
   );
 
@@ -110,7 +83,7 @@ export function Canvas() {
         "relative flex flex-1 overflow-auto overscroll-none bg-zinc-100",
         desktopFill ? "p-0" : "p-6 lg:p-10",
       )}
-      onClick={() => select(null)}
+      onClick={() => s.select(null)}
     >
       {/* Scroll footprint: takes the device's *scaled* size so overflow-auto can
           reveal a zoomed-in canvas. The inner box keeps the device's logical
@@ -123,7 +96,7 @@ export function Canvas() {
         )}
         style={{
           width: renderWidth * renderZoom,
-          height: avail.h ? avail.h * renderZoom : undefined,
+          height: s.avail.h ? s.avail.h * renderZoom : undefined,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -134,14 +107,19 @@ export function Canvas() {
           )}
           style={{
             width: renderWidth,
-            height: avail.h || undefined,
+            height: s.avail.h || undefined,
             transform: `scale(${renderZoom})`,
           }}
         >
-          <DeviceFrame viewport={active.base} slug={slug} fullBleed={desktopFill}>
-            <CanvasFrame tree={tree} theme={theme} editable={!previewMode} cssExtra={cssExtra}>
+          <DeviceFrame viewport={s.active.base} slug={s.slug} fullBleed={desktopFill}>
+            <CanvasFrame
+              tree={s.tree}
+              theme={s.theme}
+              editable={!s.previewMode}
+              cssExtra={s.cssExtra}
+            >
               <motion.div
-                key={(pageId ?? "page") + (previewMode ? ":preview" : ":edit")}
+                key={contentMotionKey(s.pageId, s.previewMode)}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
@@ -154,18 +132,18 @@ export function Canvas() {
         </div>
 
         {/* drag-to-resize "pipes" on each side of the device (edit mode only) */}
-        {!previewMode && !desktopFill && (
+        {!s.previewMode && !desktopFill && (
           <>
             <DeviceResizer
               side="left"
-              width={active.width}
-              resizing={resizeSide === "left"}
+              width={s.active.width}
+              resizing={s.resizeSide === "left"}
               onPointerDown={startResize("left")}
             />
             <DeviceResizer
               side="right"
-              width={active.width}
-              resizing={resizeSide === "right"}
+              width={s.active.width}
+              resizing={s.resizeSide === "right"}
               onPointerDown={startResize("right")}
             />
           </>
