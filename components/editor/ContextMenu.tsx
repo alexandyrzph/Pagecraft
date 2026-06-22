@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowDown,
@@ -13,53 +12,36 @@ import {
   ClipboardPaste,
   Trash2,
 } from "lucide-react";
-import { findBlockById, locate } from "@/lib/blocks/tree";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/store/editor-store";
-import { useEditorUI } from "@/store/editor-ui";
-import { useEditorActions } from "./editor-actions";
-
-const MENU_W = 210;
+import { deriveContextMenuView, MENU_W, useContextMenuState } from "./ContextMenu.helpers";
 
 export function ContextMenu() {
-  const ctx = useEditorUI((s) => s.ctx);
-  const closeCtx = useEditorUI((s) => s.closeCtx);
-  const openInserter = useEditorUI((s) => s.openInserter);
-  const actions = useEditorActions();
-  const duplicate = useEditor((s) => s.duplicate);
-  const copy = useEditor((s) => s.copy);
-  const cut = useEditor((s) => s.cut);
-  const paste = useEditor((s) => s.paste);
-  const copyStyles = useEditor((s) => s.copyStyles);
-  const pasteStyles = useEditor((s) => s.pasteStyles);
-  const remove = useEditor((s) => s.remove);
-  const moveRelative = useEditor((s) => s.moveRelative);
-
-  useEffect(() => {
-    if (!ctx) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeCtx();
-    const onScroll = () => closeCtx();
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  }, [ctx, closeCtx]);
+  const {
+    ctx,
+    closeCtx,
+    openInserter,
+    saveAsComponent,
+    duplicate,
+    copy,
+    cut,
+    paste,
+    copyStyles,
+    pasteStyles,
+    remove,
+    moveRelative,
+  } = useContextMenuState();
 
   if (!ctx) return null;
 
-  const tree = useEditor.getState().tree;
-  const block = findBlockById(tree, ctx.blockId);
-  const loc = locate(tree, ctx.blockId);
-  if (!block || !loc) return null;
-  const isComponent = block.type === "component";
-  const siblingCount = loc.parentId
-    ? (findBlockById(tree, loc.parentId)?.children.length ?? 0)
-    : tree.length;
-
-  const x = Math.min(ctx.x, window.innerWidth - MENU_W - 8);
-  const y = Math.min(ctx.y, window.innerHeight - 340);
+  const view = deriveContextMenuView(
+    useEditor.getState().tree,
+    ctx,
+    window.innerWidth,
+    window.innerHeight,
+  );
+  if (!view) return null;
+  const { block, loc, isComponent, siblingCount, x, y } = view;
 
   const run = (fn: () => void) => {
     fn();
@@ -144,7 +126,7 @@ export function ContextMenu() {
             <Item
               icon={<ComponentIcon size={14} />}
               label="Save as component"
-              onClick={() => run(() => actions.saveAsComponent(block))}
+              onClick={() => run(() => saveAsComponent(block))}
             />
           </>
         )}

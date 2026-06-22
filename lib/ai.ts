@@ -1,4 +1,5 @@
 import { REGISTRY, createBlock } from "./blocks/registry";
+import type { BlockDefinition } from "./blocks/registry-types";
 import type { Block, ResponsiveStyles, SettingField, StyleProps } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -239,34 +240,44 @@ function mergeStyles(base: ResponsiveStyles, over: ResponsiveStyles): Responsive
   return merged;
 }
 
+/** Copy only registry-known props from an AI block onto a fresh block. */
+function applyKnownProps(block: Block, def: BlockDefinition, props: unknown): void {
+  if (!props || typeof props !== "object") return;
+  const source = props as Record<string, unknown>;
+  for (const f of def.fields) {
+    const v = source[f.key];
+    if (v !== undefined && v !== null) block.props[f.key] = v;
+  }
+}
+
+/** Validate one AI-emitted node → a safe Block, or null when it should be dropped. */
+function coerceBlock(raw: unknown, depth: number): Block | null {
+  if (!raw || typeof raw !== "object") return null;
+  const type = (raw as { type?: unknown }).type;
+  if (typeof type !== "string") return null;
+  const def = REGISTRY[type];
+  if (!def || type === "column" || type === "component") return null;
+
+  const block = createBlock(type); // fresh id + defaults + default children
+  applyKnownProps(block, def, (raw as { props?: unknown }).props);
+  // Art-direction: merge any AI-emitted styles over the block's defaults.
+  const aiStyles = sanitizeResponsiveStyles((raw as { styles?: unknown }).styles);
+  block.styles = mergeStyles(block.styles, aiStyles);
+
+  if (def.isContainer) {
+    const children = (raw as { children?: unknown }).children;
+    if (Array.isArray(children)) block.children = sanitizeGeneratedBlocks(children, depth + 1);
+  }
+  return block;
+}
+
 /** Validate model output against the registry → safe Block[] with fresh ids. */
 export function sanitizeGeneratedBlocks(input: unknown, depth = 0): Block[] {
   if (!Array.isArray(input) || depth > 5) return [];
   const out: Block[] = [];
   for (const raw of input) {
-    if (!raw || typeof raw !== "object") continue;
-    const type = (raw as { type?: unknown }).type;
-    if (typeof type !== "string") continue;
-    const def = REGISTRY[type];
-    if (!def || type === "column" || type === "component") continue;
-
-    const block = createBlock(type); // fresh id + defaults + default children
-    const props = (raw as { props?: unknown }).props;
-    if (props && typeof props === "object") {
-      for (const f of def.fields) {
-        const v = (props as Record<string, unknown>)[f.key];
-        if (v !== undefined && v !== null) block.props[f.key] = v;
-      }
-    }
-    // Art-direction: merge any AI-emitted styles over the block's defaults.
-    const aiStyles = sanitizeResponsiveStyles((raw as { styles?: unknown }).styles);
-    block.styles = mergeStyles(block.styles, aiStyles);
-
-    if (def.isContainer) {
-      const children = (raw as { children?: unknown }).children;
-      if (Array.isArray(children)) block.children = sanitizeGeneratedBlocks(children, depth + 1);
-    }
-    out.push(block);
+    const block = coerceBlock(raw, depth);
+    if (block) out.push(block);
   }
   return out;
 }

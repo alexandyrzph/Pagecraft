@@ -6,16 +6,63 @@ import { Database, ExternalLink, Loader2, Pencil, Plus, Trash2, X } from "lucide
 import { Modal } from "./Modal";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/dialog-provider";
-import { api } from "@/lib/api/client";
-import { endpoints } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 import type { CmsFieldType, CollectionField, CollectionItem } from "@/lib/types";
-import { blankItemData, CMS_FIELD_TYPES, uniqueFieldKey } from "@/lib/cms/cms";
+import { CMS_FIELD_TYPES } from "@/lib/cms/cms";
 import { useCollections } from "./collections-context";
 import { SelectInput, Toggle, inputCls } from "./controls";
 import { LEAF_INPUTS } from "@/lib/field-inputs";
+import {
+  buildAddedFields,
+  closeIfMissing,
+  runAddItem,
+  runDeleteCollection,
+  runDeleteItem,
+  runPatchCollection,
+  runSaveItem,
+  type CmsTab,
+  type Editing,
+} from "./CmsManagerModal.helpers";
 
-type Editing = { id: string; data: Record<string, unknown> } | null;
+// Store/state wiring, kept in one hook so the component stays a thin render plus
+// the action wiring.
+function useCmsManagerModalState(collectionId: string, onClose: () => void) {
+  const { map, refresh } = useCollections();
+  const collection = map[collectionId];
+  const router = useRouter();
+  const confirm = useConfirm();
+
+  const [tab, setTab] = useState<CmsTab>("fields");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<Editing>(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [newType, setNewType] = useState<CmsFieldType>("text");
+  const [syncedCollectionId, setSyncedCollectionId] = useState<string | undefined>(undefined);
+
+  useEffect(() => closeIfMissing(collection, onClose), [collection, onClose]);
+
+  return {
+    collection,
+    refresh,
+    router,
+    confirm,
+    tab,
+    setTab,
+    name,
+    setName,
+    busy,
+    setBusy,
+    editing,
+    setEditing,
+    newLabel,
+    setNewLabel,
+    newType,
+    setNewType,
+    syncedCollectionId,
+    setSyncedCollectionId,
+  };
+}
 
 export function CmsManagerModal({
   collectionId,
@@ -24,108 +71,56 @@ export function CmsManagerModal({
   collectionId: string;
   onClose: () => void;
 }) {
-  const { map, refresh } = useCollections();
-  const collection = map[collectionId];
-  const router = useRouter();
-  const confirm = useConfirm();
+  const {
+    collection,
+    refresh,
+    router,
+    confirm,
+    tab,
+    setTab,
+    name,
+    setName,
+    busy,
+    setBusy,
+    editing,
+    setEditing,
+    newLabel,
+    setNewLabel,
+    newType,
+    setNewType,
+    syncedCollectionId,
+    setSyncedCollectionId,
+  } = useCmsManagerModalState(collectionId, onClose);
 
-  const [tab, setTab] = useState<"fields" | "items" | "detail">("fields");
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [editing, setEditing] = useState<Editing>(null);
-  const [newLabel, setNewLabel] = useState("");
-  const [newType, setNewType] = useState<CmsFieldType>("text");
-
-  const [syncedCollectionId, setSyncedCollectionId] = useState<string | undefined>(undefined);
   if (collection && collection.id !== syncedCollectionId) {
     setSyncedCollectionId(collection.id);
     setName(collection.name);
   }
 
-  // Collection vanished (deleted) — close.
-  useEffect(() => {
-    if (!collection) onClose();
-  }, [collection, onClose]);
-
   if (!collection) return null;
   const fields = collection.fields;
 
   // --- persistence helpers --------------------------------------------------
-  async function patchCollection(body: Record<string, unknown>) {
-    setBusy(true);
-    try {
-      await api.put(endpoints.collections.byId(collectionId), body);
-      await refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
+  const patchCollection = (body: Record<string, unknown>) =>
+    runPatchCollection(collectionId, body, setBusy, refresh);
 
   const saveFields = (next: CollectionField[]) => patchCollection({ fields: next });
 
-  function addField() {
-    const label = newLabel.trim() || "New field";
-    const key = uniqueFieldKey(
-      label,
-      fields.map((f) => f.key),
-    );
-    void saveFields([...fields, { key, label, type: newType }]);
+  const addField = () => {
+    void saveFields(buildAddedFields(fields, newLabel, newType));
     setNewLabel("");
     setNewType("text");
-  }
+  };
 
-  async function addItem() {
-    setBusy(true);
-    try {
-      const { data: item } = await api.post(endpoints.collections.items(collectionId), {
-        data: blankItemData(fields),
-      });
-      await refresh();
-      setTab("items");
-      setEditing({ id: item.id, data: item.data ?? {} });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const addItem = () => runAddItem(collectionId, fields, setBusy, setEditing, setTab, refresh);
 
-  async function saveItem() {
-    if (!editing) return;
-    setBusy(true);
-    try {
-      await api.put(endpoints.collections.item(collectionId, editing.id), {
-        data: editing.data,
-      });
-      await refresh();
-      setEditing(null);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const saveItem = () => runSaveItem(collectionId, editing, setBusy, setEditing, refresh);
 
-  async function deleteItem(itemId: string) {
-    setBusy(true);
-    try {
-      await api.delete(endpoints.collections.item(collectionId, itemId));
-      await refresh();
-      if (editing?.id === itemId) setEditing(null);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const deleteItem = (itemId: string) =>
+    runDeleteItem(collectionId, itemId, editing, setBusy, setEditing, refresh);
 
-  async function deleteCollection() {
-    const ok = await confirm({
-      title: "Delete collection?",
-      message: `"${collection.name}" and all of its items will be permanently deleted.`,
-      confirmLabel: "Delete collection",
-      destructive: true,
-    });
-    if (!ok) return;
-    setBusy(true);
-    await api.delete(endpoints.collections.byId(collectionId));
-    await refresh();
-    onClose();
-  }
+  const deleteCollection = () =>
+    runDeleteCollection(collectionId, collection.name, confirm, setBusy, refresh, onClose);
 
   return (
     <Modal onClose={onClose} className="flex max-h-[86vh] max-w-2xl flex-col overflow-hidden">

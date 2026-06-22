@@ -1,5 +1,3 @@
-# Test files hold deliberate setup repetition (render scaffolding, mock wiring,
-# per-suite Prisma fixtures) that reads as duplication but is intentional for
-# clarity, and their complexity standards differ from production code. Exclude
-# them from fallow's source analysis.
-ignorePatterns = ["tests/**"]
+# Fallow uses its defaults. Test files are intentionally NOT excluded: they are
+# the consumers that keep test-only helper exports from reading as dead code, and
+# their incidental setup duplication only raises a non-blocking `warn`.
