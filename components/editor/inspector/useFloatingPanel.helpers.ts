@@ -113,3 +113,121 @@ export function panelStyle(
         maxHeight: eff?.maxHeight,
       };
 }
+
+export type PanelDragDeps = {
+  base: PanelPos | null;
+  docked: boolean;
+  width: number;
+  frame: FrameInfo | null;
+  setDocked: (v: boolean) => void;
+  setDragPos: (p: PanelPos | null) => void;
+  setDragging: (v: boolean) => void;
+  setDockHint: (v: boolean) => void;
+};
+
+/** Build the header drag-to-move / undock pointer handler from the current panel state. */
+export function createPanelPointerDown(d: PanelDragDeps) {
+  return (e: React.PointerEvent) => {
+    const vw = window.innerWidth;
+    let base = d.base;
+    if (d.docked) {
+      // undock: pop out as a floating panel near the right edge
+      base = undockedPos(vw, d.width);
+      d.setDocked(false);
+      d.setDragPos(base);
+    }
+    if (!base) return;
+    const start = { x: e.clientX, y: e.clientY, left: base.left, top: base.top };
+    d.setDragging(true);
+    setFramePassthrough(d.frame, true);
+    const onMove = (ev: PointerEvent) => {
+      d.setDragPos(dragMovePos(ev, start, vw, d.width));
+      d.setDockHint(isInDockZone(ev.clientX, vw));
+    };
+    const onUp = (ev: PointerEvent) => {
+      d.setDragging(false);
+      setFramePassthrough(d.frame, false);
+      if (isInDockZone(ev.clientX, vw)) d.setDocked(true);
+      d.setDockHint(false);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    e.preventDefault();
+  };
+}
+
+export type PanelResizeDeps = {
+  base: PanelPos | null;
+  docked: boolean;
+  width: number;
+  frame: FrameInfo | null;
+  setResizing: (v: boolean) => void;
+  setWidth: (w: number) => void;
+  setDragPos: (p: PanelPos | null) => void;
+};
+
+/** Build the edge resize pointer handler from the current panel state. */
+export function createPanelResizeDown(d: PanelResizeDeps) {
+  return (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const vw = window.innerWidth;
+    const base = d.base;
+    const rightEdge = d.docked ? vw : base ? base.left + d.width : vw - 8;
+    d.setResizing(true);
+    setFramePassthrough(d.frame, true);
+    const onMove = (ev: PointerEvent) => {
+      const w = clampW(rightEdge - ev.clientX);
+      d.setWidth(w);
+      if (!d.docked && base) {
+        d.setDragPos({ left: rightEdge - w, top: base.top, maxHeight: base.maxHeight });
+      }
+    };
+    const onUp = () => {
+      d.setResizing(false);
+      setFramePassthrough(d.frame, false);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  };
+}
+
+/** Subscribe a selected block to scroll/resize/observer reposition events; returns a cleanup. */
+export function subscribeReposition(
+  selectedId: string,
+  frame: FrameInfo | null,
+  onReposition: () => void,
+): () => void {
+  let raf = 0;
+  const onScroll = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(onReposition);
+  };
+  window.addEventListener("scroll", onScroll, true);
+  window.addEventListener("resize", onScroll);
+  // iframe-internal scroll doesn't propagate to the parent window, so listen on
+  // the iframe's own window too (the canvas no longer bumps `tick` on scroll).
+  const fw = frame?.el.contentWindow;
+  fw?.addEventListener("scroll", onScroll, true);
+  let ro: ResizeObserver | undefined;
+  const el = document.querySelector(`[data-block-id="${selectedId}"]`);
+  if (el && "ResizeObserver" in window) {
+    ro = new ResizeObserver(onScroll);
+    ro.observe(el);
+  }
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener("scroll", onScroll, true);
+    window.removeEventListener("resize", onScroll);
+    fw?.removeEventListener("scroll", onScroll, true);
+    ro?.disconnect();
+  };
+}

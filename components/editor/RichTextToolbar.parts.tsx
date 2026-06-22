@@ -14,8 +14,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api/client";
-import { endpoints } from "@/lib/api/endpoints";
+import { loadAiAvailability } from "@/lib/ai-availability";
 import { useRichText } from "@/store/richtext";
 import { useIframe, type FrameInfo } from "./iframe-context";
 
@@ -27,14 +26,6 @@ export const AI_ACTIONS: { key: string; label: string }[] = [
   { key: "professional", label: "More professional" },
   { key: "casual", label: "More casual" },
 ];
-
-function fetchHasAi(setHasAi: (v: boolean) => void) {
-  api
-    .get(endpoints.ai)
-    .then((r) => r.data)
-    .then((d) => setHasAi(Array.isArray(d.providers) && d.providers.length > 0))
-    .catch(() => {});
-}
 
 export type RichTextToolbarState = {
   editor: Editor | null;
@@ -61,7 +52,7 @@ export function useRichTextToolbarState(): RichTextToolbarState {
   const [aiBusy, setAiBusy] = useState(false);
   void tick;
 
-  useEffect(() => fetchHasAi(setHasAi), []);
+  useEffect(() => loadAiAvailability(setHasAi), []);
 
   return {
     editor,

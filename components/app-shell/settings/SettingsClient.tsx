@@ -8,6 +8,7 @@ import { useConfirm, useAlert } from "@/components/ui/dialog-provider";
 import { Button, TextField, Select } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
+import { useSaveState } from "@/lib/hooks/use-save-state";
 
 type WS = { id: string; name: string; slug: string };
 type Member = { membershipId: string; userId: string; name: string; email: string; role: string };
@@ -46,25 +47,12 @@ export function SettingsClient({ workspace, role }: { workspace: WS; role: strin
 
 function General({ workspace, onSaved }: { workspace: WS; onSaved: () => void }) {
   const [name, setName] = useState(workspace.name);
-  const [busy, setBusy] = useState(false);
-  const [ok, setOk] = useState(false);
-  const [err, setErr] = useState("");
+  const { busy, ok, err, run } = useSaveState();
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setOk(false);
-    setErr("");
-    try {
+    await run(async () => {
       await api.patch(endpoints.workspaces.byId(workspace.id), { name });
-      setBusy(false);
-      setOk(true);
-      onSaved();
-      setTimeout(() => setOk(false), 1500);
-    } catch (e) {
-      setBusy(false);
-      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
-      setErr(d.error || "Could not save");
-    }
+    }, onSaved);
   }
   return (
     <form onSubmit={save} className="max-w-sm space-y-3">

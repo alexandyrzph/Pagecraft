@@ -14,7 +14,7 @@ export function minVariantPrice(
   return { amount: best.priceAmount, currency: best.currency };
 }
 
-export function parseOptions(json: string): Record<string, string> {
+export function parseStringRecord(json: string): Record<string, string> {
   try {
     const v = JSON.parse(json);
     if (v && typeof v === "object" && !Array.isArray(v)) {
@@ -26,6 +26,10 @@ export function parseOptions(json: string): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+export function parseOptions(json: string): Record<string, string> {
+  return parseStringRecord(json);
 }
 
 export function variantForOptions(

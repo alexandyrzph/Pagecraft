@@ -3,6 +3,7 @@ import {
   formatMoney,
   minVariantPrice,
   parseOptions,
+  parseStringRecord,
   variantForOptions,
 } from "@/lib/commerce/pricing";
 
@@ -23,6 +24,18 @@ describe("minVariantPrice", () => {
       ]),
     ).toEqual({ amount: 1500, currency: "usd" });
     expect(minVariantPrice([])).toBeNull();
+  });
+});
+
+describe("parseStringRecord", () => {
+  it("parses a flat json object into a string-valued record", () => {
+    expect(parseStringRecord('{"a":"x","b":2,"c":true}')).toEqual({ a: "x", b: "2", c: "true" });
+  });
+  it("returns an empty record for arrays, primitives, and invalid json", () => {
+    expect(parseStringRecord("[1,2]")).toEqual({});
+    expect(parseStringRecord("5")).toEqual({});
+    expect(parseStringRecord("null")).toEqual({});
+    expect(parseStringRecord("nonsense")).toEqual({});
   });
 });
 

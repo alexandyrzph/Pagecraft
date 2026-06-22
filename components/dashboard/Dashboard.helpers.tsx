@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Loader2, Plus, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
+import { loadAiAvailability } from "@/lib/ai-availability";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { useConfirm } from "@/components/ui/dialog-provider";
@@ -115,14 +116,6 @@ export function gateReady(setReady: (v: boolean) => void): () => void {
   return () => clearTimeout(t);
 }
 
-export function loadAiProviders(setHasAi: (v: boolean) => void): void {
-  api
-    .get(endpoints.ai)
-    .then((r) => r.data)
-    .then((d) => setHasAi(Array.isArray(d.providers) && d.providers.length > 0))
-    .catch(() => {});
-}
-
 export function clearNewParam(
   searchParams: ReturnType<typeof useSearchParams>,
   router: ReturnType<typeof useRouter>,
@@ -138,7 +131,7 @@ function useDashboardChrome() {
   const [ready, setReady] = useState(false);
   const [hasAi, setHasAi] = useState(false);
   useEffect(() => gateReady(setReady), []);
-  useEffect(() => loadAiProviders(setHasAi), []);
+  useEffect(() => loadAiAvailability(setHasAi), []);
   useEffect(() => clearNewParam(searchParams, router), [searchParams, router]);
   return { router, confirm, searchParams, ready, hasAi };
 }

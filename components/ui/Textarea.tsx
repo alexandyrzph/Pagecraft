@@ -1,12 +1,7 @@
 "use client";
-import {
-  TextField as RACTextField,
-  type TextFieldProps as RACTextFieldProps,
-  Label,
-  TextArea,
-  FieldError,
-} from "react-aria-components";
+import { TextArea, type TextFieldProps as RACTextFieldProps } from "react-aria-components";
 import { cn } from "@/lib/utils";
+import { FieldShell, fieldControlClassName } from "./field-shell";
 import type { ReactNode } from "react";
 
 export interface TextareaProps extends Omit<RACTextFieldProps, "children"> {
@@ -25,25 +20,12 @@ export function Textarea({
   ...props
 }: TextareaProps) {
   return (
-    <RACTextField
-      {...props}
-      isInvalid={!!errorMessage || props.isInvalid}
-      className={(rs) =>
-        cn("flex flex-col gap-1.5", typeof className === "function" ? className(rs) : className)
-      }
-    >
-      {label && <Label className="text-sm font-medium text-fg">{label}</Label>}
+    <FieldShell label={label} errorMessage={errorMessage} className={className} {...props}>
       <TextArea
         rows={rows}
         placeholder={placeholder}
-        className={cn(
-          "w-full resize-y rounded-control border border-border-strong bg-white px-3 py-2 text-sm text-fg shadow-xs outline-none transition",
-          "placeholder:text-fg-subtle hover:border-fg-subtle",
-          "focus:border-brand-400 focus:ring-4 focus:ring-brand-100",
-          "data-[invalid]:border-danger-500 disabled:opacity-50",
-        )}
+        className={cn(fieldControlClassName, "resize-y")}
       />
-      <FieldError className="text-xs text-danger-600">{errorMessage}</FieldError>
-    </RACTextField>
+    </FieldShell>
   );
 }

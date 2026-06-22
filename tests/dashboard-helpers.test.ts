@@ -15,7 +15,6 @@ import {
   computeCounts,
   gateReady,
   generatePage,
-  loadAiProviders,
   pickGeneratedTitle,
   runCreate,
   runRemove,
@@ -41,8 +40,6 @@ function page(over: Partial<PageItem> = {}): PageItem {
     ...over,
   };
 }
-
-const flush = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
   get.mockReset();
@@ -231,30 +228,6 @@ describe("effect bodies", () => {
     expect(setReady2).not.toHaveBeenCalled();
     cleanup();
     vi.useRealTimers();
-  });
-
-  it("loadAiProviders reports true when at least one provider is returned", async () => {
-    get.mockResolvedValueOnce({ data: { providers: ["mock"] } });
-    const setHasAi = vi.fn();
-    loadAiProviders(setHasAi);
-    await flush();
-    expect(setHasAi).toHaveBeenCalledWith(true);
-  });
-
-  it("loadAiProviders reports false for an empty or missing provider list", async () => {
-    get.mockResolvedValueOnce({ data: { providers: [] } });
-    const setHasAi = vi.fn();
-    loadAiProviders(setHasAi);
-    await flush();
-    expect(setHasAi).toHaveBeenCalledWith(false);
-  });
-
-  it("loadAiProviders swallows fetch errors without throwing", async () => {
-    get.mockRejectedValueOnce(new Error("offline"));
-    const setHasAi = vi.fn();
-    expect(() => loadAiProviders(setHasAi)).not.toThrow();
-    await flush();
-    expect(setHasAi).not.toHaveBeenCalled();
   });
 
   it("clearNewParam replaces to '/' only when the new param is '1'", () => {

@@ -1,4 +1,4 @@
-import { minVariantPrice, parseOptions } from "@/lib/commerce/pricing";
+import { minVariantPrice, parseOptions, parseStringRecord } from "@/lib/commerce/pricing";
 
 export type StoreVariant = {
   id: string;
@@ -43,20 +43,6 @@ type Row = {
   }[];
 };
 
-function parseData(s: string): Record<string, string> {
-  try {
-    const v = JSON.parse(s);
-    if (v && typeof v === "object" && !Array.isArray(v)) {
-      const out: Record<string, string> = {};
-      for (const [k, val] of Object.entries(v)) out[k] = String(val);
-      return out;
-    }
-    return {};
-  } catch {
-    return {};
-  }
-}
-
 export function buildProductMap(rows: Row[]): ProductMap {
   const map: ProductMap = {};
   for (const r of rows) {
@@ -75,7 +61,7 @@ export function buildProductMap(rows: Row[]): ProductMap {
       title: r.title,
       description: r.description,
       status: r.status,
-      data: parseData(r.data),
+      data: parseStringRecord(r.data),
       images: r.images.map((i) => ({ url: i.url, alt: i.alt })),
       variants,
       minPrice: minVariantPrice(variants),

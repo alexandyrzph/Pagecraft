@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { Check } from "lucide-react";
 import { Button, TextField } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
+import { useSaveState } from "@/lib/hooks/use-save-state";
 import { DomainsManager } from "./DomainsManager";
 
 type Site = { id: string; name: string; handle: string };
@@ -42,28 +42,18 @@ export function SiteSettingsClient({ site, canManage }: { site: Site; canManage:
 function General({ site, canManage }: { site: Site; canManage: boolean }) {
   const router = useRouter();
   const [name, setName] = useState(site.name);
-  const [busy, setBusy] = useState(false);
-  const [ok, setOk] = useState(false);
-  const [err, setErr] = useState("");
+  const { busy, ok, err, run } = useSaveState();
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const value = name.trim();
     if (!value) return;
-    setBusy(true);
-    setOk(false);
-    setErr("");
-    try {
-      await api.patch(endpoints.sites.byId(site.id), { name: value });
-      setBusy(false);
-      setOk(true);
-      router.refresh();
-      setTimeout(() => setOk(false), 1500);
-    } catch (e) {
-      setBusy(false);
-      const d = (axios.isAxiosError(e) ? e.response?.data : null) ?? {};
-      setErr(d.error || "Could not save");
-    }
+    await run(
+      async () => {
+        await api.patch(endpoints.sites.byId(site.id), { name: value });
+      },
+      () => router.refresh(),
+    );
   }
 
   if (!canManage) {
