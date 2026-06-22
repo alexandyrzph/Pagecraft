@@ -11,6 +11,7 @@ import { useEditorUI } from "@/store/editor-ui";
 import { useDesignSystem } from "@/store/design-system";
 import { useCanvasZoom } from "@/store/canvas-zoom";
 import { useIframe } from "./iframe-context";
+import { handleActionButtons } from "./CanvasFrame.helpers";
 
 // ---------------------------------------------------------------------------
 // Hosts the page in a real <iframe> so Tailwind's responsive utilities and the
@@ -113,35 +114,7 @@ export function CanvasFrame({
       // and closes any open overlay. CanvasFrame's is the only iframe-doc pointerdown
       // listener and there's no top-document pointerdown listener, so nothing else fires.
       document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-      const t = e.target as HTMLElement;
-      // "generate with AI" trigger in the empty-state placeholder
-      if (t?.closest?.("[data-open-ai]")) {
-        e.preventDefault();
-        useEditorUI.getState().openAi();
-        return;
-      }
-      // "add section" inserter triggers in the placeholder / canvas
-      const insBtn = t?.closest?.("[data-open-inserter]") as HTMLElement | null;
-      if (insBtn) {
-        e.preventDefault();
-        const parent = insBtn.getAttribute("data-open-inserter");
-        const idx = insBtn.getAttribute("data-insert-index");
-        useEditorUI.getState().openInserter({
-          parentId: parent && parent !== "root" ? parent : null,
-          index: idx != null ? Number(idx) : -1,
-        });
-        return;
-      }
-      // quick-add buttons in the empty-state placeholder
-      const addBtn = t?.closest?.("[data-add-block]") as HTMLElement | null;
-      if (addBtn) {
-        e.preventDefault();
-        const type = addBtn.getAttribute("data-add-block");
-        if (type == null) return;
-        const parent = addBtn.getAttribute("data-add-parent");
-        useEditor.getState().addBlock(type, parent && parent !== "root" ? parent : null, 0);
-        return;
-      }
+      if (handleActionButtons(e)) return;
       const id = idOf(e.target);
       const pe = e as PointerEvent;
       // shift / cmd / ctrl click toggles a block in the multi-selection

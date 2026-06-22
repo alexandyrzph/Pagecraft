@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppHost, customDomainRewrite } from "@/lib/domains/host";
+import { isAuthPath, isPublicPath } from "./proxy.helpers";
 
 // Next 16 renamed `middleware` → `proxy`. This does an OPTIMISTIC auth gate
 // (cookie presence only — fast, runs on every navigation). The real/secure
@@ -8,12 +9,6 @@ import { isAppHost, customDomainRewrite } from "@/lib/domains/host";
 //  • Published sites (/p, /c) and the auth endpoints stay public.
 //  • API routes enforce their own auth, so we don't redirect them here.
 //  • Every other (builder) page route requires the session cookie.
-
-// Public, pre-auth pages (redirect to "/" when already signed in). NOTE: do not
-// add "/onboarding" here — although it lives under app/(auth)/ for organization,
-// it is a session-required post-login page (requireUser); gating it as a public
-// auth page would redirect authenticated users away mid-onboarding.
-const AUTH_PAGES = ["/login", "/signup", "/forgot", "/reset"];
 
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -25,20 +20,12 @@ export default function proxy(req: NextRequest) {
     return NextResponse.rewrite(new URL(rewriteTo, req.url));
   }
 
-  // Never gate: API (handlers enforce), published pages, the internal
-  // screenshot render route (token-gated), Next internals.
-  if (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/p/") ||
-    pathname.startsWith("/c/") ||
-    pathname.startsWith("/internal/") ||
-    pathname.startsWith("/store")
-  ) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
   const hasSession = !!req.cookies.get("pc_session")?.value;
-  const isAuthPage = AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isAuthPage = isAuthPath(pathname);
 
   if (isAuthPage) {
     // Already signed in → bounce away from auth pages.

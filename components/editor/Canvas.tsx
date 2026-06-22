@@ -4,10 +4,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/store/editor-store";
-import { useBreakpoints, widthBand } from "@/store/breakpoints";
+import { useBreakpoints } from "@/store/breakpoints";
 import { useCanvasZoom } from "@/store/canvas-zoom";
-import { BlockRenderer } from "@/components/BlockRenderer";
-import { SlottedChildren } from "./EditorBlock";
 import { DeviceFrame } from "./DeviceFrame";
 import { CanvasFrame } from "./CanvasFrame";
 import { DeviceResizer } from "./DeviceResizer";
@@ -15,6 +13,7 @@ import { useComponents } from "./components-context";
 import { useCollections } from "./collections-context";
 import { useSite } from "./site-context";
 import { useIframe } from "./iframe-context";
+import { CanvasContent, createStartResize } from "./Canvas.helpers";
 
 export function Canvas() {
   const tree = useEditor((s) => s.tree);
@@ -36,47 +35,7 @@ export function Canvas() {
   const resizing = resizeSide !== null;
   const desktopFill = active.id === "desktop" && dragWidth == null;
 
-  // Drag-to-resize the preview width via the side "pipes". Centered device, so a
-  // drag of dx on one side changes the width by 2·dx (divided by zoom, since the
-  // device is visually scaled) to keep that edge under the cursor.
-  const startResize = (side: "left" | "right") => (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const handle = e.currentTarget;
-    handle.setPointerCapture(e.pointerId);
-
-    const startX = e.clientX;
-    const startW = active.width;
-    const [minW, maxW] = widthBand(active.base);
-    setResizeSide(side);
-    const fr = frame?.el;
-    fr?.style.setProperty("pointer-events", "none");
-    document.body.style.cursor = "ew-resize";
-    document.body.style.userSelect = "none";
-
-    const move = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX;
-      const next = startW + ((side === "right" ? dx : -dx) * 2) / zoom;
-      setDragWidth(Math.max(minW, Math.min(maxW, next)));
-    };
-    const end = () => {
-      setResizeSide(null);
-      fr?.style.removeProperty("pointer-events");
-      document.body.style.removeProperty("cursor");
-      document.body.style.removeProperty("user-select");
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", end);
-      handle.removeEventListener("pointercancel", end);
-      if (handle.hasPointerCapture(e.pointerId)) {
-        handle.releasePointerCapture(e.pointerId);
-      }
-    };
-    // With pointer capture, events stay on the handle even when the cursor
-    // crosses the iframe — window listeners alone lose the drag over iframes.
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", end);
-    handle.addEventListener("pointercancel", end);
-  };
+  const startResize = createStartResize({ active, zoom, frame, setResizeSide, setDragWidth });
 
   // Measure the scrollable canvas area so the zoomed device gets a correctly
   // sized scroll footprint (CSS transforms don't affect layout/scroll area) and
@@ -133,54 +92,15 @@ export function Canvas() {
     [previewMode, site.header, site.footer],
   );
 
-  // Content is portaled into the iframe by CanvasFrame.
-  const content = previewMode ? (
-    <>
-      {site.header.length > 0 && (
-        <BlockRenderer
-          tree={site.header}
-          viewport="desktop"
-          animate
-          inlineStyles={false}
-          components={components.map}
-          collections={collections.map}
-        />
-      )}
-      <BlockRenderer
-        tree={tree}
-        viewport="desktop"
-        animate
-        inlineStyles={false}
-        components={components.map}
-        collections={collections.map}
-      />
-      {site.footer.length > 0 && (
-        <BlockRenderer
-          tree={site.footer}
-          viewport="desktop"
-          animate
-          inlineStyles={false}
-          components={components.map}
-          collections={collections.map}
-        />
-      )}
-    </>
-  ) : tree.length === 0 ? (
-    <div className="p-8">
-      <SlottedChildren parentId={null} parentType="root" items={tree} emptyMinHeight={360} />
-    </div>
-  ) : (
-    <>
-      <SlottedChildren parentId={null} parentType="root" items={tree} />
-      <div className="flex justify-center px-8 py-6">
-        <button
-          data-open-inserter="root"
-          className="flex items-center gap-1.5 rounded-xl border border-dashed border-zinc-300 bg-white/70 px-4 py-2.5 text-sm font-semibold text-zinc-500 shadow-xs transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600"
-        >
-          <span className="text-base leading-none">+</span> Add section
-        </button>
-      </div>
-    </>
+  const content = (
+    <CanvasContent
+      previewMode={previewMode}
+      tree={tree}
+      header={site.header}
+      footer={site.footer}
+      componentsMap={components.map}
+      collectionsMap={collections.map}
+    />
   );
 
   return (

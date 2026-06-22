@@ -5,6 +5,7 @@ import { isProvider, oauthProviders, exchangeCode, fetchProfile } from "@/lib/au
 import { verifyState } from "@/lib/auth/oauth-state";
 import { linkOrCreateUser } from "@/lib/auth/oauth-account";
 import { createSession } from "@/lib/auth/auth";
+import { sanitizeNext, oauthErrorReason } from "./route.helpers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,14 +36,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
     const userId = await linkOrCreateUser(provider, profile);
     await createSession(userId);
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    const safeNext =
-      decoded.next && decoded.next.startsWith("/") && !decoded.next.startsWith("//")
-        ? decoded.next
-        : "/";
+    const safeNext = sanitizeNext(decoded.next);
     return to(user?.onboardedAt ? safeNext : "/onboarding");
   } catch (e) {
-    const reason =
-      e instanceof Error && e.message === "email_in_use" ? "email_in_use" : "oauth_failed";
+    const reason = oauthErrorReason(e);
     console.error("[oauth] callback failed", provider, e);
     return to(`/login?error=${reason}`);
   }

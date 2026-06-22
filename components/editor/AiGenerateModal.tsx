@@ -1,37 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { Loader2, Sparkles, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sparkles, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import { Modal } from "@/components/ui/Modal";
-import { findBlockById } from "@/lib/blocks/tree";
 import type { Block } from "@/lib/types";
+import { useShallow } from "zustand/react/shallow";
 import { useEditor } from "@/store/editor-store";
 import { useEditorUI } from "@/store/editor-ui";
-import { DESIGN_STYLE_OPTIONS } from "@/lib/ai";
+import {
+  resolveInsertIndex,
+  aiErrorMessage,
+  NoProviderNotice,
+  ScopeToggle,
+  DesignStylePicker,
+  ExamplePrompts,
+  GenerateFooter,
+} from "./AiGenerateModal.helpers";
 
-const PROVIDER_LABELS: Record<string, string> = {
-  anthropic: "Claude",
-  openai: "OpenAI",
-  mock: "Mock",
-};
+// Effect body for when the modal opens: fetch the available providers and wire
+// up Escape-to-close. Returns the listener cleanup (or nothing when closed).
+function openAiModal(
+  ai: unknown,
+  close: () => void,
+  setProviders: (v: string[]) => void,
+  setProvider: (fn: (p: string) => string) => void,
+): (() => void) | undefined {
+  if (!ai) return;
+  api
+    .get(endpoints.ai)
+    .then((r) => r.data)
+    .then((d) => {
+      const list: string[] = Array.isArray(d.providers) ? d.providers : [];
+      setProviders(list);
+      setProvider((p) => (list.includes(p) ? p : (list[0] ?? "")));
+    })
+    .catch(() => setProviders([]));
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") close();
+  };
+  window.addEventListener("keydown", onKey);
+  return () => window.removeEventListener("keydown", onKey);
+}
 
-const EXAMPLES = [
-  "A hero for a modern SaaS analytics product",
-  "A pricing section with 3 tiers",
-  "A features grid highlighting 3 benefits",
-  "A testimonial from a happy customer",
-  "A bold call-to-action to start a free trial",
-];
-
-export function AiGenerateModal() {
-  const ai = useEditorUI((s) => s.ai);
-  const close = useEditorUI((s) => s.closeAi);
-  const insertTree = useEditor((s) => s.insertTree);
-  const replaceTree = useEditor((s) => s.replaceTree);
+// Store/state wiring, kept in one hook so the component stays a thin render plus
+// the generate handler.
+function useAiGenerateModalState() {
+  const { ai, close } = useEditorUI(useShallow((s) => ({ ai: s.ai, close: s.closeAi })));
+  const { insertTree, replaceTree } = useEditor(
+    useShallow((s) => ({ insertTree: s.insertTree, replaceTree: s.replaceTree })),
+  );
 
   const [providers, setProviders] = useState<string[] | null>(null);
   const [provider, setProvider] = useState("");
@@ -40,28 +59,60 @@ export function AiGenerateModal() {
   const [style, setStyle] = useState("auto");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
   const [prevAi, setPrevAi] = useState(ai);
+
+  useEffect(() => openAiModal(ai, close, setProviders, setProvider), [ai, close]);
+
+  return {
+    ai,
+    close,
+    insertTree,
+    replaceTree,
+    providers,
+    provider,
+    setProvider,
+    prompt,
+    setPrompt,
+    scope,
+    setScope,
+    style,
+    setStyle,
+    busy,
+    setBusy,
+    error,
+    setError,
+    prevAi,
+    setPrevAi,
+  };
+}
+
+export function AiGenerateModal() {
+  const {
+    ai,
+    close,
+    insertTree,
+    replaceTree,
+    providers,
+    provider,
+    setProvider,
+    prompt,
+    setPrompt,
+    scope,
+    setScope,
+    style,
+    setStyle,
+    busy,
+    setBusy,
+    error,
+    setError,
+    prevAi,
+    setPrevAi,
+  } = useAiGenerateModalState();
+
   if (ai !== prevAi) {
     setPrevAi(ai);
     if (ai) setError("");
   }
-
-  useEffect(() => {
-    if (!ai) return;
-    api
-      .get(endpoints.ai)
-      .then((r) => r.data)
-      .then((d) => {
-        const list: string[] = Array.isArray(d.providers) ? d.providers : [];
-        setProviders(list);
-        setProvider((p) => (list.includes(p) ? p : (list[0] ?? "")));
-      })
-      .catch(() => setProviders([]));
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [ai, close]);
 
   const generate = async () => {
     if (!ai) return;
@@ -83,21 +134,12 @@ export function AiGenerateModal() {
         replaceTree(blocks);
       } else {
         const tree = useEditor.getState().tree;
-        let index = ai.index;
-        if (index < 0)
-          index = ai.parentId
-            ? (findBlockById(tree, ai.parentId)?.children.length ?? 0)
-            : tree.length;
+        const index = resolveInsertIndex(tree, ai);
         blocks.forEach((blk, i) => insertTree(blk, ai.parentId, index + i));
       }
       close();
     } catch (e) {
-      if (axios.isAxiosError(e) && e.response) {
-        const d = e.response.data;
-        setError(d.error || "Generation failed");
-      } else {
-        setError("Network error — try again.");
-      }
+      setError(aiErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -125,59 +167,11 @@ export function AiGenerateModal() {
 
       <div className="p-5">
         {noProvider ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-center text-sm text-zinc-500">
-            <p className="font-medium text-zinc-700">No AI provider configured</p>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-              Add <code className="rounded bg-zinc-200/70 px-1 text-[11px]">ANTHROPIC_API_KEY</code>{" "}
-              or <code className="rounded bg-zinc-200/70 px-1 text-[11px]">OPENAI_API_KEY</code> to
-              your <code className="rounded bg-zinc-200/70 px-1 text-[11px]">.env</code>, then
-              restart.
-            </p>
-          </div>
+          <NoProviderNotice />
         ) : (
           <>
-            <div className="mb-3 flex gap-1 rounded-lg bg-zinc-100 p-1">
-              {(
-                [
-                  ["section", "Section"],
-                  ["page", "Full page"],
-                ] as const
-              ).map(([val, label]) => (
-                <button
-                  key={val}
-                  onClick={() => setScope(val)}
-                  className={cn(
-                    "flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors",
-                    scope === val
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-700",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="mb-3">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-                Design style
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {DESIGN_STYLE_OPTIONS.map((o) => (
-                  <button
-                    key={o.key}
-                    onClick={() => setStyle(o.key)}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-                      style === o.key
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-600"
-                        : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:border-indigo-300 hover:text-indigo-600",
-                    )}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ScopeToggle scope={scope} onChange={setScope} />
+            <DesignStylePicker value={style} onChange={setStyle} />
             <textarea
               autoFocus
               value={prompt}
@@ -190,17 +184,7 @@ export function AiGenerateModal() {
               className="w-full resize-none rounded-xl border border-zinc-300 bg-white px-3.5 py-3 text-sm leading-relaxed text-zinc-800 shadow-xs outline-none transition placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
             />
 
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => setPrompt(ex)}
-                  className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-500 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
+            <ExamplePrompts onPick={setPrompt} />
 
             {scope === "page" && (
               <p className="mt-2 text-[11px] text-amber-600">
@@ -210,34 +194,14 @@ export function AiGenerateModal() {
             )}
             {error && <p className="mt-2.5 text-xs text-red-500">{error}</p>}
 
-            <div className="mt-4 flex items-center justify-between gap-2">
-              {providers && providers.length > 1 ? (
-                <label className="flex items-center gap-1.5 text-xs text-zinc-500">
-                  Model
-                  <select
-                    value={provider}
-                    onChange={(e) => setProvider(e.target.value)}
-                    className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-700 outline-none"
-                  >
-                    {providers.map((p) => (
-                      <option key={p} value={p}>
-                        {PROVIDER_LABELS[p] ?? p}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <span className="text-[11px] text-zinc-400">⌘↵ to generate</span>
-              )}
-              <button
-                onClick={generate}
-                disabled={!prompt.trim() || busy}
-                className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-zinc-800 disabled:opacity-50"
-              >
-                {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                {busy ? "Generating…" : "Generate"}
-              </button>
-            </div>
+            <GenerateFooter
+              providers={providers}
+              provider={provider}
+              onProviderChange={setProvider}
+              busy={busy}
+              prompt={prompt}
+              onGenerate={generate}
+            />
           </>
         )}
       </div>

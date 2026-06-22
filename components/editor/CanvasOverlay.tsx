@@ -12,92 +12,102 @@ import {
   Trash2,
   Unlink,
 } from "lucide-react";
+import type { Block } from "@/lib/types";
 import { getDefinition } from "@/lib/blocks/registry";
 import { findBlockById } from "@/lib/blocks/tree";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/store/editor-store";
+import { useShallow } from "zustand/react/shallow";
 import { useRichText } from "@/store/richtext";
 import { useCanvasZoom } from "@/store/canvas-zoom";
 import { useIframe, type FrameInfo } from "./iframe-context";
-import { useComponents } from "./components-context";
+import { useComponents, type ComponentItem } from "./components-context";
 import { useEditorActions } from "./editor-actions";
 import { useDrag } from "./drag-context";
+import {
+  blockChromeLabel,
+  captureBaseScroll,
+  computeBlockChromeRect,
+  outlineClass,
+  overlayHasChrome,
+  shouldShowHover,
+  startOverlaySync,
+  toolbarBgClass,
+} from "./CanvasOverlay.helpers";
 
 // Top-document layer drawn over the iframe: selection/hover outline + the block
 // toolbar and drag handle. Positioned with the block's iframe-relative rect
 // inside a container aligned to the iframe, so coords line up without offset.
-export function CanvasOverlay() {
+// All the store/ref/effect wiring the overlay needs, kept in one hook so the
+// component body stays a thin render. The frame-perfect sync runs a rAF loop
+// (started in an effect) that positions the overlay BEFORE paint — a scroll-event
+// update always trails by a frame — so chrome lands in the same frame as content.
+function useCanvasOverlayState() {
   const { frame, tick } = useIframe();
-  const selectedId = useEditor((s) => s.selectedId);
-  const selectedIds = useEditor((s) => s.selectedIds);
-  const hoveredId = useEditor((s) => s.hoveredId);
-  const previewMode = useEditor((s) => s.previewMode);
+  const { selectedId, selectedIds, hoveredId, previewMode } = useEditor(
+    useShallow((s) => ({
+      selectedId: s.selectedId,
+      selectedIds: s.selectedIds,
+      hoveredId: s.hoveredId,
+      previewMode: s.previewMode,
+    })),
+  );
   const dragActive = !!useDrag().type;
-  // While editing rich text, hide the selected block's toolbar so it doesn't
-  // stack with the formatting toolbar / cover the text.
-  const rtEditor = useRichText((s) => s.editor);
-  const rtTick = useRichText((s) => s.tick);
+  // `rtTick`/`tick` are read so the overlay re-renders (re-measures) when the
+  // rich-text selection changes or on scroll/resize/relayout.
+  const { editor: rtEditor, tick: rtTick } = useRichText(
+    useShallow((s) => ({ editor: s.editor, tick: s.tick })),
+  );
   void rtTick;
+  void tick;
   const editingText = !!rtEditor?.isFocused;
   const zoom = useCanvasZoom((s) => s.zoom);
 
-  // `tick` is read so this re-renders (re-measures) on scroll/resize/relayout.
-  void tick;
-
-  // --- frame-perfect overlay sync ------------------------------------------
-  // The chrome lives in the top document, so it can't share the iframe's scroll.
-  // A scroll-EVENT-driven update always trails by a frame (the event fires after
-  // the content already painted). Instead a rAF loop reads the LIVE iframe scroll
-  // + screen rect every frame and positions the overlay BEFORE paint, so it lands
-  // in the SAME frame as the content — zero trailing on any scroll source
-  // (iframe-internal, the canvas container, or the window).
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const baseScroll = useRef({ x: 0, y: 0 });
 
-  // Each commit re-measures block positions at the current scroll → capture that
-  // scroll as the baseline the rAF transform is relative to (and clear any held
-  // transform so the freshly-measured positions show un-offset for that frame).
-  useLayoutEffect(() => {
-    const win = frame?.el.contentWindow;
-    if (!win) return;
-    baseScroll.current = { x: win.scrollX, y: win.scrollY };
-    if (contentRef.current) contentRef.current.style.transform = "";
-  });
+  useLayoutEffect(() => captureBaseScroll(frame, contentRef.current, baseScroll));
 
-  const hasChrome = !!(selectedId || hoveredId || selectedIds.length);
-  useEffect(() => {
-    if (!frame || !hasChrome) return;
-    let raf = 0;
-    const sync = () => {
-      const fr = frame.el;
-      const win = fr.contentWindow;
-      if (win) {
-        const r = fr.getBoundingClientRect();
-        const cont = containerRef.current;
-        if (cont) {
-          cont.style.top = `${r.top}px`;
-          cont.style.left = `${r.left}px`;
-          cont.style.width = `${r.width}px`;
-          cont.style.height = `${r.height}px`;
-        }
-        const content = contentRef.current;
-        if (content) {
-          const dx = (win.scrollX - baseScroll.current.x) * zoom;
-          const dy = (win.scrollY - baseScroll.current.y) * zoom;
-          content.style.transform = `translate3d(${-dx}px, ${-dy}px, 0)`;
-        }
-      }
-      raf = requestAnimationFrame(sync);
-    };
-    raf = requestAnimationFrame(sync);
-    return () => cancelAnimationFrame(raf);
-  }, [frame, zoom, hasChrome]);
+  const hasChrome = overlayHasChrome(selectedId, hoveredId, selectedIds.length);
+  useEffect(
+    () => startOverlaySync(frame, hasChrome, containerRef, contentRef, baseScroll, zoom),
+    [frame, zoom, hasChrome],
+  );
+
+  return {
+    frame,
+    selectedId,
+    selectedIds,
+    hoveredId,
+    previewMode,
+    dragActive,
+    editingText,
+    zoom,
+    containerRef,
+    contentRef,
+  };
+}
+
+// Top-document layer drawn over the iframe: selection/hover outline + the block
+export function CanvasOverlay() {
+  const {
+    frame,
+    selectedId,
+    selectedIds,
+    hoveredId,
+    previewMode,
+    dragActive,
+    editingText,
+    zoom,
+    containerRef,
+    contentRef,
+  } = useCanvasOverlayState();
 
   if (!frame || previewMode) return null;
 
   const fb = frame.el.getBoundingClientRect();
-  const showHover = hoveredId && hoveredId !== selectedId && !selectedIds.includes(hoveredId);
+  const showHover = shouldShowHover(hoveredId, selectedId, selectedIds);
   const multi = selectedIds.length > 1;
   // Secondary selections (everything but the primary) get an outline only.
   const secondary = selectedIds.filter((id) => id !== selectedId);
@@ -172,9 +182,13 @@ function BlockChrome({
 }) {
   const router = useRouter();
   const block = useEditor((s) => findBlockById(s.tree, blockId));
-  const remove = useEditor((s) => s.remove);
-  const duplicate = useEditor((s) => s.duplicate);
-  const detachComponent = useEditor((s) => s.detachComponent);
+  const { remove, duplicate, detachComponent } = useEditor(
+    useShallow((s) => ({
+      remove: s.remove,
+      duplicate: s.duplicate,
+      detachComponent: s.detachComponent,
+    })),
+  );
   const components = useComponents();
   const actions = useEditorActions();
 
@@ -194,105 +208,138 @@ function BlockChrome({
   // render nothing — avoids getBoundingClientRect reflows on every frame.
   if (dragActive) return null;
   if (!block) return null;
-  const el = frame.doc.querySelector(`[data-block-id="${blockId}"]`) as HTMLElement | null;
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  // Hide chrome when the block is scrolled out of the iframe viewport (avoids a
-  // stale toolbar stuck at the edge). Keep it mounted during a drag so the
-  // active draggable's hook isn't torn down. (r and clientHeight are both in the
-  // iframe's unscaled internal coordinate space, so compare before scaling.)
-  if (!dragActive && (r.bottom <= 4 || r.top >= frame.el.clientHeight - 4)) return null;
-
-  // The iframe renders at logical size and is visually scaled by `zoom`; the
-  // overlay sits over the scaled iframe, so block rects are scaled to match.
-  const sTop = r.top * zoom;
-  const sLeft = r.left * zoom;
-  const sW = r.width * zoom;
-  const sH = r.height * zoom;
+  // Scaled rect, or null when the block element is gone or scrolled out of view.
+  const rect = computeBlockChromeRect(frame, blockId, zoom);
+  if (!rect) return null;
+  const { sTop, sLeft, sW, sH } = rect;
 
   const def = getDefinition(block.type);
   const comp = isComponent ? components.map[block.props?.componentId as string] : undefined;
-  const label = isComponent ? (comp?.name ?? "Component") : (def?.label ?? block.type);
+  const label = blockChromeLabel(isComponent, comp, def, block.type);
 
   return (
     <>
       <div
         className={cn(
           "pointer-events-none absolute rounded-[2px]",
-          isComponent
-            ? selected
-              ? "outline outline-2 outline-violet-500"
-              : "outline-dashed outline-1 outline-violet-300"
-            : selected
-              ? "outline outline-2 outline-indigo-500"
-              : "outline-dashed outline-1 outline-indigo-300",
+          outlineClass(isComponent, selected),
         )}
         style={{ top: sTop, left: sLeft, width: sW, height: sH, outlineOffset: -1 }}
       />
 
       {!hideToolbar && (
-        <div
-          className={cn(
-            "pointer-events-auto absolute z-10 flex items-center gap-0.5 rounded-lg px-1 py-0.5 text-[11px] font-medium text-white shadow-lg ring-1 ring-black/5",
-            isComponent
-              ? "bg-violet-600"
-              : selected
-                ? "bg-zinc-900"
-                : "bg-zinc-900/85 backdrop-blur-sm",
-          )}
-          // Sit just ABOVE the block (top-left) so it never covers the content;
-          // drop just inside the top edge when there's no room above. The toolbar
-          // itself stays unscaled (readable at any zoom) — only its anchor scales.
-          style={{ top: sTop >= 30 ? sTop - 28 : sTop + 4, left: Math.max(sLeft, 2) }}
-          // The toolbar is pointer-events-auto, so it would otherwise swallow the
-          // wheel; forward it to the iframe so scrolling over the toolbar scrolls
-          // the canvas like everywhere else.
-          onWheel={(e) => frame.el.contentWindow?.scrollBy({ left: e.deltaX, top: e.deltaY })}
-        >
-          <button
-            ref={setActivatorNodeRef}
-            {...listeners}
-            {...attributes}
-            className="flex cursor-grab touch-none items-center rounded-md p-1 transition-colors hover:bg-white/15 active:cursor-grabbing"
-            title="Drag to move"
-            aria-label="Drag to move"
-          >
-            <GripVertical size={13} />
-          </button>
-          <span className="flex items-center gap-1 px-1">
-            {isComponent && <ComponentIcon size={11} />}
-            {label}
-          </span>
-
-          {isComponent ? (
-            <>
-              <ToolBtn
-                title="Edit component"
-                onClick={() => router.push(`/component/${block.props.componentId}`)}
-              >
-                <Pencil size={13} />
-              </ToolBtn>
-              <ToolBtn
-                title="Detach"
-                onClick={() => comp && detachComponent(block.id, comp.content)}
-              >
-                <Unlink size={13} />
-              </ToolBtn>
-            </>
-          ) : (
-            <ToolBtn title="Save as component" onClick={() => actions.saveAsComponent(block)}>
-              <ComponentIcon size={13} />
-            </ToolBtn>
-          )}
-          <ToolBtn title="Duplicate" onClick={() => duplicate(block.id)}>
-            <Copy size={13} />
-          </ToolBtn>
-          <ToolBtn title="Delete" danger onClick={() => remove(block.id)}>
-            <Trash2 size={13} />
-          </ToolBtn>
-        </div>
+        <BlockToolbar
+          block={block}
+          comp={comp}
+          isComponent={isComponent}
+          selected={selected}
+          label={label}
+          sTop={sTop}
+          sLeft={sLeft}
+          frame={frame}
+          attributes={attributes}
+          listeners={listeners}
+          setActivatorNodeRef={setActivatorNodeRef}
+          router={router}
+          detachComponent={detachComponent}
+          duplicate={duplicate}
+          remove={remove}
+          saveAsComponent={actions.saveAsComponent}
+        />
       )}
     </>
+  );
+}
+
+function BlockToolbar({
+  block,
+  comp,
+  isComponent,
+  selected,
+  label,
+  sTop,
+  sLeft,
+  frame,
+  attributes,
+  listeners,
+  setActivatorNodeRef,
+  router,
+  detachComponent,
+  duplicate,
+  remove,
+  saveAsComponent,
+}: {
+  block: Block;
+  comp: ComponentItem | undefined;
+  isComponent: boolean;
+  selected: boolean;
+  label: string;
+  sTop: number;
+  sLeft: number;
+  frame: FrameInfo;
+  attributes: ReturnType<typeof useDraggable>["attributes"];
+  listeners: ReturnType<typeof useDraggable>["listeners"];
+  setActivatorNodeRef: ReturnType<typeof useDraggable>["setActivatorNodeRef"];
+  router: ReturnType<typeof useRouter>;
+  detachComponent: (instanceId: string, content: Block[]) => void;
+  duplicate: (id: string) => void;
+  remove: (id: string) => void;
+  saveAsComponent: (block: Block) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "pointer-events-auto absolute z-10 flex items-center gap-0.5 rounded-lg px-1 py-0.5 text-[11px] font-medium text-white shadow-lg ring-1 ring-black/5",
+        toolbarBgClass(isComponent, selected),
+      )}
+      // Sit just ABOVE the block (top-left) so it never covers the content;
+      // drop just inside the top edge when there's no room above. The toolbar
+      // itself stays unscaled (readable at any zoom) — only its anchor scales.
+      style={{ top: sTop >= 30 ? sTop - 28 : sTop + 4, left: Math.max(sLeft, 2) }}
+      // The toolbar is pointer-events-auto, so it would otherwise swallow the
+      // wheel; forward it to the iframe so scrolling over the toolbar scrolls
+      // the canvas like everywhere else.
+      onWheel={(e) => frame.el.contentWindow?.scrollBy({ left: e.deltaX, top: e.deltaY })}
+    >
+      <button
+        ref={setActivatorNodeRef}
+        {...listeners}
+        {...attributes}
+        className="flex cursor-grab touch-none items-center rounded-md p-1 transition-colors hover:bg-white/15 active:cursor-grabbing"
+        title="Drag to move"
+        aria-label="Drag to move"
+      >
+        <GripVertical size={13} />
+      </button>
+      <span className="flex items-center gap-1 px-1">
+        {isComponent && <ComponentIcon size={11} />}
+        {label}
+      </span>
+
+      {isComponent ? (
+        <>
+          <ToolBtn
+            title="Edit component"
+            onClick={() => router.push(`/component/${block.props.componentId}`)}
+          >
+            <Pencil size={13} />
+          </ToolBtn>
+          <ToolBtn title="Detach" onClick={() => comp && detachComponent(block.id, comp.content)}>
+            <Unlink size={13} />
+          </ToolBtn>
+        </>
+      ) : (
+        <ToolBtn title="Save as component" onClick={() => saveAsComponent(block)}>
+          <ComponentIcon size={13} />
+        </ToolBtn>
+      )}
+      <ToolBtn title="Duplicate" onClick={() => duplicate(block.id)}>
+        <Copy size={13} />
+      </ToolBtn>
+      <ToolBtn title="Delete" danger onClick={() => remove(block.id)}>
+        <Trash2 size={13} />
+      </ToolBtn>
+    </div>
   );
 }
 

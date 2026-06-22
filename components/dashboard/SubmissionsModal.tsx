@@ -1,19 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Inbox, Loader2, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Table, THead, TH, TBody, TR, TD } from "@/components/ui/Table";
-
-type Submission = {
-  id: string;
-  formId: string;
-  data: Record<string, string>;
-  createdAt: string;
-};
+import {
+  type Submission,
+  SubmissionsBody,
+  buildSubmissionsCsv,
+  downloadCsv,
+} from "./SubmissionsModal.helpers";
 
 export function SubmissionsModal({
   page,
@@ -52,22 +50,8 @@ export function SubmissionsModal({
   const columns = Array.from(new Set(subs.flatMap((s) => Object.keys(s.data))));
 
   function exportCsv() {
-    const headers = ["Submitted", ...columns];
-    const rows = subs.map((s) => [
-      new Date(s.createdAt).toLocaleString(),
-      ...columns.map((c) => s.data[c] ?? ""),
-    ]);
-    const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
-    const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `submissions-${page?.id}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    const csv = buildSubmissionsCsv(columns, subs);
+    downloadCsv(csv, `submissions-${page?.id}.csv`);
   }
 
   return (
@@ -101,43 +85,7 @@ export function SubmissionsModal({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-zinc-400">
-            <Loader2 size={20} className="animate-spin" />
-          </div>
-        ) : subs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center text-sm text-zinc-400">
-            <div className="rounded-2xl bg-zinc-100 p-3.5">
-              <Inbox size={22} className="text-zinc-400" />
-            </div>
-            No submissions yet. Publish a page with a Form block and entries will appear here.
-          </div>
-        ) : (
-          <Table>
-            <THead className="sticky top-0 bg-zinc-50">
-              <tr>
-                <TH>Submitted</TH>
-                {columns.map((c) => (
-                  <TH key={c}>{c}</TH>
-                ))}
-              </tr>
-            </THead>
-            <TBody>
-              {subs.map((s) => (
-                <TR key={s.id} className="align-top">
-                  <TD className="whitespace-nowrap text-zinc-400">
-                    {new Date(s.createdAt).toLocaleString()}
-                  </TD>
-                  {columns.map((c) => (
-                    <TD key={c} className="text-zinc-700">
-                      {s.data[c] ?? ""}
-                    </TD>
-                  ))}
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        )}
+        <SubmissionsBody loading={loading} subs={subs} columns={columns} />
       </div>
     </Modal>
   );

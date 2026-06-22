@@ -1,0 +1,5 @@
+# Test files hold deliberate setup repetition (render scaffolding, mock wiring,
+# per-suite Prisma fixtures) that reads as duplication but is intentional for
+# clarity, and their complexity standards differ from production code. Exclude
+# them from fallow's source analysis.
+ignorePatterns = ["tests/**"]

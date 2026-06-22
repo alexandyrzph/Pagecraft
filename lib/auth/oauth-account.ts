@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { createWorkspace } from "@/lib/auth/workspace";
 import type { OAuthProfile, Provider } from "@/lib/auth/oauth";
+import {
+  fallbackEmail,
+  normalizeOAuthEmail,
+  oauthDisplayName,
+  oauthWorkspaceName,
+} from "@/lib/auth/oauth-account.helpers";
 
 /**
  * Resolve an OAuth identity to a user id:
@@ -17,7 +23,7 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
   });
   if (linked) return linked.userId;
 
-  const email = profile.email ? profile.email.toLowerCase() : null;
+  const email = normalizeOAuthEmail(profile);
 
   if (email && profile.emailVerified) {
     const byEmail = await prisma.user.findUnique({ where: { email } });
@@ -34,14 +40,13 @@ export async function linkOrCreateUser(provider: Provider, profile: OAuthProfile
     if (taken) throw new Error("email_in_use"); // unverified provider email — don't take over
   }
 
-  const finalEmail =
-    email || `${provider}-${profile.providerAccountId}@users.noreply.pagecraft.local`;
+  const finalEmail = email || fallbackEmail(provider, profile);
   const user = await prisma.user.create({
-    data: { email: finalEmail, name: profile.name || "", passwordHash: null },
+    data: { email: finalEmail, name: oauthDisplayName(profile), passwordHash: null },
   });
   await prisma.oAuthAccount.create({
     data: { provider, providerAccountId: profile.providerAccountId, userId: user.id },
   });
-  await createWorkspace(user.id, `${(profile.name || "My").trim() || "My"}'s Workspace`);
+  await createWorkspace(user.id, oauthWorkspaceName(profile));
   return user.id;
 }
