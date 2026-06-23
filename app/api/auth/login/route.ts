@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createSession } from "@/lib/auth/auth";
+import { enforce } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const limited = enforce(req, "login", 10, 60_000);
+  if (limited) return limited;
+
   const body = await req.json().catch(() => ({}));
   const email = String(body.email || "")
     .trim()

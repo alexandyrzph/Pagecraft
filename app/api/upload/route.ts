@@ -1,5 +1,6 @@
 import { withSiteRole } from "@/lib/api/api-handler";
 import { created, badRequest, error } from "@/lib/api/api-response";
+import { enforce } from "@/lib/rate-limit";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,9 @@ const MAX_BYTES = 25 * 1024 * 1024;
 let seq = 0;
 
 export async function POST(req: Request) {
+  const limited = enforce(req, "upload", 30, 60_000);
+  if (limited) return limited;
+
   return withSiteRole("EDITOR", async (ctx) => {
     const form = await req.formData().catch(() => null);
     const file = form?.get("file");

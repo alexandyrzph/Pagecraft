@@ -4,6 +4,7 @@ import { withRole } from "@/lib/api/api-handler";
 import { type Role } from "@/lib/auth/workspace";
 import { json, created, badRequest } from "@/lib/api/api-response";
 import { logActivity } from "@/lib/activity";
+import { sendWorkspaceInvite } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 const ROLES: Role[] = ["ADMIN", "EDITOR", "VIEWER"]; // can't invite straight to OWNER
@@ -53,7 +54,9 @@ export async function POST(req: Request) {
     await logActivity(ws.workspace.id, ws.user.id, "invite.sent", undefined, { email, role });
 
     const origin = new URL(req.url).origin;
-    return created({ inviteUrl: `${origin}/invite/${token}` });
+    const inviteUrl = `${origin}/invite/${token}`;
+    await sendWorkspaceInvite(email, inviteUrl, ws.workspace.name);
+    return created({ inviteUrl });
   });
 }
 

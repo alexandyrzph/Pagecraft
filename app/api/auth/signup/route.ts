@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, createSession } from "@/lib/auth/auth";
 import { createWorkspace } from "@/lib/auth/workspace";
+import { enforce } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  const limited = enforce(req, "signup", 5, 60_000);
+  if (limited) return limited;
+
   const body = await req.json().catch(() => ({}));
   const email = String(body.email || "")
     .trim()

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi, type Mock } from "vitest";
 import axios from "axios";
+import { resetRateLimits } from "@/lib/rate-limit";
 
 const state = vi.hoisted(() => ({ roleCalls: [] as string[] }));
 
@@ -75,6 +76,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   clearEnv();
+  resetRateLimits();
   state.roleCalls = [];
   post.mockReset();
   isAxiosError.mockReset();

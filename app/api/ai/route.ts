@@ -4,6 +4,7 @@ import { requireApiUser } from "@/lib/auth/auth";
 import { withRole } from "@/lib/api/api-handler";
 import { json, badRequest, error } from "@/lib/api/api-response";
 import { instrumentApi, logger } from "@/lib/observability";
+import { enforce } from "@/lib/rate-limit";
 import {
   sectionSystemPrompt,
   pageSystemPrompt,
@@ -182,6 +183,9 @@ async function handleGenerate(
 
 // POST /api/ai — generate blocks from a prompt
 export async function POST(req: Request) {
+  const limited = enforce(req, "ai", 20, 60_000);
+  if (limited) return limited;
+
   return instrumentApi("/api/ai", req, () =>
     withRole("EDITOR", async () => {
       const providers = available();
