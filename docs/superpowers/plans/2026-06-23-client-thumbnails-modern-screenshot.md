@@ -29,11 +29,13 @@
 Installs the capture library and lifts the iframe stylesheet-cloning helper out of `CanvasFrame` into a shared module so `ShotFrame` (Task 5) can reuse it without duplication. No behavior change.
 
 **Files:**
+
 - Modify: `package.json` (add dependency)
 - Create: `lib/editor/iframe-styles.ts`
 - Modify: `components/editor/CanvasFrame.tsx:25-48` (remove local `copyStyles`, import shared)
 
 **Interfaces:**
+
 - Produces: `copyStyles(doc: Document): void` from `@/lib/editor/iframe-styles`
 
 - [ ] **Step 1: Install modern-screenshot**
@@ -103,10 +105,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 A framework-agnostic module that holds a reference to the mounted `ShotFrame`'s capturer and exposes a guarded `requestThumbnailCapture()`. Single-flight (overlapping requests share one capture) and throttle (rapid non-forced requests collapse). Triggers (Task 6) call this; `ShotFrame` (Task 5) registers the capturer.
 
 **Files:**
+
 - Create: `lib/thumbnails/capture-controller.ts`
 - Test: `tests/thumbnail-capture-controller.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `type ThumbnailResult = { url: string; version: number }`
   - `registerThumbnailCapturer(fn: (() => Promise<ThumbnailResult | null>) | null): void`
@@ -241,10 +245,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 Posts the captured PNG blob to the thumbnail endpoint via the axios client + endpoint registry.
 
 **Files:**
+
 - Create: `lib/thumbnails/upload-thumbnail.ts`
 - Test: `tests/upload-thumbnail.test.ts`
 
 **Interfaces:**
+
 - Consumes: `api` (`@/lib/api/client`), `endpoints.pages.thumbnail(id)` (`@/lib/api/endpoints`)
 - Produces: `uploadThumbnail(pageId: string, blob: Blob): Promise<{ url: string; version: number } | null>`
 
@@ -330,6 +336,7 @@ Expected: PASS (2 tests).
 git add lib/thumbnails/upload-thumbnail.ts tests/upload-thumbnail.test.ts
 git commit -m "feat(thumbnails): client uploadThumbnail helper"
 ```
+
 (Append the standard Co-Authored-By trailer to every commit, as in Task 1.)
 
 ---
@@ -339,10 +346,12 @@ git commit -m "feat(thumbnails): client uploadThumbnail helper"
 Rewrite `POST /api/pages/[id]/thumbnail` so it stores an uploaded PNG (overwriting `/uploads/thumbnails/{id}.png`) and upserts `PageThumbnail` — no Playwright. Keeps `withSiteRole("EDITOR")` ownership check and adds basic rate-limiting like `/api/upload`.
 
 **Files:**
+
 - Modify (rewrite): `app/api/pages/[id]/thumbnail/route.ts`
 - Test: `tests/pages-thumbnail-route.test.ts`
 
 **Interfaces:**
+
 - Consumes: `withSiteRole` (`@/lib/api/api-handler`), `json`/`notFound`/`badRequest`/`error` (`@/lib/api/api-response`), `enforce` (`@/lib/rate-limit`), `prisma` (`@/lib/prisma`)
 - Produces: `POST` returning `{ url, version }` (200), `404` if page not owned, `400` if no file, `413` if too large
 
@@ -408,7 +417,10 @@ describe("POST /api/pages/[id]/thumbnail", () => {
   it("400 when no file is provided", async () => {
     state.page = { id: "p1", updatedAt: new Date(1000) };
     const res = await POST(
-      new Request("http://localhost/api/pages/p1/thumbnail", { method: "POST", body: new FormData() }),
+      new Request("http://localhost/api/pages/p1/thumbnail", {
+        method: "POST",
+        body: new FormData(),
+      }),
       ctx("p1"),
     );
     expect(res.status).toBe(400);
@@ -504,9 +516,11 @@ git commit -m "feat(thumbnails): thumbnail endpoint receives + stores uploaded P
 A hidden iframe mounted inside the editor providers. It always keeps an empty, style-synced iframe loaded; when a capture is requested it portals the page (header + tree + footer, `animate` off, `inlineStyles={false}`) into the iframe body, waits for fonts + images, captures with `domToBlob`, uploads, and clears. Registers/unregisters its capturer with the controller.
 
 **Files:**
+
 - Create: `components/editor/ShotFrame.tsx`
 
 **Interfaces:**
+
 - Consumes: `copyStyles` (Task 1), `registerThumbnailCapturer`/`ThumbnailResult` (Task 2), `uploadThumbnail` (Task 3), `BlockRenderer` (`@/components/BlockRenderer`), `responsiveCss` (`@/lib/blocks/styles`), `designSystemCss` (`@/lib/design/design-system`), `themeVars` (`@/lib/design/theme`), stores `useEditor`/`useDesignSystem`, contexts `useComponents`/`useCollections`/`useSite`
 - Produces: `<ShotFrame />` (no props); registers a capturer that returns `Promise<ThumbnailResult | null>`
 
@@ -721,11 +735,13 @@ git commit -m "feat(thumbnails): ShotFrame off-screen 1280x800 capture component
 Mounts `<ShotFrame />` in `EditorClient`, routes the manual Save action through a wrapper that captures, captures after a successful publish, and fires a one-shot capture when a stale/missing page is opened. Threads `thumbnailStale` from the edit-page server component into `PageDTO`.
 
 **Files:**
+
 - Modify: `components/editor/use-editor-persistence.ts` (publish capture + `saveManual`)
 - Modify: `components/editor/EditorClient.tsx` (mount ShotFrame; wire `saveManual`; open-if-stale effect; `PageDTO.thumbnailStale`)
 - Modify: `app/editor/[id]/page.tsx` (include thumbnail, compute + pass `thumbnailStale`)
 
 **Interfaces:**
+
 - Consumes: `requestThumbnailCapture` (Task 2), `<ShotFrame />` (Task 5), `isThumbnailStale` (`@/lib/thumbnails/staleness`)
 - Produces: `useEditorPersistence(...)` now also returns `saveManual: () => Promise<void>`
 
@@ -742,23 +758,23 @@ import { requestThumbnailCapture } from "@/lib/thumbnails/capture-controller";
 In `publish`, after the versions POST line, add the forced capture (inside the `try`):
 
 ```ts
-      void api.post(endpoints.pages.versions(s.pageId), { label: "Published" }).catch(() => {});
-      void requestThumbnailCapture({ force: true });
+void api.post(endpoints.pages.versions(s.pageId), { label: "Published" }).catch(() => {});
+void requestThumbnailCapture({ force: true });
 ```
 
 After the `publish` callback, add:
 
 ```ts
-  const saveManual = useCallback(async () => {
-    await save();
-    void requestThumbnailCapture();
-  }, [save]);
+const saveManual = useCallback(async () => {
+  await save();
+  void requestThumbnailCapture();
+}, [save]);
 ```
 
 Add `saveManual` to the returned object:
 
 ```ts
-  return { save, saveManual, publish, unpublish, exportHtml, exportRef };
+return { save, saveManual, publish, unpublish, exportHtml, exportRef };
 ```
 
 - [ ] **Step 2: Thread `thumbnailStale` through PageDTO and the server page**
@@ -787,10 +803,10 @@ import { isThumbnailStale } from "@/lib/thumbnails/staleness";
 Change the page query to include the thumbnail:
 
 ```ts
-  const page = await prisma.page.findFirst({
-    where: { id, siteId: ctx.site.id },
-    include: { thumbnail: true },
-  });
+const page = await prisma.page.findFirst({
+  where: { id, siteId: ctx.site.id },
+  include: { thumbnail: true },
+});
 ```
 
 Add `thumbnailStale` to the `page` object passed to `<EditorClient>` (alongside `theme`):
@@ -820,10 +836,11 @@ import { requestThumbnailCapture } from "@/lib/thumbnails/capture-controller";
 Pull `saveManual` out of persistence:
 
 ```ts
-  const { save, saveManual, publish, unpublish, exportHtml, exportRef } = persistence;
+const { save, saveManual, publish, unpublish, exportHtml, exportRef } = persistence;
 ```
 
 Wire the manual Save entry points to `saveManual`:
+
 - `<TopBar ... onSave={saveManual} ... />` (was `onSave={save}`)
 - `<CommandPalette ... onSave={saveManual} ... />` (was `onSave={save}`)
 
@@ -832,28 +849,32 @@ Leave `UnsavedModal` and `VersionHistory` on `save` (navigation/restore saves do
 Add the open-if-stale effect after the `useEditorClientState` destructure (before the `if (!ready)` early return):
 
 ```ts
-  useEffect(() => {
-    if (mode !== "page" || !ready || !page.thumbnailStale) return;
-    const t = setTimeout(() => void requestThumbnailCapture({ force: true }), 1500);
-    return () => clearTimeout(t);
-  }, [mode, ready, page.thumbnailStale]);
+useEffect(() => {
+  if (mode !== "page" || !ready || !page.thumbnailStale) return;
+  const t = setTimeout(() => void requestThumbnailCapture({ force: true }), 1500);
+  return () => clearTimeout(t);
+}, [mode, ready, page.thumbnailStale]);
 ```
 
 Mount `<ShotFrame />` inside the provider tree — add it right after the hidden export `<div ref={exportRef}>…</div>` block (still inside `<DragProvider>`):
 
 ```tsx
-                {/* hidden clean render used by HTML export */}
-                <div ref={exportRef} className="hidden" aria-hidden>
-                  <BlockRenderer
-                    tree={tree}
-                    viewport="desktop"
-                    inlineStyles={false}
-                    components={componentsMap}
-                    collections={collectionsMap}
-                  />
-                </div>
+{
+  /* hidden clean render used by HTML export */
+}
+<div ref={exportRef} className="hidden" aria-hidden>
+  <BlockRenderer
+    tree={tree}
+    viewport="desktop"
+    inlineStyles={false}
+    components={componentsMap}
+    collections={collectionsMap}
+  />
+</div>;
 
-                {mode === "page" && <ShotFrame />}
+{
+  mode === "page" && <ShotFrame />;
+}
 ```
 
 - [ ] **Step 4: Typecheck + lint**
@@ -875,10 +896,12 @@ git commit -m "feat(thumbnails): capture on publish, manual save, and open-if-st
 The dashboard no longer POSTs to regenerate (no server browser). `PageThumbnail` becomes display-only (stored image if present, placeholder otherwise — decision A).
 
 **Files:**
+
 - Modify (simplify): `components/dashboard/PageThumbnail.tsx`
 - Modify: `components/dashboard/PageCard.tsx:94-100` (drop `pageId`/`stale` props)
 
 **Interfaces:**
+
 - Produces: `<PageThumbnail title={string} initialUrl={string|null} version={number|null} />`
 
 - [ ] **Step 1: Simplify PageThumbnail**
@@ -921,11 +944,7 @@ export function PageThumbnail({
 In `components/dashboard/PageCard.tsx`, change the `<PageThumbnail>` invocation to:
 
 ```tsx
-        <PageThumbnail
-          title={page.title}
-          initialUrl={page.thumbnailUrl}
-          version={page.thumbnailVersion}
-        />
+<PageThumbnail title={page.title} initialUrl={page.thumbnailUrl} version={page.thumbnailVersion} />
 ```
 
 Leave the `DashboardPage` type and the dashboard server DTO (`app/(app)/page.tsx`) unchanged — `thumbnailStale` stays computed server-side (cheap; harmless if unused on the card).
@@ -989,6 +1008,7 @@ If all pass, note it in the task tracker and proceed. If a step fails, stop and 
 With client capture confirmed (Task 8), delete the dead server-browser code and the dependency. Run `fallow dead-code --trace` first per AGENTS.md.
 
 **Files:**
+
 - Delete: `lib/thumbnails/screenshot.ts`, `lib/thumbnails/token.ts`, `lib/thumbnails/queue.ts`
 - Delete: `app/internal/shot/[id]/page.tsx` (and the now-empty `app/internal/shot/[id]` / `app/internal/shot` / `app/internal` dirs if empty)
 - Modify: `package.json` (remove `playwright` from `devDependencies`)
@@ -997,24 +1017,30 @@ With client capture confirmed (Task 8), delete the dead server-browser code and 
 - [ ] **Step 1: Confirm the files are unreferenced**
 
 Run:
+
 ```bash
 grep -rn "thumbnails/screenshot\|thumbnails/token\|thumbnails/queue\|internal/shot\|captureThumbnail\|createLimiter\|signShotToken\|verifyShotToken" app/ components/ lib/ tests/
 ```
+
 Expected: no matches (all consumers removed in Tasks 4–7). If any remain, fix them before deleting.
 
 Run the fallow dead-code trace as the AGENTS task map prescribes (informational):
+
 ```bash
 BIN=/Users/alexander/.npm/_npx/e6d07818f0a04ee4/node_modules/.bin/fallow
 "$BIN" dead-code --trace lib/thumbnails/screenshot.ts:captureThumbnail
 ```
+
 Expected: confirms `captureThumbnail` has no remaining callers.
 
 - [ ] **Step 2: Delete the files**
 
 Run:
+
 ```bash
 git rm lib/thumbnails/screenshot.ts lib/thumbnails/token.ts lib/thumbnails/queue.ts app/internal/shot/[id]/page.tsx
 ```
+
 Then remove any now-empty `app/internal/...` directories.
 
 - [ ] **Step 3: Remove the playwright devDependency**
@@ -1046,21 +1072,21 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **1. Spec coverage**
 
-| Spec section | Task(s) |
-|---|---|
-| Client-side capture with modern-screenshot | T1 (dep), T5 (ShotFrame `domToBlob`) |
-| Off-screen 1280×800 desktop iframe, preview, animate off | T5 |
-| Reuse canvas render pipeline (copyStyles + design/responsive CSS) | T1 (copyStyles), T5 |
-| Triggers: publish + manual save + open-if-stale | T6 |
-| Repurposed endpoint receives PNG, overwrites in place, upserts | T4 |
-| Not routed through /api/upload (no asset pollution) | T4 (dedicated route) |
-| Dashboard display-only, placeholder when none (decision A) | T7 |
-| Remove screenshot.ts/token.ts/queue.ts/internal-shot + playwright dep | T9 |
-| Keep staleness.ts | T6/T9 (kept) |
-| Error handling: failures swallowed, never block publish/save | T2 (controller catch), T3 (upload catch), T5 (try/catch) |
-| Cross-origin image / third-party iframe limits | T8 Step 6 (verified, accepted) |
-| Testing: controller, endpoint, upload unit-tested; capture manual | T2, T3, T4 (unit), T8 (manual) |
-| Gate tsc+vitest+lint+format; no next build during dev | Global Constraints, every task |
+| Spec section                                                          | Task(s)                                                  |
+| --------------------------------------------------------------------- | -------------------------------------------------------- |
+| Client-side capture with modern-screenshot                            | T1 (dep), T5 (ShotFrame `domToBlob`)                     |
+| Off-screen 1280×800 desktop iframe, preview, animate off              | T5                                                       |
+| Reuse canvas render pipeline (copyStyles + design/responsive CSS)     | T1 (copyStyles), T5                                      |
+| Triggers: publish + manual save + open-if-stale                       | T6                                                       |
+| Repurposed endpoint receives PNG, overwrites in place, upserts        | T4                                                       |
+| Not routed through /api/upload (no asset pollution)                   | T4 (dedicated route)                                     |
+| Dashboard display-only, placeholder when none (decision A)            | T7                                                       |
+| Remove screenshot.ts/token.ts/queue.ts/internal-shot + playwright dep | T9                                                       |
+| Keep staleness.ts                                                     | T6/T9 (kept)                                             |
+| Error handling: failures swallowed, never block publish/save          | T2 (controller catch), T3 (upload catch), T5 (try/catch) |
+| Cross-origin image / third-party iframe limits                        | T8 Step 6 (verified, accepted)                           |
+| Testing: controller, endpoint, upload unit-tested; capture manual     | T2, T3, T4 (unit), T8 (manual)                           |
+| Gate tsc+vitest+lint+format; no next build during dev                 | Global Constraints, every task                           |
 
 No gaps.
 

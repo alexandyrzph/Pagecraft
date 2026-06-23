@@ -11,7 +11,7 @@ signed-token request navigates a headless browser to `/internal/shot/[id]`, wait
 screenshots the rendered `PageDocument` at 1280×800. This is heavy in two ways that hurt our
 self-hosted deployment (Oracle Free VM + Docker: Caddy + app + Postgres):
 
-- **Install/image size** — `playwright install` pulls Chromium *and* Firefox + WebKit even though
+- **Install/image size** — `playwright install` pulls Chromium _and_ Firefox + WebKit even though
   we only use Chromium.
 - **Runtime RAM** — a Chromium instance is ~150–300 MB resident, competing with Postgres and the
   app on a small VM.
@@ -49,15 +49,15 @@ existing same-origin iframe render pipeline.
 
 - The editor renders the page in a **same-origin iframe** (`srcDoc` in
   `components/editor/CanvasFrame.tsx`), so client JS can reach `iframe.contentDocument` and capture
-  its DOM. Editor overlays/handles live *outside* the iframe and are therefore never captured.
+  its DOM. Editor overlays/handles live _outside_ the iframe and are therefore never captured.
 - The iframe render pipeline already copies `<style>`/`<link>` (fonts via `next/font`) from the host
   document and injects design-system + responsive CSS. We can `await
-  iframe.contentDocument.fonts.ready` before capturing — the same wait Playwright performs.
+iframe.contentDocument.fonts.ready` before capturing — the same wait Playwright performs.
 - Storage today: PNG at `/uploads/thumbnails/{id}.png` + a `PageThumbnail` row
   (`pageId`, `url`, `takenForUpdatedAt`). The dashboard reads `thumbnailUrl` / `thumbnailVersion` /
   `thumbnailStale` and cache-busts with `?v={version}`.
 - `/internal/shot/[id]` exists **only** for Playwright to navigate to.
-- All capture triggers happen *inside the editor*, where the full page data (tree, theme, header /
+- All capture triggers happen _inside the editor_, where the full page data (tree, theme, header /
   footer, design system, component map) is already client-side.
 
 ## Decisions (from brainstorming)

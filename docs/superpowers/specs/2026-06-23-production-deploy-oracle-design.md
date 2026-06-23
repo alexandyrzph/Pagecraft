@@ -14,19 +14,19 @@ Take the current feature-complete page builder from "runs on localhost with SQLi
 
 ## Locked decisions
 
-| Decision      | Choice                                                      | Why |
-| ------------- | ---------------------------------------------------------- | --- |
+| Decision      | Choice                                                    | Why                                                                               |
+| ------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Host          | **Oracle Cloud "Always Free" A1 VM** (ARM Ampere, Ubuntu) | Genuinely $0 forever, commercial-use OK, full Node runtime → no feature reshaping |
-| Runtime       | **Docker Compose** (caddy + app + postgres)               | Reproducible, one-command deploy, isolates services |
-| Database      | **PostgreSQL 16 in a container** on the same VM           | Robust under concurrency, clean path to scale later; still $0 |
-| Existing data | **Dropped** — fresh DB, schema-only                       | User confirmed; no data migration needed |
-| Uploads       | **Local disk on a persistent Docker volume**             | Single VM has a persistent filesystem → object storage unnecessary |
-| TLS / proxy   | **Caddy** (auto Let's Encrypt + existing on-demand TLS)   | Already configured in `ops/Caddyfile`; free certs |
-| Domain        | **Buy a cheap real domain** (~$1–12/yr)                   | Required for HTTPS + the custom-domains feature |
-| Email         | **Resend** (free tier: 3k/mo, 100/day, verified domain)  | Closes the password-reset hole; cheapest reliable deliverability |
-| Rate limiting | **In-memory limiter**                                     | Single instance → no Redis needed |
-| Secrets       | **`.env` on the box, chmod 600**                          | Single instance → no secret manager needed |
-| CI/CD         | **Deferred to after first launch**                        | User confirmed; manual deploy for v1 |
+| Runtime       | **Docker Compose** (caddy + app + postgres)               | Reproducible, one-command deploy, isolates services                               |
+| Database      | **PostgreSQL 16 in a container** on the same VM           | Robust under concurrency, clean path to scale later; still $0                     |
+| Existing data | **Dropped** — fresh DB, schema-only                       | User confirmed; no data migration needed                                          |
+| Uploads       | **Local disk on a persistent Docker volume**              | Single VM has a persistent filesystem → object storage unnecessary                |
+| TLS / proxy   | **Caddy** (auto Let's Encrypt + existing on-demand TLS)   | Already configured in `ops/Caddyfile`; free certs                                 |
+| Domain        | **Buy a cheap real domain** (~$1–12/yr)                   | Required for HTTPS + the custom-domains feature                                   |
+| Email         | **Resend** (free tier: 3k/mo, 100/day, verified domain)   | Closes the password-reset hole; cheapest reliable deliverability                  |
+| Rate limiting | **In-memory limiter**                                     | Single instance → no Redis needed                                                 |
+| Secrets       | **`.env` on the box, chmod 600**                          | Single instance → no secret manager needed                                        |
+| CI/CD         | **Deferred to after first launch**                        | User confirmed; manual deploy for v1                                              |
 
 ## Architecture
 
@@ -49,15 +49,15 @@ Persistent volumes:
 
 ## Cost summary
 
-| Item            | Cost |
-| --------------- | ---- |
-| Oracle A1 VM    | $0 (Always Free) |
-| PostgreSQL      | $0 (self-hosted container) |
-| Upload storage  | $0 (local volume) |
-| TLS certs       | $0 (Let's Encrypt via Caddy) |
-| Email (Resend)  | $0 (free tier) |
-| Domain          | ~$1–12/yr |
-| **Total**       | **≈ a few dollars per year** |
+| Item           | Cost                         |
+| -------------- | ---------------------------- |
+| Oracle A1 VM   | $0 (Always Free)             |
+| PostgreSQL     | $0 (self-hosted container)   |
+| Upload storage | $0 (local volume)            |
+| TLS certs      | $0 (Let's Encrypt via Caddy) |
+| Email (Resend) | $0 (free tier)               |
+| Domain         | ~$1–12/yr                    |
+| **Total**      | **≈ a few dollars per year** |
 
 ## Workstreams
 
@@ -72,8 +72,8 @@ Persistent volumes:
 ### B. Containerization
 
 - **B1. Multi-stage ARM64 Dockerfile.**
-  - *deps/builder* stage: install all deps, `prisma generate`, `next build` (standalone).
-  - *runner* stage: copy standalone output + static + public; **install `playwright` and run `playwright install --with-deps chromium`** — Playwright is currently a **devDependency** but `lib/thumbnails/screenshot.ts` imports it at runtime, so the runner image must include it + Chromium + system libs. `--no-sandbox` is already passed in code.
+  - _deps/builder_ stage: install all deps, `prisma generate`, `next build` (standalone).
+  - _runner_ stage: copy standalone output + static + public; **install `playwright` and run `playwright install --with-deps chromium`** — Playwright is currently a **devDependency** but `lib/thumbnails/screenshot.ts` imports it at runtime, so the runner image must include it + Chromium + system libs. `--no-sandbox` is already passed in code.
   - Entrypoint runs `prisma migrate deploy` then starts the standalone server.
 - **B2. docker-compose.yml.** Services: `caddy`, `app`, `postgres`. Healthchecks (app → `/api/internal/health`, postgres → `pg_isready`), `restart: unless-stopped`, named volumes (`pg_data`, `uploads`, `caddy_data`), internal network, `depends_on` ordering.
 - **B3. Parameterize Caddyfile.** Replace hardcoded `pagistry.com` with an env-driven domain (Caddy env-var substitution) so the same file works for any domain. Keep the existing `on_demand_tls` → `/api/domains/check` block for customer custom domains.
@@ -92,7 +92,7 @@ Persistent volumes:
 
 - **D1.** Nightly `pg_dump` cron → a backups volume; optionally `rclone` a copy to Backblaze B2 (10GB free) or similar off-box target.
 - **D2.** Enforce `METRICS_TOKEN` on `/api/internal/metrics` (confirm it's required, not optional, in production).
-- **D3.** *(Deferred — explicitly out of scope for launch)* GitHub Actions CI/CD (gate → build image to GHCR → SSH deploy) and Sentry free-tier error alerting.
+- **D3.** _(Deferred — explicitly out of scope for launch)_ GitHub Actions CI/CD (gate → build image to GHCR → SSH deploy) and Sentry free-tier error alerting.
 
 ## Sequencing
 
@@ -100,14 +100,14 @@ Persistent volumes:
 
 ## Risks & mitigations
 
-| Risk | Mitigation |
-| ---- | ---------- |
-| Oracle A1 "out of capacity" in popular regions | Retry, or choose a less-busy home region; A1 is the constrained shape |
-| Oracle reclaims idle Always-Free VM | Upgrade account to Pay-As-You-Go (stays $0 under limits) |
-| ARM64 build issues (Playwright/Chromium) | Pin an ARM64-compatible base; Playwright ships ARM Chromium; verify in build |
-| Playwright missing in prod image | Explicitly install it + Chromium in the runner stage (see B1) |
-| Single VM = no HA | Acceptable at launch; nightly backups (D1) mitigate data loss |
-| Published-page CSP vs user embeds | Strict CSP on editor; looser/sandboxed for rendered pages; iterate post-launch |
+| Risk                                           | Mitigation                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| Oracle A1 "out of capacity" in popular regions | Retry, or choose a less-busy home region; A1 is the constrained shape          |
+| Oracle reclaims idle Always-Free VM            | Upgrade account to Pay-As-You-Go (stays $0 under limits)                       |
+| ARM64 build issues (Playwright/Chromium)       | Pin an ARM64-compatible base; Playwright ships ARM Chromium; verify in build   |
+| Playwright missing in prod image               | Explicitly install it + Chromium in the runner stage (see B1)                  |
+| Single VM = no HA                              | Acceptable at launch; nightly backups (D1) mitigate data loss                  |
+| Published-page CSP vs user embeds              | Strict CSP on editor; looser/sandboxed for rendered pages; iterate post-launch |
 
 ## Out of scope (deferred)
 

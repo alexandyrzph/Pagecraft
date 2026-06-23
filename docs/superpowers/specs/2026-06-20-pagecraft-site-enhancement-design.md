@@ -51,16 +51,16 @@ Take the existing, already-shipped landing page from "clean but generic" to a di
 
 ### New / reworked sections (`src/components/sections/`)
 
-| Section                              | What it is                                                                                                                                                              |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Section                              | What it is                                                                                                                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ProductShowcase` (new, centerpiece) | Pinned, scroll-scrubbed walkthrough of how Pagistry is different (visual builder vs code → per-breakpoint → CMS binding → one-click publish), pinning the editor mock. |
-| `Features` (rework → bento)          | Asymmetric **bento grid** of varied tile sizes; one tile holds a mini live demo (small animated block/cursor). Replaces the uniform 3-col grid.                         |
-| `TemplateGallery` (new)              | Two horizontal rows of stylized template thumbnails scrolling in opposite directions on scroll (parallax marquee).                                                      |
-| `UseCases` (new)                     | Persona/outcome cards or tabs: Landing pages · Portfolios · SaaS sites · Blogs.                                                                                         |
+| `Features` (rework → bento)          | Asymmetric **bento grid** of varied tile sizes; one tile holds a mini live demo (small animated block/cursor). Replaces the uniform 3-col grid.                        |
+| `TemplateGallery` (new)              | Two horizontal rows of stylized template thumbnails scrolling in opposite directions on scroll (parallax marquee).                                                     |
+| `UseCases` (new)                     | Persona/outcome cards or tabs: Landing pages · Portfolios · SaaS sites · Blogs.                                                                                        |
 | `Comparison` (new)                   | A clean check-grid: Pagistry vs hand-coding vs other builders — decision-grade differentiation.                                                                        |
-| `FAQ` (new)                          | Accordion built on the UU/react-aria Disclosure pattern.                                                                                                                |
-| Hero (enhance)                       | WebGL backdrop (`HeroScene`) + 3D-tilt product card + parallax.                                                                                                         |
-| Stats, Testimonials (enhance)        | Parallax + scrub-reveal. LogoCloud, Pricing, FinalCTA, Footer kept (light parallax where tasteful).                                                                     |
+| `FAQ` (new)                          | Accordion built on the UU/react-aria Disclosure pattern.                                                                                                               |
+| Hero (enhance)                       | WebGL backdrop (`HeroScene`) + 3D-tilt product card + parallax.                                                                                                        |
+| Stats, Testimonials (enhance)        | Parallax + scrub-reveal. LogoCloud, Pricing, FinalCTA, Footer kept (light parallax where tasteful).                                                                    |
 
 Content for all new sections lives in `src/lib/content.ts` (extend it with `USE_CASES`, `COMPARISON`, `FAQ`, `TEMPLATES`, and the showcase steps), keeping copy out of JSX.
 

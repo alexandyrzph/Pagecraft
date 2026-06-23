@@ -140,10 +140,10 @@ cert. All DNS work runs in a **Node-runtime route handler** (`dns/promises`); ne
 
 **DNS instructions shown to the user**
 
-| Record    | Purpose              | Apex (`acme.com`)                                                          | Subdomain (`www.acme.com`)                         |
-| --------- | -------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| Ownership | proves control       | `TXT _pagistry-verify.acme.com = "pagistry-domain-verification=<token>"` | `TXT _pagistry-verify.www.acme.com = "…=<token>"` |
-| Routing   | points traffic at us | `A acme.com → <server IP>` (or `ALIAS/ANAME` if the provider supports it)  | `CNAME www.acme.com → cname.pagistry.com`         |
+| Record    | Purpose              | Apex (`acme.com`)                                                         | Subdomain (`www.acme.com`)                        |
+| --------- | -------------------- | ------------------------------------------------------------------------- | ------------------------------------------------- |
+| Ownership | proves control       | `TXT _pagistry-verify.acme.com = "pagistry-domain-verification=<token>"`  | `TXT _pagistry-verify.www.acme.com = "…=<token>"` |
+| Routing   | points traffic at us | `A acme.com → <server IP>` (or `ALIAS/ANAME` if the provider supports it) | `CNAME www.acme.com → cname.pagistry.com`         |
 
 (Apex cannot use a CNAME per DNS rules; we instruct an `A`/`ALIAS`. `cname.pagistry.com` is a stable
 DNS name that resolves to the Caddy front-door, so the server IP can change without customer action.)
@@ -347,15 +347,15 @@ domains: {
 
 ## 9. Edge cases
 
-| Case                                 | Handling                                                                                                                                                                                                                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **apex + www**                       | Two `Domain` rows; one `isPrimary`. The non-primary (with `redirectToPrimary`) issues a `308` to the primary host, preserving path + query. Redirect applied in the home/`[slug]` render layer (host-aware) or by a Caddy redirect block.                          |
-| **Domain already taken**             | `hostname @unique` → `409` at add-time (against any site); no silent reassignment.                                                                                                                                                                                 |
+| Case                                 | Handling                                                                                                                                                                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **apex + www**                       | Two `Domain` rows; one `isPrimary`. The non-primary (with `redirectToPrimary`) issues a `308` to the primary host, preserving path + query. Redirect applied in the home/`[slug]` render layer (host-aware) or by a Caddy redirect block.                         |
+| **Domain already taken**             | `hostname @unique` → `409` at add-time (against any site); no silent reassignment.                                                                                                                                                                                |
 | **Local dev / preview**              | `APP_PRIMARY_HOST` includes `localhost:3000` and preview hosts; the proxy's custom-domain branch is skipped for them, so dev keeps using `pagistry.com/p/<slug>`. Testing a real custom domain locally needs a hosts-file entry + the ask endpoint returning 200. |
-| **Removing an ACTIVE domain**        | Row deleted → ask endpoint now `403`s that host → new handshakes fail and the render layer 404s it. Optionally purge the cached cert via Caddy's admin API; otherwise it simply expires.                                                                           |
-| **DNS points at us but unverified**  | Caddy refuses the cert (ask `403`) until `ACTIVE`; user sees a TLS error until verification completes — surfaced as a clear "verify your domain" state in the UI.                                                                                                  |
-| **Wildcard / `*.acme.com`**          | Out of scope: on-demand HTTP issuance can't do wildcards (needs DNS-01). Deferred (§12).                                                                                                                                                                           |
-| **Page slug collision across sites** | Already handled by the foundation's `@@unique([siteId, slug])`; the render layer additionally asserts the resolved page belongs to the host's site (§5).                                                                                                           |
+| **Removing an ACTIVE domain**        | Row deleted → ask endpoint now `403`s that host → new handshakes fail and the render layer 404s it. Optionally purge the cached cert via Caddy's admin API; otherwise it simply expires.                                                                          |
+| **DNS points at us but unverified**  | Caddy refuses the cert (ask `403`) until `ACTIVE`; user sees a TLS error until verification completes — surfaced as a clear "verify your domain" state in the UI.                                                                                                 |
+| **Wildcard / `*.acme.com`**          | Out of scope: on-demand HTTP issuance can't do wildcards (needs DNS-01). Deferred (§12).                                                                                                                                                                          |
+| **Page slug collision across sites** | Already handled by the foundation's `@@unique([siteId, slug])`; the render layer additionally asserts the resolved page belongs to the host's site (§5).                                                                                                          |
 
 ---
 

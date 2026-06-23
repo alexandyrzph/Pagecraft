@@ -25,6 +25,7 @@
 ### Task A1: Switch Prisma from SQLite to Postgres + first migration
 
 **Files:**
+
 - Modify: `prisma/schema.prisma:5-8` (datasource block)
 - Modify: `.gitignore` (stop tracking the SQLite file)
 - Modify: `.env` (local `DATABASE_URL` → Postgres)
@@ -32,6 +33,7 @@
 - Delete: `prisma/dev.db` (existing data is dropped per spec)
 
 **Interfaces:**
+
 - Produces: a committed `prisma/migrations/` history (replaces the `db push` workflow) and a Postgres-targeted client. No app code imports change — `lib/prisma.ts` is provider-agnostic.
 
 - [ ] **Step 1: Create the working branch**
@@ -108,10 +110,12 @@ git commit -m "feat(db): switch Prisma to PostgreSQL with an initial migration"
 ### Task A2: In-memory rate limiter
 
 **Files:**
+
 - Create: `lib/rate-limit.ts`
 - Test: `tests/rate-limit.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `hit(key: string, limit: number, windowMs: number, now: number): boolean` — pure fixed-window counter; `true` = allowed.
   - `clientIp(req: Request): string` — first IP from `X-Forwarded-For` (Caddy sets it), else `x-real-ip`, else `"unknown"`.
@@ -237,12 +241,14 @@ git commit -m "feat(security): add in-memory per-IP rate limiter"
 ### Task A3: Email module (Resend) with pure message builders
 
 **Files:**
+
 - Create: `lib/email/messages.ts`
 - Create: `lib/email/index.ts`
 - Test: `tests/email-messages.test.ts`
 - Modify: `package.json` (add `resend` dependency)
 
 **Interfaces:**
+
 - Produces:
   - `passwordResetEmail(resetUrl: string): { subject: string; html: string }` (pure)
   - `workspaceInviteEmail(inviteUrl: string, workspaceName: string): { subject: string; html: string }` (pure)
@@ -392,6 +398,7 @@ git commit -m "feat(email): add Resend-backed transactional email module"
 ### Task A4: Wire email + rate limiting into routes; close the password-reset leak
 
 **Files:**
+
 - Modify: `app/api/auth/forgot/route.ts` (send email, stop returning the reset link)
 - Modify: `app/api/workspaces/invites/route.ts` (send invite email)
 - Modify: `app/api/auth/login/route.ts` (rate limit)
@@ -401,6 +408,7 @@ git commit -m "feat(email): add Resend-backed transactional email module"
 - Test: `tests/forgot-route.test.ts`
 
 **Interfaces:**
+
 - Consumes: `enforce` (Task A2), `sendPasswordReset` / `sendWorkspaceInvite` (Task A3).
 - Produces: `/api/auth/forgot` no longer returns `resetUrl` in its body and no longer logs it; it emails the link instead.
 
@@ -532,10 +540,10 @@ import { sendWorkspaceInvite } from "@/lib/email";
 Then in `POST`, after `await logActivity(...)` and before building the response, replace the tail of the handler with:
 
 ```ts
-    const origin = new URL(req.url).origin;
-    const inviteUrl = `${origin}/invite/${token}`;
-    await sendWorkspaceInvite(email, inviteUrl, ws.workspace.name);
-    return created({ inviteUrl });
+const origin = new URL(req.url).origin;
+const inviteUrl = `${origin}/invite/${token}`;
+await sendWorkspaceInvite(email, inviteUrl, ws.workspace.name);
+return created({ inviteUrl });
 ```
 
 (The response still returns `inviteUrl` — that's admin-only and safe; the new behavior is also emailing it. `ws.workspace.name` exists on the `Workspace` model.)
@@ -551,29 +559,29 @@ import { enforce } from "@/lib/rate-limit";
 As the first lines inside `POST(req)`:
 
 ```ts
-  const limited = enforce(req, "login", 10, 60_000);
-  if (limited) return limited;
+const limited = enforce(req, "login", 10, 60_000);
+if (limited) return limited;
 ```
 
 In `app/api/auth/signup/route.ts`, add the same import and, as the first lines inside `POST(req)`:
 
 ```ts
-  const limited = enforce(req, "signup", 5, 60_000);
-  if (limited) return limited;
+const limited = enforce(req, "signup", 5, 60_000);
+if (limited) return limited;
 ```
 
 In `app/api/upload/route.ts`, add `import { enforce } from "@/lib/rate-limit";` and, as the first lines inside `POST(req)` (before `return withSiteRole(...)`):
 
 ```ts
-  const limited = enforce(req, "upload", 30, 60_000);
-  if (limited) return limited;
+const limited = enforce(req, "upload", 30, 60_000);
+if (limited) return limited;
 ```
 
 In `app/api/ai/route.ts`, add `import { enforce } from "@/lib/rate-limit";` and, as the first lines inside `POST(req)` (before `return instrumentApi(...)`):
 
 ```ts
-  const limited = enforce(req, "ai", 20, 60_000);
-  if (limited) return limited;
+const limited = enforce(req, "ai", 20, 60_000);
+if (limited) return limited;
 ```
 
 - [ ] **Step 7: Run the full gate**
@@ -595,11 +603,13 @@ git commit -m "feat(security): email reset/invite links + rate-limit auth, AI, a
 ### Task B1: Dockerfile + entrypoint (ARM64, Playwright/Chromium, migrate-on-boot)
 
 **Files:**
+
 - Create: `Dockerfile`
 - Create: `docker/entrypoint.sh`
 - Create: `.dockerignore`
 
 **Interfaces:**
+
 - Produces: a runnable image whose container runs `prisma migrate deploy` then `next start` on port 3000. Playwright Chromium is installed so thumbnail rendering works at runtime.
 
 **Note on approach:** We copy the whole built app (not Next `standalone`) into the runner. Standalone does not reliably trace the runtime `import "playwright"` in `lib/thumbnails/screenshot.ts`; the full copy guarantees `playwright` resolves. Image size is irrelevant on the Oracle disk. Optimize to standalone later if desired.
@@ -677,10 +687,12 @@ git commit -m "build: add Dockerfile (next start + prisma migrate deploy + playw
 ### Task B2: docker-compose stack (caddy + app + postgres)
 
 **Files:**
+
 - Create: `docker-compose.yml`
 - Create: `.env.production.example`
 
 **Interfaces:**
+
 - Consumes: the image from B1 and the Caddyfile from B3.
 - Produces: a three-service stack with healthchecks and named volumes (`pg_data`, `uploads`, `caddy_data`, `caddy_config`).
 
@@ -795,9 +807,11 @@ git commit -m "build: add docker-compose stack (caddy + app + postgres) and env 
 ### Task B3: Parameterize the Caddyfile + safe security headers
 
 **Files:**
+
 - Modify: `ops/Caddyfile`
 
 **Interfaces:**
+
 - Consumes: `APP_DOMAIN` env (set by compose); upstream service name `app:3000`.
 - Produces: TLS for `${APP_DOMAIN}`/`www`, on-demand TLS for customer custom domains, and safe response headers.
 
@@ -995,6 +1009,7 @@ Expected: containers removed; named volumes persist. No commit (verification onl
 ### Task D1: Nightly Postgres backup
 
 **Files:**
+
 - Create: `ops/backup.sh`
 
 **Interfaces:** Produces a dated `pg_dump` in a host directory via cron; restorable with `psql`/`pg_restore`.
@@ -1039,6 +1054,7 @@ git commit -m "ops: nightly pg_dump backup with 14-day retention"
 ### Task D2: Enforce the metrics token in production
 
 **Files:**
+
 - Modify: `app/api/internal/metrics/route.ts`
 
 **Interfaces:** Produces a 401 on `/api/internal/metrics` unless the request presents `METRICS_TOKEN` (when the env var is set).
@@ -1051,14 +1067,14 @@ Expected: see whether `METRICS_TOKEN` is already required. If it already enforce
 - [ ] **Step 2: Add the guard at the top of the GET handler**
 
 ```ts
-  const required = process.env.METRICS_TOKEN;
-  if (required) {
-    const auth = req.headers.get("authorization") || "";
-    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-    if (token !== required) {
-      return new Response("Unauthorized", { status: 401 });
-    }
+const required = process.env.METRICS_TOKEN;
+if (required) {
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (token !== required) {
+    return new Response("Unauthorized", { status: 401 });
   }
+}
 ```
 
 (If the existing `GET` has no `req` parameter, change its signature to `GET(req: Request)`.)
