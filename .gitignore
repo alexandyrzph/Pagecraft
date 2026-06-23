@@ -41,5 +41,9 @@ yarn-error.log*
 next-env.d.ts
 /uploads/
 
+# prisma sqlite
+/prisma/dev.db
+/prisma/*.db-journal
+
 # generated page-preview screenshots
 /public/uploads/thumbnails/
