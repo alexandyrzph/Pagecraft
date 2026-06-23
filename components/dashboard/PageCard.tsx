@@ -92,11 +92,9 @@ export function PageCard({
         className="relative block aspect-[16/10] border-b border-[#eef0f2]"
       >
         <PageThumbnail
-          pageId={page.id}
           title={page.title}
           initialUrl={page.thumbnailUrl}
           version={page.thumbnailVersion}
-          stale={page.thumbnailStale}
         />
         <span
           className={cn(
