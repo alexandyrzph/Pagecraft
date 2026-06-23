@@ -1,34 +1,44 @@
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 import { prisma } from "@/lib/prisma";
 import { withSiteRole } from "@/lib/api/api-handler";
-import { json, notFound, error } from "@/lib/api/api-response";
-import { isThumbnailStale } from "@/lib/thumbnails/staleness";
-import { captureThumbnail } from "@/lib/thumbnails/screenshot";
+import { json, notFound, badRequest, error } from "@/lib/api/api-response";
+import { enforce } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+
+const THUMB_DIR = path.join(process.cwd(), "public", "uploads", "thumbnails");
+const MAX_BYTES = 8 * 1024 * 1024;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(_req: Request, { params }: Ctx) {
+export async function POST(req: Request, { params }: Ctx) {
+  const limited = enforce(req, "thumbnail", 30, 60_000);
+  if (limited) return limited;
+
   return withSiteRole("EDITOR", async (ctx) => {
     const { id } = await params;
-    const page = await prisma.page.findFirst({
-      where: { id, siteId: ctx.site.id },
-      include: { thumbnail: true },
-    });
+    const page = await prisma.page.findFirst({ where: { id, siteId: ctx.site.id } });
     if (!page) return notFound();
 
-    if (page.thumbnail && !isThumbnailStale(page.thumbnail.takenForUpdatedAt, page.updatedAt)) {
-      return json({ url: page.thumbnail.url, version: page.thumbnail.takenForUpdatedAt.getTime() });
-    }
+    const form = await req.formData().catch(() => null);
+    const file = form?.get("file");
+    if (!file || typeof file === "string") return badRequest("No file provided");
+    if (file.size > MAX_BYTES) return error(413, "Thumbnail too large");
 
-    try {
-      const shot = await captureThumbnail(id);
-      return json({ url: shot.url, version: shot.takenForUpdatedAt.getTime() });
-    } catch (e) {
-      console.error("[thumbnail] capture failed for", id, e);
-      return error(500, "Thumbnail generation failed");
-    }
+    await mkdir(THUMB_DIR, { recursive: true });
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await writeFile(path.join(THUMB_DIR, `${id}.png`), buffer);
+
+    const url = `/uploads/thumbnails/${id}.png`;
+    const takenForUpdatedAt = page.updatedAt;
+    await prisma.pageThumbnail.upsert({
+      where: { pageId: id },
+      create: { pageId: id, url, takenForUpdatedAt },
+      update: { url, takenForUpdatedAt },
+    });
+
+    return json({ url, version: takenForUpdatedAt.getTime() });
   });
 }
