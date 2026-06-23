@@ -1,3 +1,7 @@
 # Fallow uses its defaults. Test files are intentionally NOT excluded: they are
 # the consumers that keep test-only helper exports from reading as dead code, and
 # their incidental setup duplication only raises a non-blocking `warn`.
+
+ignoreDependencies = [
+  "modern-screenshot",
+]

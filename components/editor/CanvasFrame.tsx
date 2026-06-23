@@ -12,6 +12,7 @@ import { useDesignSystem } from "@/store/design-system";
 import { useCanvasZoom } from "@/store/canvas-zoom";
 import { useIframe } from "./iframe-context";
 import { handleActionButtons } from "./CanvasFrame.helpers";
+import { copyStyles } from "@/lib/editor/iframe-styles";
 
 // ---------------------------------------------------------------------------
 // Hosts the page in a real <iframe> so Tailwind's responsive utilities and the
@@ -21,31 +22,6 @@ import { handleActionButtons } from "./CanvasFrame.helpers";
 // cross-document portal, selection/hover are wired with delegated listeners on
 // the iframe document, and inline editing uses native listeners (see Editable).
 // ---------------------------------------------------------------------------
-
-function copyStyles(doc: Document) {
-  document
-    .querySelectorAll('style, link[rel="stylesheet"]')
-    .forEach((n) => doc.head.appendChild(n.cloneNode(true)));
-
-  const adopted = (document as unknown as { adoptedStyleSheets?: CSSStyleSheet[] })
-    .adoptedStyleSheets;
-  if (adopted) {
-    for (const sheet of adopted) {
-      try {
-        const text = Array.from(sheet.cssRules)
-          .map((r) => r.cssText)
-          .join("\n");
-        if (text) {
-          const el = doc.createElement("style");
-          el.textContent = text;
-          doc.head.appendChild(el);
-        }
-      } catch {
-        /* inaccessible sheet — skip */
-      }
-    }
-  }
-}
 
 export function CanvasFrame({
   tree,
