@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     });
     await logActivity(ws.workspace.id, ws.user.id, "invite.sent", undefined, { email, role });
 
-    const origin = new URL(req.url).origin;
+    const origin = process.env.APP_URL || new URL(req.url).origin;
     const inviteUrl = `${origin}/invite/${token}`;
     await sendWorkspaceInvite(email, inviteUrl, ws.workspace.name);
     return created({ inviteUrl });
