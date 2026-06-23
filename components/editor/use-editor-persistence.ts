@@ -9,6 +9,7 @@ import { useEditor } from "@/store/editor-store";
 import { useEditorUI } from "@/store/editor-ui";
 import { useDesignSystem } from "@/store/design-system";
 import { resolveSaveMode, savePayload, saveUrl } from "./use-editor-persistence.helpers";
+import { requestThumbnailCapture } from "@/lib/thumbnails/capture-controller";
 
 /**
  * Save/publish/unpublish/export for whichever editor mode is active, plus the
@@ -60,6 +61,7 @@ export function useEditorPersistence(opts: {
       useEditor.getState().setPublished(!!data.published);
       // capture a restore point for each publish
       void api.post(endpoints.pages.versions(s.pageId), { label: "Published" }).catch(() => {});
+      void requestThumbnailCapture({ force: true });
     } catch {
       /* ignore */
     }
@@ -116,5 +118,10 @@ export function useEditorPersistence(opts: {
     return () => clearTimeout(t);
   }, [dirty, autosave, tree, save]);
 
-  return { save, publish, unpublish, exportHtml, exportRef };
+  const saveManual = useCallback(async () => {
+    await save();
+    void requestThumbnailCapture();
+  }, [save]);
+
+  return { save, saveManual, publish, unpublish, exportHtml, exportRef };
 }

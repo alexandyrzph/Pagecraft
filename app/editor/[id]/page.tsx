@@ -3,13 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { parseContent } from "@/lib/page-service";
 import { requireSite } from "@/lib/auth/site";
 import { EditorClient } from "@/components/editor/EditorClient";
+import { isThumbnailStale } from "@/lib/thumbnails/staleness";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditorPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await requireSite();
   const { id } = await params;
-  const page = await prisma.page.findFirst({ where: { id, siteId: ctx.site.id } });
+  const page = await prisma.page.findFirst({
+    where: { id, siteId: ctx.site.id },
+    include: { thumbnail: true },
+  });
   if (!page) notFound();
 
   let theme = {};
@@ -33,6 +37,7 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
           ogImage: page.ogImage ?? "",
         },
         theme,
+        thumbnailStale: isThumbnailStale(page.thumbnail?.takenForUpdatedAt, page.updatedAt),
       }}
     />
   );

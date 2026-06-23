@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { DndContext, DragOverlay, MeasuringStrategy, closestCenter } from "@dnd-kit/core";
 import type { Block, Seo, Theme } from "@/lib/types";
 import { useEditor } from "@/store/editor-store";
@@ -29,6 +29,8 @@ import { SectionInserter } from "./SectionInserter";
 import { AiGenerateModal } from "./AiGenerateModal";
 import { RichTextToolbar } from "./RichTextToolbar";
 import { VersionHistory } from "./VersionHistory";
+import { ShotFrame } from "./ShotFrame";
+import { requestThumbnailCapture } from "@/lib/thumbnails/capture-controller";
 
 export type PageDTO = {
   id: string;
@@ -38,6 +40,7 @@ export type PageDTO = {
   content: Block[];
   seo?: Seo;
   theme?: Theme;
+  thumbnailStale?: boolean;
 };
 
 export function EditorClient({
@@ -68,9 +71,15 @@ export function EditorClient({
 
   const { drag, sensors, measure, onDragStart, onDragEnd, onDragCancel } = dragDrop;
   const { componentsCtx, collectionsCtx, siteCtx, componentsMap, collectionsMap } = editorData;
-  const { save, publish, unpublish, exportHtml, exportRef } = persistence;
+  const { save, saveManual, publish, unpublish, exportHtml, exportRef } = persistence;
   const { actionsCtx, pending, setPending, saveCompBlock, setSaveCompBlock, persistComponent } =
     navigation;
+
+  useEffect(() => {
+    if (mode !== "page" || !ready || !page.thumbnailStale) return;
+    const t = setTimeout(() => void requestThumbnailCapture({ force: true }), 1500);
+    return () => clearTimeout(t);
+  }, [mode, ready, page.thumbnailStale]);
 
   if (!ready) return <EditorSkeleton />;
 
@@ -96,7 +105,7 @@ export function EditorClient({
                   <div className="flex h-screen flex-col overflow-clip overscroll-none bg-zinc-100">
                     <TopBar
                       mode={mode}
-                      onSave={save}
+                      onSave={saveManual}
                       onExport={exportHtml}
                       onPublish={publish}
                       onUnpublish={unpublish}
@@ -122,7 +131,7 @@ export function EditorClient({
                   <CommandPalette
                     open={paletteOpen}
                     onClose={() => setPaletteOpen(false)}
-                    onSave={save}
+                    onSave={saveManual}
                     onExport={exportHtml}
                     onPublish={publish}
                   />
@@ -138,6 +147,8 @@ export function EditorClient({
                     collections={collectionsMap}
                   />
                 </div>
+
+                {mode === "page" && <ShotFrame />}
 
                 <UnsavedModal
                   open={!!pending}
