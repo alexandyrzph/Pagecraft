@@ -13,7 +13,7 @@
 	}
 }
 
-{$APP_DOMAIN}, www.{$APP_DOMAIN} {
+{$APP_DOMAIN} {
 	import security_headers
 	reverse_proxy app:3000
 }
