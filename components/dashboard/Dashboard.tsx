@@ -32,8 +32,17 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
   const liveCount = s.counts.live;
   const filtered = filterPages(pages, s.query, s.filter);
 
+  const openEditor = (id: string) => {
+    s.router.refresh();
+    s.router.push(`/editor/${id}`);
+  };
   const create = (template: Template) =>
-    runCreate(template, s.setCreating, (href) => s.router.push(href));
+    runCreate(
+      template,
+      s.setCreating,
+      (href) => s.router.push(href),
+      () => s.router.refresh(),
+    );
   const remove = (id: string) => runRemove(id, s.confirm, s.setDeleting, () => s.router.refresh());
 
   if (!s.ready) return <DashboardSkeleton />;
@@ -156,7 +165,7 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
         open={s.aiModal}
         onClose={() => s.setAiModal(false)}
         onGenerate={generatePage}
-        onDone={(id) => s.router.push(`/editor/${id}`)}
+        onDone={openEditor}
       />
 
       <SubmissionsModal page={s.inbox} onClose={() => s.setInbox(null)} />

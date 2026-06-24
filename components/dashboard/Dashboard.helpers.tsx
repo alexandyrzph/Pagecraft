@@ -58,12 +58,13 @@ export async function generatePage(prompt: string): Promise<string | null> {
   return page.id ?? null;
 }
 
-// Create a page from a template and navigate into the editor; clears the
-// "creating" flag if the request fails.
+// Create a page from a template, refresh the dashboard list, and navigate into
+// the editor; clears the "creating" flag if the request fails.
 export async function runCreate(
   template: Template,
   setCreating: (id: string | null) => void,
   push: (href: string) => void,
+  refresh: () => void,
 ): Promise<void> {
   setCreating(template.id);
   try {
@@ -73,6 +74,7 @@ export async function runCreate(
         content: template.build(),
       })
     ).data;
+    refresh();
     push(`/editor/${page.id}`);
   } catch {
     setCreating(null);

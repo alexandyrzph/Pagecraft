@@ -136,34 +136,38 @@ describe("runCreate", () => {
     };
   }
 
-  it("posts the template name + built content and navigates into the editor", async () => {
+  it("posts the template name + built content, refreshes the list, and navigates into the editor", async () => {
     post.mockResolvedValueOnce({ data: { id: "ed1" } });
     const setCreating = vi.fn();
     const push = vi.fn();
+    const refresh = vi.fn();
 
-    await runCreate(template(), setCreating, push);
+    await runCreate(template(), setCreating, push, refresh);
 
     expect(setCreating).toHaveBeenCalledWith("landing");
     expect(post).toHaveBeenCalledWith("/api/pages", { title: "Landing page", content: [] });
+    expect(refresh).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith("/editor/ed1");
   });
 
   it("uses the 'Untitled Page' title for the blank template", async () => {
     post.mockResolvedValueOnce({ data: { id: " b" } });
-    await runCreate(template({ id: "blank", name: "Blank" }), vi.fn(), vi.fn());
+    await runCreate(template({ id: "blank", name: "Blank" }), vi.fn(), vi.fn(), vi.fn());
     expect(post).toHaveBeenCalledWith("/api/pages", { title: "Untitled Page", content: [] });
   });
 
-  it("clears the creating flag and does not navigate when the request fails", async () => {
+  it("clears the creating flag and does not navigate or refresh when the request fails", async () => {
     post.mockRejectedValueOnce(new Error("nope"));
     const setCreating = vi.fn();
     const push = vi.fn();
+    const refresh = vi.fn();
 
-    await runCreate(template(), setCreating, push);
+    await runCreate(template(), setCreating, push, refresh);
 
     expect(setCreating).toHaveBeenNthCalledWith(1, "landing");
     expect(setCreating).toHaveBeenLastCalledWith(null);
     expect(push).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
 
