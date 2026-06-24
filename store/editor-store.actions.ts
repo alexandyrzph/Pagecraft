@@ -45,6 +45,7 @@ export const createLifecycleActions = (set: Set): LifecycleActions => ({
       pageId: page.id,
       title: page.title,
       slug: page.slug,
+      noindex: page.noindex ?? false,
       published: page.published,
       seo: page.seo ?? {},
       theme: page.theme ?? {},
@@ -66,11 +67,13 @@ export const createLifecycleActions = (set: Set): LifecycleActions => ({
   setTheme: (partial) => set((s) => ({ theme: { ...s.theme, ...partial }, dirty: true })),
 });
 
-type MetaActions = Pick<EditorState, "setTitle" | "setPublished">;
+type MetaActions = Pick<EditorState, "setTitle" | "setPublished" | "setSlug" | "setNoindex">;
 
 export const createMetaActions = (set: Set): MetaActions => ({
   setTitle: (title) => set({ title, dirty: true }),
   setPublished: (published) => set({ published }),
+  setSlug: (slug) => set({ slug, dirty: true }),
+  setNoindex: (noindex) => set({ noindex, dirty: true }),
 });
 
 type SelectionActions = Pick<

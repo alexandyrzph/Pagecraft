@@ -17,6 +17,7 @@ export type EditorState = {
   pageId: string | null;
   title: string;
   slug: string;
+  noindex: boolean;
   published: boolean;
   seo: Seo;
   theme: Theme;
@@ -50,6 +51,7 @@ export type EditorState = {
     id: string;
     title: string;
     slug: string;
+    noindex?: boolean;
     published: boolean;
     tree: Block[];
     seo?: Seo;
@@ -64,6 +66,8 @@ export type EditorState = {
   // --- meta ---
   setTitle: (title: string) => void;
   setPublished: (published: boolean) => void;
+  setSlug: (slug: string) => void;
+  setNoindex: (noindex: boolean) => void;
 
   // --- selection / ui ---
   select: (id: string | null) => void;
@@ -105,6 +109,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   pageId: null,
   title: "Untitled Page",
   slug: "",
+  noindex: false,
   published: false,
   seo: {},
   theme: {},
