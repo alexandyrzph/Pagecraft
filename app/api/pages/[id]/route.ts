@@ -1,9 +1,8 @@
-import { unlink } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
 import { withSite, withSiteRole } from "@/lib/api/api-handler";
 import { json, notFound } from "@/lib/api/api-response";
 import { instrumentApi, timeDb } from "@/lib/observability";
+import { deleteFile } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -58,9 +57,7 @@ export async function DELETE(req: Request, { params }: Ctx) {
       const { id } = await params;
       const result = await prisma.page.deleteMany({ where: { id, siteId: ctx.site.id } });
       if (result.count === 0) return notFound();
-      await unlink(path.join(process.cwd(), "public", "uploads", "thumbnails", `${id}.png`)).catch(
-        () => {},
-      );
+      await deleteFile(`thumbnails/${id}.png`);
       return json({ ok: true });
     }),
   );

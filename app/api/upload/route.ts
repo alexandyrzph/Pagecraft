@@ -1,14 +1,12 @@
 import { withSiteRole } from "@/lib/api/api-handler";
 import { created, badRequest, error } from "@/lib/api/api-response";
 import { enforce } from "@/lib/rate-limit";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
+import { saveFile } from "@/lib/storage";
 import { slugify } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const MAX_BYTES = 25 * 1024 * 1024;
 
 let seq = 0;
@@ -38,11 +36,8 @@ export async function POST(req: Request) {
     const base = slugify(dot >= 0 ? file.name.slice(0, dot) : file.name) || "file";
     const filename = `${base}-${Date.now().toString(36)}${(seq++).toString(36)}${ext ? "." + ext : ""}`;
 
-    await mkdir(UPLOAD_DIR, { recursive: true });
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(UPLOAD_DIR, filename), buffer);
-
-    const url = `/uploads/${filename}`;
+    const url = await saveFile(filename, buffer, file.type || "application/octet-stream");
     const asset = await prisma.asset.create({
       data: {
         name: file.name.slice(0, 200),

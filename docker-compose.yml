@@ -1,30 +1,8 @@
 services:
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: pagistry
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: pagistry
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pagistry"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
     restart: unless-stopped
     env_file: .env
-    environment:
-      DATABASE_URL: postgresql://pagistry:${POSTGRES_PASSWORD}@postgres:5432/pagistry
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - uploads:/app/public/uploads
     healthcheck:
       test:
         - CMD
@@ -53,7 +31,5 @@ services:
         condition: service_healthy
 
 volumes:
-  pg_data:
-  uploads:
   caddy_data:
   caddy_config:
