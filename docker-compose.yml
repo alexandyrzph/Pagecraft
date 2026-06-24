@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: ghcr.io/alexandyrzph/pagecraft:latest
     restart: unless-stopped
     env_file: .env
     healthcheck:
