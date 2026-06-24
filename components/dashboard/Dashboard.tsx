@@ -1,9 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { filterPages, emptyStateMessage } from "@/lib/dashboard/filter";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
+import { activeDomainHost } from "@/lib/domains/live-url";
 import { type Template } from "@/lib/blocks/templates";
 import { DashboardSkeleton } from "./DashboardSkeleton";
 import { SubmissionsModal } from "./SubmissionsModal";
@@ -22,6 +26,20 @@ import {
 
 export function Dashboard({ pages }: { pages: PageItem[] }) {
   const s = useDashboardState(pages);
+
+  const [liveHost, setLiveHost] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void api
+      .get(endpoints.domains.list)
+      .then(({ data }) => {
+        if (alive) setLiveHost(activeDomainHost(data));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const newParam = s.searchParams.get("new");
   if (newParam !== s.seenNewParam) {
@@ -143,6 +161,7 @@ export function Dashboard({ pages }: { pages: PageItem[] }) {
                     key={p.id}
                     page={p}
                     index={i}
+                    liveHost={liveHost}
                     deleting={s.deleting === p.id}
                     onOpenSubmissions={() => s.setInbox({ id: p.id, title: p.title })}
                     onDelete={() => remove(p.id)}

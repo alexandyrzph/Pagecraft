@@ -18,18 +18,34 @@ const base: DashboardPage = {
 };
 
 describe("PageCard", () => {
-  it("shows a Live pill and a view-live link for a published page", () => {
+  it("links view-live to the site's domain for a published page with an active domain", () => {
     const { container } = render(
       <PageCard
         page={base}
         index={0}
+        liveHost="example.com"
         deleting={false}
         onOpenSubmissions={() => {}}
         onDelete={() => {}}
       />,
     );
     expect(screen.getByText("Live")).toBeInTheDocument();
-    expect(container.querySelector('a[href="/p/portfolio"]')).not.toBeNull();
+    expect(container.querySelector('a[href="https://example.com/p/portfolio"]')).not.toBeNull();
+  });
+
+  it("shows no view-live link for a published page when no domain is connected", () => {
+    const { container } = render(
+      <PageCard
+        page={base}
+        index={0}
+        liveHost={null}
+        deleting={false}
+        onOpenSubmissions={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(container.querySelector('a[href^="https://"]')).toBeNull();
   });
 
   it("shows a Draft pill and no view-live link for an unpublished page", () => {
@@ -38,12 +54,13 @@ describe("PageCard", () => {
       <PageCard
         page={draft}
         index={0}
+        liveHost="example.com"
         deleting={false}
         onOpenSubmissions={() => {}}
         onDelete={() => {}}
       />,
     );
     expect(screen.getByText("Draft")).toBeInTheDocument();
-    expect(container.querySelector('a[href="/p/draft-x"]')).toBeNull();
+    expect(container.querySelector('a[href="https://example.com/p/draft-x"]')).toBeNull();
   });
 });

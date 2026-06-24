@@ -22,6 +22,9 @@ import {
   Undo2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api/client";
+import { endpoints } from "@/lib/api/endpoints";
+import { activeDomainHost, liveUrl } from "@/lib/domains/live-url";
 import { useEditor } from "@/store/editor-store";
 import { useEditorUI } from "@/store/editor-ui";
 import { LogoMark } from "@/components/Brand";
@@ -413,6 +416,19 @@ export function SavingBar() {
 // "View live" and "Unpublish".
 function PublishedMenu({ slug, onUnpublish }: { slug: string; onUnpublish?: () => void }) {
   const [open, setOpen] = useState(false);
+  const [host, setHost] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void api
+      .get(endpoints.domains.list)
+      .then(({ data }) => {
+        if (alive) setHost(activeDomainHost(data));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   return (
     <div className="relative">
       <motion.button
@@ -430,16 +446,18 @@ function PublishedMenu({ slug, onUnpublish }: { slug: string; onUnpublish?: () =
         onClose={() => setOpen(false)}
         className="right-0 top-11 w-48 overflow-hidden rounded-xl p-1"
       >
-        <a
-          href={`/p/${slug}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => setOpen(false)}
-          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
-        >
-          <ExternalLink size={15} className="text-zinc-400" />
-          View live
-        </a>
+        {host && (
+          <a
+            href={liveUrl(host, slug)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+          >
+            <ExternalLink size={15} className="text-zinc-400" />
+            View live
+          </a>
+        )}
         <button
           onClick={() => {
             setOpen(false);

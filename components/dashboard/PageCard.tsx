@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ExternalLink, Inbox, Loader2, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { liveUrl } from "@/lib/domains/live-url";
 import { PageThumbnail } from "./PageThumbnail";
 
 export type DashboardPage = {
@@ -68,12 +69,14 @@ function IconBtn({
 export function PageCard({
   page,
   index,
+  liveHost,
   deleting,
   onOpenSubmissions,
   onDelete,
 }: {
   page: DashboardPage;
   index: number;
+  liveHost: string | null;
   deleting: boolean;
   onOpenSubmissions: () => void;
   onDelete: () => void;
@@ -141,8 +144,8 @@ export function PageCard({
               </span>
             )}
           </div>
-          {page.published && (
-            <IconBtn label="View live" href={`/p/${page.slug}`} external>
+          {page.published && liveHost && (
+            <IconBtn label="View live" href={liveUrl(liveHost, page.slug)} external>
               <ExternalLink size={15} />
             </IconBtn>
           )}

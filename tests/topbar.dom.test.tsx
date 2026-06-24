@@ -9,6 +9,15 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
+vi.mock("@/lib/api/client", () => ({
+  api: {
+    get: vi.fn().mockResolvedValue({ data: [{ hostname: "example.com", status: "ACTIVE" }] }),
+    post: vi.fn().mockResolvedValue({ data: {} }),
+    put: vi.fn().mockResolvedValue({ data: {} }),
+    patch: vi.fn().mockResolvedValue({ data: {} }),
+    delete: vi.fn().mockResolvedValue({ data: {} }),
+  },
+}));
 
 import { TopBar } from "@/components/editor/TopBar";
 import { EditorActionsProvider } from "@/components/editor/editor-actions";
@@ -173,14 +182,14 @@ describe("TopBar — component mode chrome", () => {
 });
 
 describe("TopBar — published menu", () => {
-  it("opens the menu and exposes View live + Unpublish", () => {
+  it("opens the menu and exposes View live + Unpublish", async () => {
     const onUnpublish = vi.fn();
     initPage({ id: "p1", title: "Home", slug: "home", published: true, tree: [] });
     renderTopBar({ onUnpublish });
 
     fireEvent.click(screen.getByText("Published"));
-    const live = screen.getByRole("link", { name: /View live/ });
-    expect(live).toHaveAttribute("href", "/p/home");
+    const live = await screen.findByRole("link", { name: /View live/ });
+    expect(live).toHaveAttribute("href", "https://example.com/p/home");
 
     fireEvent.click(screen.getByRole("button", { name: /Unpublish/ }));
     expect(onUnpublish).toHaveBeenCalledTimes(1);
