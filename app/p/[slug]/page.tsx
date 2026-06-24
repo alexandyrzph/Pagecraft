@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageDocument } from "@/components/PageDocument";
 import { resolveHostSite } from "@/lib/domains/resolve";
 import { requestHost } from "@/lib/domains/request-host";
+import { faviconMetadata } from "@/lib/seo/favicon";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +26,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await loadPage(slug);
   if (!page || !page.published) return { title: "Page not found" };
+  const site = await prisma.site.findUnique({
+    where: { id: page.siteId },
+    select: { faviconUrl: true },
+  });
   const title = page.metaTitle || page.title;
   const description = page.metaDescription || undefined;
   const images = page.ogImage ? [page.ogImage] : undefined;
   return {
     title,
     description,
+    ...faviconMetadata(site?.faviconUrl),
     openGraph: { title, description, images, type: "website" },
     twitter: { card: "summary_large_image", title, description, images },
   };
