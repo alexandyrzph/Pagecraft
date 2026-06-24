@@ -1,10 +1,11 @@
 import { slugify } from "@/lib/utils";
-import { createSite } from "@/lib/sites/create";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, type SessionUser } from "./auth";
+import type { Prisma } from "@prisma/client";
+type Db = Prisma.TransactionClient | typeof prisma;
 
 // ---------------------------------------------------------------------------
 // Pure role helpers
@@ -112,27 +113,26 @@ export async function setActiveWorkspace(id: string): Promise<boolean> {
   return true;
 }
 
-/** Unique workspace slug derived from a name. */
-async function uniqueWorkspaceSlug(name: string): Promise<string> {
+async function uniqueWorkspaceSlug(name: string, db: Db = prisma): Promise<string> {
   let n = 1;
   while (n < 1000) {
     const slug = slugCandidate(name, n);
-    const existing = await prisma.workspace.findUnique({ where: { slug } });
+    const existing = await db.workspace.findUnique({ where: { slug } });
     if (!existing) return slug;
     n++;
   }
   return `${slugCandidate(name, 1)}-${Date.now()}`;
 }
 
-/** Create a workspace and make `userId` its OWNER. */
-export async function createWorkspace(userId: string, name: string): Promise<ActiveWorkspace> {
+export async function createWorkspace(
+  { userId, name, logoUrl }: { userId: string; name: string; logoUrl?: string | null },
+  db: Db = prisma,
+): Promise<ActiveWorkspace> {
   const cleanName = (name || "Workspace").trim().slice(0, 80) || "Workspace";
-  const slug = await uniqueWorkspaceSlug(cleanName);
-  const ws = await prisma.$transaction(async (tx) => {
-    const created = await tx.workspace.create({ data: { name: cleanName, slug } });
-    await tx.membership.create({ data: { userId, workspaceId: created.id, role: "OWNER" } });
-    await createSite({ workspaceId: created.id, name: "Main site" }, tx);
-    return created;
+  const slug = await uniqueWorkspaceSlug(cleanName, db);
+  const created = await db.workspace.create({
+    data: { name: cleanName, slug, logoUrl: logoUrl ?? null },
   });
-  return { id: ws.id, name: ws.name, slug: ws.slug };
+  await db.membership.create({ data: { userId, workspaceId: created.id, role: "OWNER" } });
+  return { id: created.id, name: created.name, slug: created.slug };
 }

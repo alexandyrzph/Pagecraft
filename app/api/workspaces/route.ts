@@ -32,6 +32,6 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const name = String(body.name || "").trim();
   if (!name) return badRequest("Name required");
-  const ws = await createWorkspace(u.user.id, name);
+  const ws = await createWorkspace({ userId: u.user.id, name, logoUrl: body?.logoUrl ?? null });
   return created(ws);
 }
