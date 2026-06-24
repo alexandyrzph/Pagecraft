@@ -79,3 +79,16 @@ export async function setActiveSite(id: string): Promise<boolean> {
   });
   return true;
 }
+
+export async function persistActiveContext(workspaceId: string, siteId: string): Promise<void> {
+  const jar = await cookies();
+  const opts = {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  };
+  jar.set("pc_ws", workspaceId, opts);
+  jar.set("pc_site", siteId, opts);
+}

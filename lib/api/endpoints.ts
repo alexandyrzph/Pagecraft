@@ -13,6 +13,7 @@ export const endpoints = {
   ai: "/api/ai",
   upload: "/api/upload",
   site: "/api/site",
+  setup: "/api/setup",
   assets: (opts?: { kind?: "image" }) =>
     opts?.kind === "image" ? "/api/assets?kind=image" : "/api/assets",
   auth: {
