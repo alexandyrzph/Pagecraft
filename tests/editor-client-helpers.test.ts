@@ -30,6 +30,7 @@ describe("buildInitPayload", () => {
       title: "Home",
       slug: "home",
       published: true,
+      noindex: false,
       tree: content,
       seo,
       theme,

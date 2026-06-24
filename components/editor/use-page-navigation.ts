@@ -28,6 +28,7 @@ export function usePageNavigation(opts: { refreshComponents: () => Promise<void>
           title: p.title,
           slug: p.slug,
           published: !!p.published,
+          noindex: p.noindex ?? false,
           tree: parseContent(p.content),
           seo: {
             metaTitle: p.metaTitle ?? "",

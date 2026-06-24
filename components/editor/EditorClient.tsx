@@ -37,6 +37,7 @@ export type PageDTO = {
   title: string;
   slug: string;
   published: boolean;
+  noindex?: boolean | null;
   content: Block[];
   seo?: Seo;
   theme?: Theme;

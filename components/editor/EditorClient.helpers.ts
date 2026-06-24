@@ -25,6 +25,7 @@ export function buildInitPayload(page: PageDTO) {
     title: page.title,
     slug: page.slug,
     published: page.published,
+    noindex: page.noindex ?? false,
     tree: page.content,
     seo: page.seo,
     theme: page.theme,

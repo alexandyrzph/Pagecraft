@@ -45,8 +45,8 @@ export function PagePanel() {
     };
   }, []);
 
-  async function saveSite(patch: { name?: string; faviconUrl?: string }) {
-    await api.put(endpoints.site, patch).catch(() => {});
+  function saveSite(patch: { name?: string; faviconUrl?: string }) {
+    void api.put(endpoints.site, patch).catch(() => {});
   }
 
   async function commitSlug() {
@@ -87,7 +87,7 @@ export function PagePanel() {
         )}
       </Section>
 
-      <Section title="Status">
+      <Section title="Homepage">
         <button
           onClick={() => void setAsHome()}
           className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:border-zinc-300"
