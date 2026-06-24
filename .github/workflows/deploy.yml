@@ -1,4 +1,4 @@
-name: Build and publish image
+name: Build and deploy
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/pagistry
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -46,3 +50,20 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/pagistry
+            git pull --ff-only
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
