@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/auth";
 import { getActiveWorkspace } from "@/lib/auth/workspace";
+import { getActiveSite } from "@/lib/auth/site";
 import { needsSetup } from "@/lib/auth/setup-gate";
 import { Sidebar } from "@/components/app-shell/Sidebar";
 import { SIDEBAR_COOKIE } from "@/components/app-shell/SidebarToggleCookie";
@@ -29,6 +30,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     role: m.role,
   }));
 
+  const sites = await prisma.site.findMany({
+    where: { workspaceId: ctx.workspace.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, handle: true },
+  });
+  const activeSiteId = (await getActiveSite())?.site.id;
+
   const jar = await cookies();
   const collapsed = jar.get(SIDEBAR_COOKIE)?.value === "collapsed";
 
@@ -40,6 +48,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         activeWorkspaceId={ctx.workspace.id}
         role={ctx.role}
         user={{ name: user.name, email: user.email }}
+        sites={sites}
+        activeSiteId={activeSiteId}
       />
       <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
     </div>

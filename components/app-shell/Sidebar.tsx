@@ -10,18 +10,23 @@ import { CommandPalette } from "./CommandPalette";
 import { SidebarRail, isPaletteShortcut } from "./Sidebar.helpers";
 
 type WS = { id: string; name: string; slug: string; role: string };
+type Site = { id: string; name: string; handle: string };
 
 export function Sidebar({
   collapsed: initialCollapsed,
   workspaces,
   activeWorkspaceId,
   user,
+  sites,
+  activeSiteId,
 }: {
   collapsed: boolean;
   workspaces: WS[];
   activeWorkspaceId: string;
   role: string;
   user: { name: string; email: string };
+  sites: Site[];
+  activeSiteId?: string;
 }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,6 +66,8 @@ export function Sidebar({
       user={user}
       pathname={pathname}
       onSearch={() => setPaletteOpen(true)}
+      sites={sites}
+      activeSiteId={activeSiteId}
     />
   );
 

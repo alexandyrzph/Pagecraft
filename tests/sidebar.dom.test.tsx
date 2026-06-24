@@ -67,6 +67,9 @@ vi.mock("@/components/app-shell/CommandPalette", () => ({
   CommandPalette: ({ open }: { open: boolean; onClose: () => void }) =>
     open ? <div data-testid="command-palette" /> : null,
 }));
+vi.mock("@/components/app-shell/SiteSwitcher", () => ({
+  SiteSwitcher: () => <div data-testid="site-switcher" />,
+}));
 
 import { Sidebar } from "@/components/app-shell/Sidebar";
 import { SidebarRail, isPaletteShortcut } from "@/components/app-shell/Sidebar.helpers";
@@ -102,6 +105,7 @@ describe("SidebarRail", () => {
         user={user}
         pathname="/"
         onSearch={() => {}}
+        sites={[]}
       />,
     );
     expect(screen.getByText("Build")).toBeInTheDocument();
@@ -124,6 +128,7 @@ describe("SidebarRail", () => {
         user={user}
         pathname="/cms/items/123"
         onSearch={() => {}}
+        sites={[]}
       />,
     );
     expect(screen.getByRole("link", { name: "CMS" })).toHaveClass("bg-indigo-50");
@@ -139,6 +144,7 @@ describe("SidebarRail", () => {
         user={user}
         pathname="/"
         onSearch={() => {}}
+        sites={[]}
       />,
     );
     expect(screen.queryByText("Build")).toBeNull();
@@ -161,6 +167,7 @@ describe("SidebarRail", () => {
         user={user}
         pathname="/"
         onSearch={onSearch}
+        sites={[]}
       />,
     );
     fireEvent.click(screen.getByText("Search"));
@@ -177,6 +184,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="w2"
         role="member"
         user={user}
+        sites={[]}
       />,
     );
     expect(screen.getByText("Beta")).toBeInTheDocument();
@@ -190,6 +198,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="missing"
         role="member"
         user={user}
+        sites={[]}
       />,
     );
     expect(screen.getByText("Acme")).toBeInTheDocument();
@@ -203,6 +212,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="w1"
         role="owner"
         user={user}
+        sites={[]}
       />,
     );
     const toggle = screen.getByRole("button", { name: "Collapse sidebar" });
@@ -213,7 +223,14 @@ describe("Sidebar", () => {
 
   it("renders the expanded chevron affordance when starting collapsed", () => {
     render(
-      <Sidebar collapsed workspaces={workspaces} activeWorkspaceId="w1" role="owner" user={user} />,
+      <Sidebar
+        collapsed
+        workspaces={workspaces}
+        activeWorkspaceId="w1"
+        role="owner"
+        user={user}
+        sites={[]}
+      />,
     );
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
   });
@@ -227,6 +244,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="w1"
         role="owner"
         user={user}
+        sites={[]}
       />,
     );
     expect(screen.queryByRole("button", { name: "Close menu" })).toBeNull();
@@ -244,6 +262,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="w1"
         role="owner"
         user={user}
+        sites={[]}
       />,
     );
     expect(screen.queryByTestId("command-palette")).toBeNull();
@@ -261,6 +280,7 @@ describe("Sidebar", () => {
         activeWorkspaceId="w1"
         role="owner"
         user={user}
+        sites={[]}
       />,
     );
     fireEvent.click(screen.getByText("Search"));
@@ -275,6 +295,7 @@ describe("Sidebar", () => {
       activeWorkspaceId: "w1",
       role: "owner",
       user,
+      sites: [] as { id: string; name: string; handle: string }[],
     };
     const { rerender } = render(<Sidebar {...props} />);
     await u.click(screen.getByRole("button", { name: "Open menu" }));

@@ -5,10 +5,12 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_GROUPS } from "./nav";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+import { SiteSwitcher } from "./SiteSwitcher";
 import { SidebarProfile } from "./SidebarProfile";
 import { SettingsMenu } from "./SettingsMenu";
 
 type WS = { id: string; name: string; slug: string; role: string };
+type Site = { id: string; name: string; handle: string };
 
 export function isPaletteShortcut(e: KeyboardEvent) {
   return (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
@@ -25,6 +27,8 @@ export function SidebarRail({
   user,
   pathname,
   onSearch,
+  sites,
+  activeSiteId,
 }: {
   collapsed: boolean;
   workspaces: WS[];
@@ -32,6 +36,8 @@ export function SidebarRail({
   user: { name: string; email: string };
   pathname: string;
   onSearch: () => void;
+  sites: Site[];
+  activeSiteId?: string;
 }) {
   const w = collapsed ? "w-[68px]" : "w-64";
   return (
@@ -44,6 +50,7 @@ export function SidebarRail({
       <div className="flex items-center gap-2 px-4 py-3.5">
         <WorkspaceSwitcher collapsed={collapsed} workspaces={workspaces} activeId={active?.id} />
       </div>
+      <SiteSwitcher collapsed={collapsed} sites={sites} activeSiteId={activeSiteId} />
       <div className="px-4 pb-2">
         <button
           onClick={onSearch}
