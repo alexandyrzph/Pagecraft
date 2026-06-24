@@ -73,7 +73,7 @@ export const getActiveWorkspace = cache(async (): Promise<WorkspaceCtx | null> =
  *  the safe fallback that re-drives setup. */
 export async function requireWorkspace(): Promise<WorkspaceCtx> {
   const ctx = await getActiveWorkspace();
-  if (!ctx) redirect("/onboarding");
+  if (!ctx) redirect("/setup");
   return ctx;
 }
 

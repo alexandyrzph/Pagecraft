@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/auth";
 import { getActiveWorkspace } from "@/lib/auth/workspace";
+import { needsSetup } from "@/lib/auth/setup-gate";
 import { Sidebar } from "@/components/app-shell/Sidebar";
 import { SIDEBAR_COOKIE } from "@/components/app-shell/SidebarToggleCookie";
 
@@ -12,7 +13,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   if (!user.onboarded) redirect("/onboarding");
   const ctx = await getActiveWorkspace();
-  if (!ctx) redirect("/onboarding");
+  const siteCount = ctx
+    ? await prisma.site.count({ where: { workspaceId: ctx.workspace.id } })
+    : 0;
+  if (needsSetup({ hasWorkspace: !!ctx, siteCount })) redirect("/setup");
+  if (!ctx) redirect("/setup");
 
   const memberships = await prisma.membership.findMany({
     where: { userId: user.id },

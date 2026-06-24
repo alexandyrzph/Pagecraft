@@ -45,7 +45,7 @@ export const getActiveSite = cache(async (): Promise<SiteCtx | null> => {
 export async function requireSite(): Promise<SiteCtx> {
   await requireUser();
   const ctx = await getActiveSite();
-  if (!ctx) redirect("/onboarding");
+  if (!ctx) redirect("/setup");
   return ctx;
 }
 
