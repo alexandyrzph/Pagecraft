@@ -17,14 +17,20 @@ export async function POST(req: Request) {
   let result;
   try {
     result = await runSetup(u.user.id, {
-      workspace: wsDraft ? { name: String(wsDraft.name), logoUrl: wsDraft.logoUrl ?? null } : null,
+      workspace: wsDraft
+        ? {
+            name: String(wsDraft.name),
+            logoUrl: typeof wsDraft.logoUrl === "string" ? wsDraft.logoUrl : null,
+          }
+        : null,
       site: {
         name: siteName,
-        logoUrl: body?.site?.logoUrl ?? null,
-        faviconUrl: body?.site?.faviconUrl ?? null,
+        logoUrl: typeof body?.site?.logoUrl === "string" ? body.site.logoUrl : null,
+        faviconUrl: typeof body?.site?.faviconUrl === "string" ? body.site.faviconUrl : null,
       },
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.message === "no_workspace") return badRequest("no_workspace");
     return badRequest("Could not complete setup");
   }
   await persistActiveContext(result.workspaceId, result.siteId);

@@ -29,6 +29,14 @@ describe("runSetup", () => {
     expect(sites[0].faviconUrl).toBe("/f.ico");
   });
 
+  it("rejects when workspace is null and the user has no membership", async () => {
+    const user = await prisma.user.create({ data: { email: `s3-${Date.now()}@t.dev`, name: "T" } });
+    users.push(user.id);
+    await expect(runSetup(user.id, { workspace: null, site: { name: "X" } })).rejects.toThrow(
+      "no_workspace",
+    );
+  });
+
   it("adds a site to the existing workspace when workspace is null", async () => {
     const user = await prisma.user.create({ data: { email: `s2-${Date.now()}@t.dev`, name: "T" } });
     users.push(user.id);
